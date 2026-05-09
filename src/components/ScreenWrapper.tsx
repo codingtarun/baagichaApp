@@ -12,6 +12,6 @@ export default function ScreenWrapper({ children }: Props) {
 const styles = StyleSheet.create({
   base: {
     flex: 1,
-    backgroundColor: Colors.bgPrimary,
+    backgroundColor: Colors.info,
   },
 });
