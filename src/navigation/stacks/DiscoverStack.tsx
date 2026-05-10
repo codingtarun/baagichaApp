@@ -30,9 +30,13 @@ import DiscoverScreen from '../../screens/DiscoverScreen';
 import VarietyScreen from '../../screens/VarietyScreen';
 import VarietyDetailScreen from '../../screens/VarietyDetailScreen';
 import VarietyCompareScreen from '../../screens/VarietyCompareScreen';
-import DiseasesScreen from '../../screens/DiseasesScreen';
+import DiseasesScreen from '../../screens/DiseaseScreen';
+import DiseaseDetailScreen from '../../screens/DiseaseDetailScreen';
 import WeatherScreen from '../../screens/WeatherScreen';
-import BlogScreen from '../../screens/BlogScreen';
+import RootstockListScreen from '../../screens/RootstockListScreen';
+import RootstockDetailScreen from '../../screens/RootstockDetailScreen';
+import BlogListScreen from '../../screens/BlogListScreen';
+import BlogDetailScreen from '../../screens/BlogDetailScreen';
 
 export type DiscoverStackParamList = {
   Discover: undefined;
@@ -40,9 +44,12 @@ export type DiscoverStackParamList = {
   VarietyDetail: { slug: string };
   VarietyCompare: { slugs: string[] };
   Diseases: undefined;
+  DiseaseDetail: { slug: string };
   Weather: undefined;
   Blog: undefined;
-  Rootstock: undefined;
+  BlogDetail: { slug: string };
+  RootstockList: undefined;
+  RootstockDetail: { slug: string };
 };
 
 const Stack = createNativeStackNavigator<DiscoverStackParamList>();
@@ -55,10 +62,12 @@ export default function DiscoverStack(): React.JSX.Element {
       <Stack.Screen name="VarietyDetail" component={VarietyDetailScreen} />
       <Stack.Screen name="VarietyCompare" component={VarietyCompareScreen} />
       <Stack.Screen name="Diseases" component={DiseasesScreen} />
+      <Stack.Screen name="DiseaseDetail" component={DiseaseDetailScreen} />
       <Stack.Screen name="Weather" component={WeatherScreen} />
-      <Stack.Screen name="Blog" component={BlogScreen} />
-      {/* Rootstock placeholder — reuse BlogScreen until built */}
-      <Stack.Screen name="Rootstock" component={BlogScreen} />
+      <Stack.Screen name="Blog" component={BlogListScreen} />
+      <Stack.Screen name="BlogDetail" component={BlogDetailScreen} />
+      <Stack.Screen name="RootstockList" component={RootstockListScreen} />
+      <Stack.Screen name="RootstockDetail" component={RootstockDetailScreen} />
     </Stack.Navigator>
   );
 }

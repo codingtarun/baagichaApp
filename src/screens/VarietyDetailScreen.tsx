@@ -62,6 +62,18 @@ export default function VarietyDetailScreen(): React.JSX.Element {
   const { variety, loading, error } = useVarietyDetail(slug);
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
 
+  // Orchard tracking for related variety cards
+  const [orchardSet, setOrchardSet] = useState<Set<number>>(new Set());
+
+  const toggleOrchard = (id: number) => {
+    setOrchardSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   if (loading && !variety) {
     return (
       <SafeAreaView style={[styles.container, styles.centered]} edges={['top']}>
@@ -105,6 +117,19 @@ export default function VarietyDetailScreen(): React.JSX.Element {
           )}
           {/* Gradient overlay */}
           <View style={styles.heroOverlay} />
+          {/* Orchard toggle — top right of hero image */}
+          <TouchableOpacity
+            style={[styles.heroOrchardBtn, orchardSet.has(variety.id) && styles.heroOrchardBtnActive]}
+            onPress={() => toggleOrchard(variety.id)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Icon
+              name="sprout"
+              size={18}
+              color={orchardSet.has(variety.id) ? Colors.white : Colors.gray600}
+            />
+          </TouchableOpacity>
           {/* Badges */}
           <View style={styles.heroBadges}>
             <View style={[styles.badge, { backgroundColor: sc }]}>
@@ -231,6 +256,8 @@ export default function VarietyDetailScreen(): React.JSX.Element {
                   item={rel}
                   onPress={() => navigation.navigate('VarietyDetail', { slug: rel.slug })}
                   style={styles.relatedCard}
+                  inOrchard={orchardSet.has(rel.id)}
+                  onToggleOrchard={() => toggleOrchard(rel.id)}
                 />
               ))}
             </ScrollView>
@@ -829,15 +856,37 @@ const styles = StyleSheet.create({
   },
   relatedScroll: {
     gap: 12,
-    paddingBottom: 8,
+    paddingBottom: 24,
   },
   relatedCard: {
     width: 160,
   },
 
-  // Safe bottom
+  // Safe bottom — extra space so last content isn't hidden behind bottom tab bar
   safeBottom: {
-    height: 40,
+    height: 100,
+  },
+
+  // Orchard button on hero
+  heroOrchardBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  heroOrchardBtnActive: {
+    backgroundColor: Colors.primary,
   },
 
   // Back button

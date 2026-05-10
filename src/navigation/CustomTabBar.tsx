@@ -47,7 +47,7 @@ const TABS: TabConfig[] = [
   { name: 'Home', label: 'Home', labelHi: 'होम', icon: 'home' },
   { name: 'Spray', label: 'Spray', labelHi: 'स्प्रे', icon: 'spray-bottle' },
   { name: 'Shop', label: 'Shop', labelHi: 'दुकान', icon: 'store' },
-  { name: 'Discover', label: 'Discover', labelHi: 'खोजें', icon: 'compass' },
+  { name: 'Discover', label: 'Baagicha', labelHi: 'बागीचा', icon: 'compass' },
   { name: 'MyOrchard', label: 'My Orchard', labelHi: 'मेरा बाग', icon: 'sprout' },
 ];
 

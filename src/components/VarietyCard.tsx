@@ -39,8 +39,6 @@ export interface VarietyCardData {
 interface VarietyCardProps {
   item: VarietyCardData;
   onPress: () => void;
-  /** Rank number shown as a badge (top-left). Omit for no badge. */
-  rank?: number;
   /** Show orchard ownership indicator (top-right). */
   inOrchard?: boolean;
   onToggleOrchard?: () => void;
@@ -56,7 +54,6 @@ interface VarietyCardProps {
 export default function VarietyCard({
   item,
   onPress,
-  rank,
   inOrchard = false,
   onToggleOrchard,
   compareMode = false,
@@ -73,15 +70,6 @@ export default function VarietyCard({
         style,
       ]}
     >
-      {/* Rank badge (optional) */}
-      {rank !== undefined && (
-        <View style={styles.rankBadge}>
-          <Typography variant="badgeText" color={Colors.white}>
-            #{rank}
-          </Typography>
-        </View>
-      )}
-
       {/* Orchard button (optional) */}
       {onToggleOrchard && (
         <TouchableOpacity
@@ -161,18 +149,6 @@ const styles = StyleSheet.create({
     backgroundColor: `${Colors.primary}08`,
   },
 
-  // Rank badge (top-left)
-  rankBadge: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 6,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    zIndex: 2,
-  },
-
   // Orchard button (top-right, small)
   orchardBtn: {
     position: 'absolute',
@@ -198,11 +174,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
 
-  // Compare selection circle
+  // Compare selection circle (top-left)
   selectCircle: {
     position: 'absolute',
-    top: 32,
-    right: 4,
+    top: 8,
+    left: 8,
     width: 24,
     height: 24,
     borderRadius: 12,

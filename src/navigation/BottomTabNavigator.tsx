@@ -19,7 +19,7 @@
  *   ├── HomeTab        → HomeStack
  *   ├── SprayTab       → SprayStack
  *   ├── ShopTab        → ShopStack
- *   ├── DiscoverTab    → DiscoverStack (Variety, Diseases, Blog...)
+ *   ├── BaagichaTab    → DiscoverStack (Variety, Diseases, Blog...)
  *   └── MyOrchardTab   → MyOrchardStack
  */
 

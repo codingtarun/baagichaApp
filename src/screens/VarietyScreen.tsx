@@ -25,7 +25,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../theme/colors';
 import { globalStyle } from '../theme/style';
 import { Typography } from '../typography';
-import { useVarieties } from '../hooks/useVarieties';
+import { useVarieties, type AltitudeRange } from '../hooks/useVarieties';
 // LEARN: VarietyListItem type is used internally by the useVarieties hook.
 // We don't need to import it here since the hook already types its return.
 import type { DiscoverNavigationProp } from '../navigation/types';
@@ -44,6 +44,9 @@ export default function VarietyScreen(): React.JSX.Element {
     error,
     activeSeason,
     setActiveSeason,
+    activeAltitude,
+    setActiveAltitude,
+    altitudeFilters,
     refresh,
     hasMore,
     loadMore,
@@ -188,6 +191,46 @@ export default function VarietyScreen(): React.JSX.Element {
         />
       </View>
 
+      {/* ── Altitude Filter Pills ── */}
+      <View style={[styles.filterScroller, styles.altitudeScroller]}>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={altitudeFilters}
+          keyExtractor={(item) => item.key}
+          contentContainerStyle={styles.filterPillsRow}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() => setActiveAltitude(item.key as AltitudeRange)}
+              activeOpacity={0.7}
+              style={[
+                styles.altitudePill,
+                activeAltitude === item.key && styles.altitudePillActive,
+              ]}
+            >
+              <Icon
+                name="terrain"
+                size={10}
+                color={activeAltitude === item.key ? Colors.white : Colors.gray500}
+              />
+              <Typography
+                variant="badgeText"
+                color={activeAltitude === item.key ? Colors.white : Colors.gray600}
+              >
+                {item.label}
+              </Typography>
+              <Typography
+                variant="hindiMeta"
+                color={activeAltitude === item.key ? 'rgba(255,255,255,0.85)' : Colors.gray400}
+                style={{ marginTop: 0 }}
+              >
+                {' '}{item.labelHi}
+              </Typography>
+            </TouchableOpacity>
+          )}
+        />
+      </View>
+
       {/* ── Error State ── */}
       {error && (
         <View style={styles.centered}>
@@ -228,10 +271,9 @@ export default function VarietyScreen(): React.JSX.Element {
             <ActivityIndicator style={styles.loadMore} color={Colors.primary} />
           ) : null
         }
-        renderItem={({ item, index }) => (
+        renderItem={({ item }) => (
           <VarietyCard
             item={item}
-            rank={index + 1}
             onPress={() => handleCardPress(item.slug)}
             compareMode={compareMode}
             isSelected={selected.has(item.slug)}
@@ -334,9 +376,29 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.gray200,
   },
+  altitudeScroller: {
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray200,
+  },
   filterPillsRow: {
     paddingHorizontal: 12,
     gap: 8,
+  },
+  altitudePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: Colors.gray50,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.gray200,
+  },
+  altitudePillActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
 
   // Grid

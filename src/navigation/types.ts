@@ -38,9 +38,12 @@ export type DiscoverStackParamList = {
   VarietyDetail: { slug: string };
   VarietyCompare: { slugs: string[] };
   Diseases: undefined;
+  DiseaseDetail: { slug: string };
   Weather: undefined;
   Blog: undefined;
-  Rootstock: undefined;
+  BlogDetail: { slug: string };
+  RootstockList: undefined;
+  RootstockDetail: { slug: string };
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -65,6 +68,15 @@ export type DiscoverNavigationProp = NativeStackNavigationProp<DiscoverStackPara
 
 /** Route prop for VarietyDetail params */
 export type VarietyDetailRouteProp = RouteProp<DiscoverStackParamList, 'VarietyDetail'>;
+
+/** Route prop for DiseaseDetail params */
+export type DiseaseDetailRouteProp = RouteProp<DiscoverStackParamList, 'DiseaseDetail'>;
+
+/** Route prop for RootstockDetail params */
+export type RootstockDetailRouteProp = RouteProp<DiscoverStackParamList, 'RootstockDetail'>;
+
+/** Route prop for BlogDetail params */
+export type BlogDetailRouteProp = RouteProp<DiscoverStackParamList, 'BlogDetail'>;
 
 /** Route prop for VarietyCompare params */
 export type VarietyCompareRouteProp = RouteProp<DiscoverStackParamList, 'VarietyCompare'>;
