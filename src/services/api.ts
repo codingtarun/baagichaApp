@@ -3,60 +3,71 @@
  * BAAGICHA — API SERVICE
  * ═══════════════════════════════════════════════════════════════
  *
- * LEARN: Axios is a popular HTTP client for JavaScript. It wraps
- * the native fetch API with a cleaner interface, automatic JSON
- * parsing, request/response interceptors, and better error handling.
- *
- * We create ONE axios instance with our base URL and default config.
- * Every API call in the app uses this instance, so if we need to
- * change the base URL (e.g., for staging vs production), we only
- * change it in ONE place.
+ * Axios instance with automatic auth token injection.
+ * The token is read from MMKV storage on every request.
  */
 
 import axios from 'axios';
+import { authStorage } from '../store/authStore';
 
 // LEARN: Use 10.0.2.2 for Android emulator to reach localhost.
 // For physical devices on the same WiFi, use the actual IP.
-// This matches the Laravel dev server at http://192.168.1.13:8000
+// Update this to your Laravel dev server IP.
 const API_BASE_URL = 'http://192.168.1.13:8000/api/v1';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000, // 15 seconds before aborting
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
 });
 
-// LEARN: Interceptors let us transform every request before it
-// goes out, and every response before it reaches the calling code.
-// This is where we would add auth tokens, logging, etc.
+// ── Request Interceptor ──
+// Automatically attach the Bearer token to every request
 api.interceptors.request.use(
   (config) => {
-    // Future: attach auth token here
-    // const token = await getAuthToken();
-    // if (token) config.headers.Authorization = `Bearer ${token}`;
+    const token = authStorage.getString('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
+// ── Response Interceptor ──
+// Handle auth errors globally (401 = token expired or invalid)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // LEARN: Axios wraps network errors, timeouts, and HTTP errors
-    // in a single error object. We can centralize error handling here.
     if (error.response) {
-      // Server responded with an error status (4xx, 5xx)
-      console.error('API Error:', error.response.status, error.response.data);
+      const status = error.response.status;
+
+      // Unauthorized — token expired or invalid
+      if (status === 401) {
+        console.error('Auth Error: Token expired or invalid');
+        // Clear stored credentials (the app will redirect to login)
+        authStorage.delete('token');
+        authStorage.delete('user');
+      }
+
+      // Validation errors
+      if (status === 422) {
+        console.error('Validation Error:', error.response.data.errors);
+      }
+
+      // Server errors
+      if (status >= 500) {
+        console.error('Server Error:', error.response.data);
+      }
     } else if (error.request) {
-      // Request was made but no response received (network issue)
       console.error('Network Error:', error.message);
     } else {
-      // Something else went wrong
       console.error('Request Error:', error.message);
     }
+
     return Promise.reject(error);
   }
 );

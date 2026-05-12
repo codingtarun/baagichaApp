@@ -3,11 +3,7 @@
  * BAAGICHA — NAVIGATION TYPES
  * ═══════════════════════════════════════════════════════════════
  *
- * LEARN: React Navigation uses TypeScript for type-safe navigation.
- * With nested navigators, we need types for EACH level:
- *   1. BottomTabParamList      — the 5 main tabs
- *   2. DiscoverStackParamList  — screens inside Discover tab's stack
- *   3. RootStackParamList      — truly global screens (auth, splash)
+ * TypeScript types for ALL navigators in the app.
  */
 
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -15,7 +11,18 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 
 // ═══════════════════════════════════════════════════════════════
-// 1. BOTTOM TAB PARAM LIST
+// 1. AUTH STACK PARAM LIST
+// ═══════════════════════════════════════════════════════════════
+// Screens that should NOT show the bottom tab bar.
+
+export type AuthStackParamList = {
+  Login: undefined;
+  EmailRegister: undefined;
+  PhoneAuth: undefined;
+};
+
+// ═══════════════════════════════════════════════════════════════
+// 2. BOTTOM TAB PARAM LIST
 // ═══════════════════════════════════════════════════════════════
 
 export type BottomTabParamList = {
@@ -27,10 +34,8 @@ export type BottomTabParamList = {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// 2. DISCOVER STACK PARAM LIST
+// 3. DISCOVER STACK PARAM LIST
 // ═══════════════════════════════════════════════════════════════
-// These screens live INSIDE the Discover tab's nested stack.
-// The bottom tab bar stays visible when navigating between them.
 
 export type DiscoverStackParamList = {
   Discover: undefined;
@@ -47,18 +52,21 @@ export type DiscoverStackParamList = {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// 3. ROOT STACK PARAM LIST
+// 4. ROOT STACK PARAM LIST
 // ═══════════════════════════════════════════════════════════════
-// Only screens that should NOT show the tab bar go here.
-// Currently empty — everything lives inside tabs.
+// Root navigator screens: Auth flow or Main app.
 
 export type RootStackParamList = {
+  Auth: { screen?: keyof AuthStackParamList } | undefined;
   MainTabs: undefined;
 };
 
 // ═══════════════════════════════════════════════════════════════
-// 4. TYPE HELPERS
+// 5. TYPE HELPERS
 // ═══════════════════════════════════════════════════════════════
+
+/** Navigation prop for auth screens */
+export type AuthNavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 /** Navigation prop for screens inside the bottom tabs */
 export type TabNavigationProp = BottomTabNavigationProp<BottomTabParamList>;

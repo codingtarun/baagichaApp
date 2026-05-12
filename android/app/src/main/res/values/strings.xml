@@ -1,3 +1,24 @@
 <resources>
     <string name="app_name">baagichaApp</string>
+
+    <!--
+    ============================================
+    SOCIAL AUTH CONFIGURATION
+    ============================================
+    Replace these placeholder values with your actual app credentials.
+    See: baagichaApp/docs/SOCIAL_AUTH_SETUP.md for full setup instructions.
+    -->
+
+    <!-- Facebook App ID — Get from https://developers.facebook.com/apps -->
+    <string name="facebook_app_id">YOUR_FACEBOOK_APP_ID</string>
+    <string name="fb_login_protocol_scheme">fbYOUR_FACEBOOK_APP_ID</string>
+    <string name="facebook_client_token">YOUR_FACEBOOK_CLIENT_TOKEN</string>
+
+    <!-- Google Web Client ID — Get from https://console.cloud.google.com/apis/credentials -->
+    <string name="google_web_client_id">YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com</string>
+
+    <!--
+    To use social login in development without real app IDs,
+    enable DEV_MOCK_MODE in SocialAuthService.ts
+    -->
 </resources>
