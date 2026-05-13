@@ -20,6 +20,7 @@ import { Colors } from './src/theme/colors';
 
 import AppNavigator from './src/navigation/AppNavigator';
 import Toast from './src/components/Toast';
+import { navigationRef } from './src/navigation/navigationRef';
 
 export default function App(): React.JSX.Element {
   return (
@@ -29,7 +30,7 @@ export default function App(): React.JSX.Element {
         backgroundColor={Colors.bgPrimary}
       />
 
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         <AppNavigator />
       </NavigationContainer>
 

@@ -6,8 +6,8 @@
  * Shows user profile when logged in, or login/register prompt when guest.
  */
 
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -15,6 +15,8 @@ import { Colors } from '../theme/colors';
 import { Typography, HindiText } from '../typography';
 import ScreenLayout from '../components/ScreenLayout';
 import { useAuthStore } from '../store/authStore';
+import { showToast } from '../store/toastStore';
+import { resendEmailVerification } from '../services/authApi';
 import type { RootStackParamList } from '../navigation/types';
 
 type RootNavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -23,13 +25,32 @@ export default function ProfileScreen(): React.JSX.Element {
   const navigation = useNavigation<RootNavProp>();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
+  const logoutAndClear = useAuthStore((s) => s.logoutAndClear);
+
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isResendingEmail, setIsResendingEmail] = useState(false);
 
   const goToLogin = () => navigation.navigate('Auth', { screen: 'Login' });
   const goToRegister = () => navigation.navigate('Auth', { screen: 'EmailRegister' });
 
-  const handleLogout = () => {
-    logout();
+  const handleResendVerification = async () => {
+    setIsResendingEmail(true);
+    try {
+      const response = await resendEmailVerification();
+      if (response.success) {
+        showToast('Verification email sent!', 'success');
+      }
+    } catch (error: any) {
+      showToast(error.response?.data?.message || 'Failed to resend email.', 'error');
+    } finally {
+      setIsResendingEmail(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await logoutAndClear();
+    setIsLoggingOut(false);
   };
 
   return (
@@ -56,6 +77,29 @@ export default function ProfileScreen(): React.JSX.Element {
             )}
           </View>
 
+          {/* Email Verification Banner */}
+          {user.email && !user.email_verified_at && (
+            <View style={styles.verificationBanner}>
+              <Typography variant="caption" style={styles.verificationText}>
+                ⚠️ Email not verified. Please check your inbox.
+              </Typography>
+              <TouchableOpacity
+                style={styles.verificationButton}
+                onPress={handleResendVerification}
+                disabled={isResendingEmail}
+                activeOpacity={0.7}
+              >
+                {isResendingEmail ? (
+                  <ActivityIndicator size="small" color={Colors.primary} />
+                ) : (
+                  <Typography variant="caption" style={styles.verificationButtonText}>
+                    Resend / फिर से भेजें
+                  </Typography>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+
           <View style={styles.menu}>
             <MenuItem label="My Orchards / मेरे बाग" icon="🌳" />
             <MenuItem label="Saved Items / सहेजी गईं चीज़ें" icon="🔖" />
@@ -64,13 +108,18 @@ export default function ProfileScreen(): React.JSX.Element {
           </View>
 
           <TouchableOpacity
-            style={styles.logoutButton}
+            style={[styles.logoutButton, isLoggingOut && styles.buttonDisabled]}
             onPress={handleLogout}
             activeOpacity={0.8}
+            disabled={isLoggingOut}
           >
-            <Typography variant="button" style={styles.logoutText}>
-              Log Out / लॉग आउट
-            </Typography>
+            {isLoggingOut ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Typography variant="button" style={styles.logoutText}>
+                Log Out / लॉग आउट
+              </Typography>
+            )}
           </TouchableOpacity>
         </View>
       ) : (
@@ -209,6 +258,31 @@ const styles = StyleSheet.create({
   logoutText: {
     color: '#fff',
     fontSize: 15,
+    fontWeight: '600',
+  },
+  buttonDisabled: { opacity: 0.6 },
+  verificationBanner: {
+    backgroundColor: '#FFF3CD',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  verificationText: {
+    color: '#856404',
+    flex: 1,
+  },
+  verificationButton: {
+    backgroundColor: '#FFE69C',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  verificationButtonText: {
+    color: '#856404',
     fontWeight: '600',
   },
   // ── Guest ──

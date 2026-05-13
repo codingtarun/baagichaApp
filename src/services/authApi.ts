@@ -118,8 +118,20 @@ export async function getProfile(): Promise<ApiResponse<{ user: User }>> {
   return response.data;
 }
 
+export interface UpdateProfileRequest {
+  name?: string;
+  email?: string;
+  phone?: string;
+  village?: string;
+  district?: string;
+  state?: string;
+  preferred_language?: 'en' | 'hi';
+  notifications_enabled?: boolean;
+  location_enabled?: boolean;
+}
+
 export async function updateProfile(
-  data: Partial<User>
+  data: UpdateProfileRequest
 ): Promise<ApiResponse<{ user: User }>> {
   const response = await api.put<ApiResponse<{ user: User }>>('/auth/profile', data);
   return response.data;
@@ -144,5 +156,79 @@ export async function changePassword(
   data: ChangePasswordRequest
 ): Promise<ApiResponse<null>> {
   const response = await api.post<ApiResponse<null>>('/auth/change-password', data);
+  return response.data;
+}
+
+// ── Password Reset ──
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export async function forgotPassword(
+  data: ForgotPasswordRequest
+): Promise<ApiResponse<null>> {
+  const response = await api.post<ApiResponse<null>>('/auth/forgot-password', data);
+  return response.data;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+}
+
+export async function resetPassword(
+  data: ResetPasswordRequest
+): Promise<ApiResponse<null>> {
+  const response = await api.post<ApiResponse<null>>('/auth/reset-password', data);
+  return response.data;
+}
+
+// ── Email Verification ──
+
+export async function getEmailVerificationStatus(): Promise<
+  ApiResponse<{ verified: boolean; email: string | null }>
+> {
+  const response = await api.get<ApiResponse<{ verified: boolean; email: string | null }>>(
+    '/auth/email/status'
+  );
+  return response.data;
+}
+
+export async function resendEmailVerification(): Promise<ApiResponse<null>> {
+  const response = await api.post<ApiResponse<null>>('/auth/email/resend');
+  return response.data;
+}
+
+// ── Device Tokens ──
+
+export interface RegisterDeviceRequest {
+  token: string;
+  platform: 'android' | 'ios';
+}
+
+export async function registerDevice(
+  data: RegisterDeviceRequest
+): Promise<ApiResponse<{ id: number; linked: boolean }>> {
+  const response = await api.post<ApiResponse<{ id: number; linked: boolean }>>(
+    '/devices/register',
+    data
+  );
+  return response.data;
+}
+
+export async function unregisterDevice(token: string): Promise<ApiResponse<null>> {
+  const response = await api.delete<ApiResponse<null>>('/devices/unregister', {
+    data: { token },
+  });
+  return response.data;
+}
+
+export async function linkDevices(tokens: string[]): Promise<ApiResponse<{ linked_count: number }>> {
+  const response = await api.post<ApiResponse<{ linked_count: number }>>('/devices/link', {
+    tokens,
+  });
   return response.data;
 }

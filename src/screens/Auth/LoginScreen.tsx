@@ -31,6 +31,7 @@ import { showToast } from '../../store/toastStore';
 import { loginByEmail, loginBySocial } from '../../services/authApi';
 import { signInWithGoogle, signInWithFacebook } from '../../services/socialAuth';
 import SocialAuthButtons from '../../components/SocialAuthButtons';
+import { finishOnboardingAndGoHome } from '../../navigation/onboardingNavigation';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type AuthNavProp = NativeStackNavigationProp<AuthStackParamList>;
@@ -61,7 +62,7 @@ export default function LoginScreen(): React.JSX.Element {
       if (response.success && response.data) {
         authLogin(response.data.token, response.data.user);
         showToast('Welcome back!', 'success');
-        navigation.getParent()?.goBack();
+        finishOnboardingAndGoHome(navigation.getParent());
         return;
       }
     } catch (error: any) {
@@ -84,6 +85,10 @@ export default function LoginScreen(): React.JSX.Element {
 
   const goToRegister = useCallback(() => {
     navigation.navigate('EmailRegister');
+  }, [navigation]);
+
+  const goToForgotPassword = useCallback(() => {
+    navigation.navigate('ForgotPassword');
   }, [navigation]);
 
   // ── Social Login ──
@@ -112,11 +117,14 @@ export default function LoginScreen(): React.JSX.Element {
           authLogin(response.data.token, response.data.user);
 
           if (response.data.is_new_user) {
-            showToast('Welcome to Baagicha! Account created.', 'success');
+            navigation.navigate('Onboarding', {
+              token: response.data.token,
+              user: response.data.user,
+            });
           } else {
             showToast('Welcome back!', 'success');
+            navigation.getParent()?.goBack();
           }
-          navigation.getParent()?.goBack();
         }
       } catch (error: any) {
         // Social login was cancelled or failed before backend call
@@ -246,6 +254,19 @@ export default function LoginScreen(): React.JSX.Element {
               </View>
             )}
 
+            {/* Forgot Password Link (password method only) */}
+            {method === 'password' && (
+              <TouchableOpacity
+                style={styles.forgotPasswordLink}
+                onPress={goToForgotPassword}
+                activeOpacity={0.7}
+              >
+                <Typography variant="body" style={styles.link}>
+                  Forgot Password? / पासवर्ड भूल गए?
+                </Typography>
+              </TouchableOpacity>
+            )}
+
             {/* Login Button */}
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}
@@ -366,4 +387,5 @@ const styles = StyleSheet.create({
   },
   footerText: { color: Colors.gray500 },
   link: { color: Colors.primary, fontWeight: '600' },
+  forgotPasswordLink: { alignSelf: 'flex-end', marginTop: -8, marginBottom: 4 },
 });

@@ -19,6 +19,19 @@ export type AuthStackParamList = {
   Login: undefined;
   EmailRegister: undefined;
   PhoneAuth: undefined;
+  ForgotPassword: undefined;
+  Onboarding: { token: string; user: import('../store/authStore').User } | undefined;
+};
+
+// ═══════════════════════════════════════════════════════════════
+// 1b. ONBOARDING STACK PARAM LIST
+// ═══════════════════════════════════════════════════════════════
+// First-launch screens before auth.
+
+export type OnboardingStackParamList = {
+  Welcome: undefined;
+  NotificationPermission: undefined;
+  LocationPermission: undefined;
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -57,6 +70,7 @@ export type DiscoverStackParamList = {
 // Root navigator screens: Auth flow or Main app.
 
 export type RootStackParamList = {
+  Onboarding: undefined;
   Auth: { screen?: keyof AuthStackParamList } | undefined;
   MainTabs: undefined;
 };

@@ -27,6 +27,7 @@ import { Typography, PrimaryHeading, HindiText } from '../../typography';
 import { useAuthStore } from '../../store/authStore';
 import { showToast } from '../../store/toastStore';
 import { registerByEmail } from '../../services/authApi';
+import { finishOnboardingAndGoHome } from '../../navigation/onboardingNavigation';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type AuthNavProp = NativeStackNavigationProp<AuthStackParamList>;
@@ -67,8 +68,7 @@ export default function EmailRegisterScreen(): React.JSX.Element {
       if (response.success && response.data) {
         authLogin(response.data.token, response.data.user);
         showToast('Welcome! Your Baagicha account is ready.', 'success');
-        // Navigate back to MainTabs (Home)
-        navigation.getParent()?.goBack();
+        finishOnboardingAndGoHome(navigation.getParent());
         return;
       }
     } catch (error: any) {

@@ -27,6 +27,7 @@ import { Typography, PrimaryHeading, HindiText } from '../../typography';
 import { useAuthStore } from '../../store/authStore';
 import { showToast } from '../../store/toastStore';
 import { sendOtp, verifyOtp } from '../../services/authApi';
+import { finishOnboardingAndGoHome } from '../../navigation/onboardingNavigation';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type AuthNavProp = NativeStackNavigationProp<AuthStackParamList>;
@@ -88,11 +89,14 @@ export default function PhoneAuthScreen(): React.JSX.Element {
       if (response.success && response.data) {
         authLogin(response.data.token, response.data.user);
         if (response.data.is_new_user) {
-          showToast('Welcome! Your account has been created.', 'success');
+          navigation.navigate('Onboarding', {
+            token: response.data.token,
+            user: response.data.user,
+          });
         } else {
           showToast('Welcome back!', 'success');
+          finishOnboardingAndGoHome(navigation.getParent());
         }
-        navigation.getParent()?.goBack();
       }
     } catch (error: any) {
       if (error.response?.status === 422) {

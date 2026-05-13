@@ -16,6 +16,7 @@
 
 import { create } from 'zustand';
 import { MMKV } from 'react-native-mmkv';
+import { logout as logoutApi } from '../services/authApi';
 
 // ── MMKV Storage Instance (with graceful fallback) ──
 let mmkvInstance: MMKV | null = null;
@@ -68,7 +69,10 @@ export interface User {
   email: string | null;
   avatar: string | null;
   preferred_language: string;
+  auth_provider?: string;
   is_active: boolean;
+  phone_verified_at: string | null;
+  email_verified_at: string | null;
   profile: {
     village: string | null;
     district: string | null;
@@ -99,6 +103,7 @@ interface AuthState {
   setUser: (user: User) => void;
   login: (token: string, user: User) => void;
   logout: () => void;
+  logoutAndClear: () => Promise<void>;
   updateUser: (user: Partial<User>) => void;
   restoreSession: () => void;
 }
@@ -130,8 +135,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ token, user, isAuthenticated: true, isLoading: false });
   },
 
-  // Logout — clear everything
+  // Logout — clear everything (local only, for interceptor use)
   logout: () => {
+    authStorage.delete('token');
+    authStorage.delete('user');
+    set({ token: null, user: null, isAuthenticated: false, isLoading: false });
+  },
+
+  // Full logout — notify backend then clear local state
+  logoutAndClear: async () => {
+    try {
+      await logoutApi();
+    } catch (e) {
+      // Ignore backend errors — still clear local state
+      console.warn('[AuthStore] Backend logout failed, clearing local state anyway');
+    }
     authStorage.delete('token');
     authStorage.delete('user');
     set({ token: null, user: null, isAuthenticated: false, isLoading: false });
