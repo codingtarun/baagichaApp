@@ -25,6 +25,7 @@
 
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import type { BottomTabParamList } from './types';
 
 // Nested stack navigators — one per tab
@@ -49,7 +50,17 @@ export default function BottomTabNavigator(): React.JSX.Element {
     >
       <Tab.Screen name="Home" component={HomeStack} />
       <Tab.Screen name="Spray" component={SprayStack} />
-      <Tab.Screen name="Shop" component={ShopStack} />
+      <Tab.Screen
+        name="Shop"
+        component={ShopStack}
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? 'Shop';
+          const hideTabBar = ['ProductDetail', 'Cart', 'Checkout', 'AddressList', 'AddEditAddress', 'OrderList', 'OrderDetail'].includes(routeName);
+          return {
+            tabBarStyle: { display: hideTabBar ? 'none' : 'flex' },
+          };
+        }}
+      />
       <Tab.Screen name="Discover" component={DiscoverStack} />
       <Tab.Screen name="MyOrchard" component={MyOrchardStack} />
     </Tab.Navigator>

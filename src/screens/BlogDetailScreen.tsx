@@ -16,6 +16,7 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -32,7 +33,7 @@ export default function BlogDetailScreen(): React.JSX.Element {
   const navigation = useNavigation<DiscoverNavigationProp>();
   const { slug } = route.params;
 
-  const { post, loading, error } = useBlogDetail(slug);
+  const { post, loading, error, refresh } = useBlogDetail(slug);
   const [hindiMode, setHindiMode] = useState(false);
 
   if (loading && !post) {
@@ -68,7 +69,10 @@ export default function BlogDetailScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={loading && !!post} onRefresh={refresh} colors={[Colors.primary]} />}
+      >
         {/* ── Hero ── */}
         <View style={styles.hero}>
           {post.featured_image ? (

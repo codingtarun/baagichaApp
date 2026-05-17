@@ -29,6 +29,7 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -59,7 +60,7 @@ export default function VarietyDetailScreen(): React.JSX.Element {
   const navigation = useNavigation<DiscoverNavigationProp>();
   const { slug } = route.params;
 
-  const { variety, loading, error } = useVarietyDetail(slug);
+  const { variety, loading, error, refresh } = useVarietyDetail(slug);
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
 
   // Orchard tracking for related variety cards
@@ -105,7 +106,10 @@ export default function VarietyDetailScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={loading && !!variety} onRefresh={refresh} colors={[Colors.primary]} />}
+      >
         {/* ── Hero ── */}
         <View style={styles.hero}>
           {variety.hero_image ? (

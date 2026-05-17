@@ -128,7 +128,7 @@ api.interceptors.response.use(
         console.error('Server Error:', error.response.data);
       }
     } else if (error.request) {
-      console.error('Network Error:', error.message);
+      console.error('Network Error — request was made but no response received:', error.message);
     } else {
       console.error('Request Error:', error.message);
     }

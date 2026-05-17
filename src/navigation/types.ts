@@ -7,6 +7,7 @@
  */
 
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { ShopStackParamList } from './stacks/ShopStack';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 
@@ -76,6 +77,12 @@ export type RootStackParamList = {
 };
 
 // ═══════════════════════════════════════════════════════════════
+// 4b. SHOP STACK PARAM LIST
+// ═══════════════════════════════════════════════════════════════
+
+export type { ShopStackParamList };
+
+// ═══════════════════════════════════════════════════════════════
 // 5. TYPE HELPERS
 // ═══════════════════════════════════════════════════════════════
 
@@ -87,6 +94,9 @@ export type TabNavigationProp = BottomTabNavigationProp<BottomTabParamList>;
 
 /** Navigation prop for screens inside the Discover stack */
 export type DiscoverNavigationProp = NativeStackNavigationProp<DiscoverStackParamList>;
+
+/** Navigation prop for screens inside the Shop stack */
+export type ShopNavigationProp = NativeStackNavigationProp<ShopStackParamList>;
 
 /** Route prop for VarietyDetail params */
 export type VarietyDetailRouteProp = RouteProp<DiscoverStackParamList, 'VarietyDetail'>;

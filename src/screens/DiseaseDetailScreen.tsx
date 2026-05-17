@@ -16,6 +16,7 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -41,7 +42,7 @@ export default function DiseaseDetailScreen(): React.JSX.Element {
   const navigation = useNavigation<DiscoverNavigationProp>();
   const { slug } = route.params;
 
-  const { disease, loading, error } = useDiseaseDetail(slug);
+  const { disease, loading, error, refresh } = useDiseaseDetail(slug);
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
 
   if (loading && !disease) {
@@ -76,7 +77,10 @@ export default function DiseaseDetailScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={loading && !!disease} onRefresh={refresh} colors={[Colors.primary]} />}
+      >
         {/* ── Hero ── */}
         <View style={styles.hero}>
           {disease.hero_image ? (

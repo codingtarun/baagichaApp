@@ -53,11 +53,36 @@ const TABS: TabConfig[] = [
 
 // ── Component ──
 
+// Screens where the bottom tab bar should be hidden (full-screen flows)
+const HIDDEN_TABBAR_SCREENS = [
+  'ProductDetail', 'Cart', 'Checkout',
+  'AddressList', 'AddEditAddress',
+  'OrderList', 'OrderDetail',
+];
+
+/**
+ * Recursively find the deepest focused route name in the navigation state.
+ * This works across nested stack navigators inside tab navigators.
+ */
+function getFocusedRouteName(navState: any): string | null {
+  const route = navState.routes?.[navState.index];
+  if (!route) return null;
+  if (route.state) {
+    return getFocusedRouteName(route.state);
+  }
+  return route.name ?? null;
+}
+
 export default function CustomTabBar({
   state,
   descriptors,
   navigation,
-}: BottomTabBarProps): React.JSX.Element {
+}: BottomTabBarProps): React.JSX.Element | null {
+  // Hide tab bar for full-screen shop flows (cart, checkout, product detail, etc.)
+  const focusedRoute = getFocusedRouteName(state);
+  if (focusedRoute && HIDDEN_TABBAR_SCREENS.includes(focusedRoute)) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>

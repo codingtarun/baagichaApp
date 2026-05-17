@@ -71,6 +71,11 @@ export default function LoginScreen(): React.JSX.Element {
         showToast('Please check your email/phone and password.', 'warning');
       } else if (error.response?.status === 401) {
         showToast(error.response.data.message || 'Invalid credentials', 'error');
+      } else if (!error.response || error.message === 'Network Error') {
+        showToast(
+          'Cannot connect to server. Please check your internet, API URL, and try again.',
+          'error',
+        );
       } else {
         showToast('Something went wrong. Please try again.', 'error');
       }
