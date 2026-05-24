@@ -87,13 +87,14 @@ export default function PhoneAuthScreen(): React.JSX.Element {
       });
 
       if (response.success && response.data) {
-        authLogin(response.data.token, response.data.user);
         if (response.data.is_new_user) {
+          // Don't login yet — let user complete profile first
           navigation.navigate('Onboarding', {
             token: response.data.token,
             user: response.data.user,
           });
         } else {
+          authLogin(response.data.token, response.data.user);
           showToast('Welcome back!', 'success');
           finishOnboardingAndGoHome(navigation.getParent());
         }

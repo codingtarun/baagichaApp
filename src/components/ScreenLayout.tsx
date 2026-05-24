@@ -25,6 +25,7 @@ import {
   View,
   Animated,
   StyleSheet,
+  RefreshControl,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
@@ -40,12 +41,17 @@ interface ScreenLayoutProps {
   bottomPadding?: number;
   /** Props passed through to GlobalHeader */
   headerProps?: Omit<React.ComponentProps<typeof GlobalHeader>, 'scrollProgress'>;
+  /** Pull-to-refresh control — pass when screen loads remote data */
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }
 
 export default function ScreenLayout({
   children,
   bottomPadding = 100,
   headerProps,
+  refreshing,
+  onRefresh,
 }: ScreenLayoutProps): React.JSX.Element {
   // Animated value: 0 = at top, 1 = scrolled past threshold
   const scrollProgress = useRef(new Animated.Value(0)).current;
@@ -79,6 +85,11 @@ export default function ScreenLayout({
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16} // 60fps updates
         onScroll={handleScroll}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+          ) : undefined
+        }
       >
         {children}
       </Animated.ScrollView>

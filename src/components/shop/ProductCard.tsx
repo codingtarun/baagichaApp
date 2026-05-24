@@ -5,11 +5,12 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import FastImage from 'react-native-fast-image';
+import { View, StyleSheet } from 'react-native';
 import { Colors } from '../../theme/colors';
 import { globalStyle } from '../../theme/style';
 import { Typography } from '../../typography';
+import PressableScale from '../PressableScale';
+import SmartImage from '../SmartImage';
 import type { ProductListItem } from '../../services/shopApi';
 
 interface ProductCardProps {
@@ -19,7 +20,6 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onPress, width = 160 }: ProductCardProps): React.JSX.Element {
-  // Defensive: normalize fields that may be missing from different API endpoints
   const finalPrice = product.final_price ?? product.base_price ?? 0;
   const comparePrice = product.compare_at_price ?? null;
   const discountPct = product.discount_percentage ?? null;
@@ -32,62 +32,57 @@ export default function ProductCard({ product, onPress, width = 160 }: ProductCa
   const hasDiscount = comparePrice && comparePrice > finalPrice;
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={() => onPress(product.slug)}
-      style={[styles.card, { width }]}
-    >
-      {/* Image */}
-      <View style={styles.imageContainer}>
-        <FastImage
-          source={{
-            uri: featuredImage ?? 'https://via.placeholder.com/300x300?text=No+Image',
-            priority: FastImage.priority.normal,
-          }}
-          style={styles.image}
-          resizeMode={FastImage.resizeMode.cover}
-        />
-        {hasDiscount && discountPct ? (
-          <View style={styles.badge}>
-            <Typography variant="caption" style={styles.badgeText}>
-              {Math.round(discountPct)}% OFF
-            </Typography>
-          </View>
-        ) : null}
-      </View>
-
-      {/* Content */}
-      <View style={styles.content}>
-        <Typography variant="caption" style={styles.brand} numberOfLines={1}>
-          {brandName}
-        </Typography>
-        <Typography variant="body" style={styles.name} numberOfLines={2}>
-          {name}
-        </Typography>
-
-        <View style={globalStyle.row}>
-          <Typography variant="body" style={styles.price}>
-            ₹{finalPrice.toLocaleString('en-IN')}
-          </Typography>
-          {hasDiscount ? (
-            <Typography variant="caption" style={styles.comparePrice}>
-              ₹{comparePrice.toLocaleString('en-IN')}
-            </Typography>
+    <PressableScale scale={0.97} onPress={() => onPress(product.slug)}>
+      <View style={[styles.card, { width }]}>
+        {/* Image */}
+        <View style={styles.imageContainer}>
+          <SmartImage
+            source={{ uri: featuredImage ?? '' }}
+            containerStyle={styles.image}
+            fallbackIcon="package-variant"
+          />
+          {hasDiscount && discountPct ? (
+            <View style={styles.badge}>
+              <Typography variant="caption" style={styles.badgeText}>
+                {Math.round(discountPct)}% OFF
+              </Typography>
+            </View>
           ) : null}
         </View>
 
-        {reviewCount > 0 ? (
+        {/* Content */}
+        <View style={styles.content}>
+          <Typography variant="caption" style={styles.brand} numberOfLines={1}>
+            {brandName}
+          </Typography>
+          <Typography variant="body" style={styles.name} numberOfLines={2}>
+            {name}
+          </Typography>
+
           <View style={globalStyle.row}>
-            <Typography variant="caption" style={styles.rating}>
-              ★ {rating.toFixed(1)}
+            <Typography variant="body" style={styles.price}>
+              ₹{finalPrice.toLocaleString('en-IN')}
             </Typography>
-            <Typography variant="caption" style={styles.reviewCount}>
-              ({reviewCount})
-            </Typography>
+            {hasDiscount ? (
+              <Typography variant="caption" style={styles.comparePrice}>
+                ₹{comparePrice.toLocaleString('en-IN')}
+              </Typography>
+            ) : null}
           </View>
-        ) : null}
+
+          {reviewCount > 0 ? (
+            <View style={globalStyle.row}>
+              <Typography variant="caption" style={styles.rating}>
+                ★ {rating.toFixed(1)}
+              </Typography>
+              <Typography variant="caption" style={styles.reviewCount}>
+                ({reviewCount})
+              </Typography>
+            </View>
+          ) : null}
+        </View>
       </View>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 

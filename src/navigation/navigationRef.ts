@@ -9,16 +9,16 @@
  */
 
 import { createNavigationContainerRef } from '@react-navigation/native';
+import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from './types';
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 /**
- * Programmatically navigate to the Auth stack.
+ * Clear authentication and let AppNavigator route to AuthStack.
  * Use this from API interceptors when a 401 is received.
  */
 export function navigateToLogin(): void {
-  if (navigationRef.isReady()) {
-    navigationRef.navigate('Auth', { screen: 'Login' });
-  }
+  const { logout } = useAuthStore.getState();
+  logout();
 }

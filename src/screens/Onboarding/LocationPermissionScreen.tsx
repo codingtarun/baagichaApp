@@ -18,8 +18,10 @@ import { Colors } from '../../theme/colors';
 import { Typography, PrimaryHeading, HindiText } from '../../typography';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import type { OnboardingStackParamList } from '../../navigation/types';
+import type { RootStackParamList } from '../../navigation/types';
 
 type OnboardingNavProp = NativeStackNavigationProp<OnboardingStackParamList>;
+type RootNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const LOCATION_PERMISSION = Platform.select({
   ios: PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
@@ -28,7 +30,9 @@ const LOCATION_PERMISSION = Platform.select({
 
 export default function LocationPermissionScreen(): React.JSX.Element {
   const navigation = useNavigation<OnboardingNavProp>();
+  const rootNavigation = useNavigation<RootNavProp>();
   const setLocationPermission = useOnboardingStore((s) => s.setLocationPermission);
+  const completeOnboarding = useOnboardingStore((s) => s.completeOnboarding);
 
   const [isRequesting, setIsRequesting] = useState(false);
 
@@ -46,13 +50,15 @@ export default function LocationPermissionScreen(): React.JSX.Element {
     } finally {
       setIsRequesting(false);
     }
-    // After location, go to auth
-    navigation.getParent()?.navigate('Auth', { screen: 'Login' });
+    // After location, mark onboarding complete and go to main app
+    completeOnboarding();
+    rootNavigation.navigate('MainTabs');
   };
 
   const handleSkip = () => {
     setLocationPermission(false);
-    navigation.getParent()?.navigate('Auth', { screen: 'Login' });
+    completeOnboarding();
+    rootNavigation.navigate('MainTabs');
   };
 
   return (

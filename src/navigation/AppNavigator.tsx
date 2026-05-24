@@ -3,11 +3,9 @@
  * BAAGICHA — APP NAVIGATOR
  * ═══════════════════════════════════════════════════════════════
  *
- * ROOT navigator. Entry point depends on onboarding state:
- *   - First launch    → OnboardingStack (slides → permissions → auth)
- *   - Returning user  → MainTabs (home), regardless of auth state
- *
- * Auth screens (Login/Register) can still be pushed on top when needed.
+ * ROOT navigator. All app screens are gated behind authentication.
+ *   - Not authenticated → AuthStack ONLY (Login / Register / OTP)
+ *   - Authenticated     → OnboardingStack (first launch) or MainTabs
  */
 
 import React, { useEffect } from 'react';
@@ -26,6 +24,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator(): React.JSX.Element {
   const restoreSession = useAuthStore((s) => s.restoreSession);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isAuthLoading = useAuthStore((s) => s.isLoading);
   const restoreOnboarding = useOnboardingStore((s) => s.restoreOnboardingState);
   const hasSeenOnboarding = useOnboardingStore((s) => s.hasSeenOnboarding);
   const isOnboardingLoading = useOnboardingStore((s) => s.isLoading);
@@ -37,24 +37,30 @@ export default function AppNavigator(): React.JSX.Element {
   }, [restoreOnboarding, restoreSession]);
 
   // Show nothing while we read MMKV (prevents flash of wrong screen)
-  if (isOnboardingLoading) {
+  if (isAuthLoading || isOnboardingLoading) {
     return <></>;
   }
 
+  // ── NOT AUTHENTICATED → Auth screens only ──
+  if (!isAuthenticated) {
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Auth" component={AuthStack} />
+      </Stack.Navigator>
+    );
+  }
+
+  // ── AUTHENTICATED → Onboarding (first launch) or Main app ──
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!hasSeenOnboarding ? (
-        /* ── FIRST LAUNCH ── */
         <>
           <Stack.Screen name="Onboarding" component={OnboardingStack} />
-          <Stack.Screen name="Auth" component={AuthStack} />
           <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
         </>
       ) : (
-        /* ── RETURNING USER ── */
         <>
           <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
-          <Stack.Screen name="Auth" component={AuthStack} />
         </>
       )}
     </Stack.Navigator>

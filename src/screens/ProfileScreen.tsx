@@ -18,11 +18,14 @@ import { useAuthStore } from '../store/authStore';
 import { showToast } from '../store/toastStore';
 import { resendEmailVerification } from '../services/authApi';
 import type { RootStackParamList } from '../navigation/types';
+import type { MyOrchardStackParamList } from '../navigation/stacks/MyOrchardStack';
 
 type RootNavProp = NativeStackNavigationProp<RootStackParamList>;
+type MyOrchardNavProp = NativeStackNavigationProp<MyOrchardStackParamList>;
 
 export default function ProfileScreen(): React.JSX.Element {
-  const navigation = useNavigation<RootNavProp>();
+  const rootNavigation = useNavigation<RootNavProp>();
+  const navigation = useNavigation<MyOrchardNavProp>();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
   const logoutAndClear = useAuthStore((s) => s.logoutAndClear);
@@ -30,8 +33,9 @@ export default function ProfileScreen(): React.JSX.Element {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isResendingEmail, setIsResendingEmail] = useState(false);
 
-  const goToLogin = () => navigation.navigate('Auth', { screen: 'Login' });
-  const goToRegister = () => navigation.navigate('Auth', { screen: 'EmailRegister' });
+  const goToLogin = () => rootNavigation.navigate('Auth', { screen: 'Login' });
+  const goToRegister = () => rootNavigation.navigate('Auth', { screen: 'EmailRegister' });
+  const goToOrchards = () => navigation.navigate('OrchardList');
 
   const handleResendVerification = async () => {
     setIsResendingEmail(true);
@@ -101,7 +105,7 @@ export default function ProfileScreen(): React.JSX.Element {
           )}
 
           <View style={styles.menu}>
-            <MenuItem label="My Orchards / मेरे बाग" icon="🌳" />
+            <MenuItem label="My Orchards / मेरे बाग" icon="🌳" onPress={goToOrchards} />
             <MenuItem label="Saved Items / सहेजी गईं चीज़ें" icon="🔖" />
             <MenuItem label="Orders / ऑर्डर" icon="📦" />
             <MenuItem label="Settings / सेटिंग्स" icon="⚙️" />
@@ -133,7 +137,7 @@ export default function ProfileScreen(): React.JSX.Element {
               बागीचा में आपका स्वागत है
             </HindiText>
             <Typography variant="bodyMuted" center style={styles.guestDesc}>
-              Sign in to manage your orchards, track spray schedules, save favourite varieties, and shop for farming inputs.
+              Please sign in to access your profile and manage your account.
             </Typography>
 
             <TouchableOpacity
@@ -159,10 +163,10 @@ export default function ProfileScreen(): React.JSX.Element {
 
           <View style={styles.guestHint}>
             <Typography variant="captionMuted" center>
-              You can browse all content without signing in.
+              All features require sign in.
             </Typography>
             <HindiText center style={styles.guestHintHi}>
-              साइन इन किए बिना सभी सामग्री देख सकते हैं।
+              सभी सुविधाओं के लिए साइन इन आवश्यक है।
             </HindiText>
           </View>
         </View>
@@ -171,9 +175,9 @@ export default function ProfileScreen(): React.JSX.Element {
   );
 }
 
-function MenuItem({ label, icon }: { label: string; icon: string }) {
+function MenuItem({ label, icon, onPress }: { label: string; icon: string; onPress?: () => void }) {
   return (
-    <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
       <Typography variant="body" style={styles.menuIcon}>
         {icon}
       </Typography>

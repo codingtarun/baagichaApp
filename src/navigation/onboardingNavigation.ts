@@ -12,25 +12,15 @@ import { useOnboardingStore } from '../store/onboardingStore';
 import type { RootStackParamList } from './types';
 
 /**
- * Call after successful login/register to finish onboarding
- * and land the user on the home screen.
+ * Call after successful login/register.
  *
- * During first-launch onboarding: resets stack to MainTabs.
- * For returning users: simply goes back to the previous screen.
+ * AppNavigator now gates all screens behind authentication and
+ * automatically routes to OnboardingStack or MainTabs based on
+ * isAuthenticated + hasSeenOnboarding. No manual navigation needed.
  */
 export function finishOnboardingAndGoHome(
-  rootNavigation: NavigationProp<RootStackParamList> | undefined
+  _rootNavigation: NavigationProp<RootStackParamList> | undefined
 ): void {
-  const { hasSeenOnboarding, completeOnboarding } = useOnboardingStore.getState();
-
-  if (!hasSeenOnboarding) {
-    completeOnboarding();
-    rootNavigation?.reset({
-      index: 0,
-      routes: [{ name: 'MainTabs' }],
-    });
-  } else {
-    // Returning user — just dismiss the auth modal
-    rootNavigation?.goBack();
-  }
+  // AppNavigator handles all routing based on auth + onboarding state.
+  // This function is kept for backward compatibility at call sites.
 }

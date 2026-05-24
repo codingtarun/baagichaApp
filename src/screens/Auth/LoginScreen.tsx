@@ -119,16 +119,16 @@ export default function LoginScreen(): React.JSX.Element {
 
         // 3. Store auth state
         if (response.success && response.data) {
-          authLogin(response.data.token, response.data.user);
-
           if (response.data.is_new_user) {
+            // Don't login yet — let user complete profile first
             navigation.navigate('Onboarding', {
               token: response.data.token,
               user: response.data.user,
             });
           } else {
+            authLogin(response.data.token, response.data.user);
             showToast('Welcome back!', 'success');
-            navigation.getParent()?.goBack();
+            finishOnboardingAndGoHome(navigation.getParent());
           }
         }
       } catch (error: any) {
@@ -166,17 +166,6 @@ export default function LoginScreen(): React.JSX.Element {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Skip / Back */}
-          <TouchableOpacity
-            style={styles.skipButton}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-          >
-            <Typography variant="body" style={styles.skipText}>
-              ← Continue without signing in
-            </Typography>
-          </TouchableOpacity>
-
           {/* Header */}
           <View style={styles.header}>
             <PrimaryHeading style={styles.title}>Welcome Back</PrimaryHeading>

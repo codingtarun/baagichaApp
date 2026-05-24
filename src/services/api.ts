@@ -10,8 +10,7 @@
 
 import axios from 'axios';
 import { Platform } from 'react-native';
-import { authStorage } from '../store/authStore';
-import { navigateToLogin } from '../navigation/navigationRef';
+import { authStorage, useAuthStore } from '../store/authStore';
 import { ENV } from '../config/env';
 
 export const API_BASE_URL = ENV.API_BASE_URL;
@@ -76,9 +75,8 @@ async function attemptTokenRefresh(): Promise<string | null> {
 }
 
 function clearAuthAndRedirect(): void {
-  authStorage.delete('token');
-  authStorage.delete('user');
-  navigateToLogin();
+  const { logout } = useAuthStore.getState();
+  logout();
 }
 
 api.interceptors.response.use(
