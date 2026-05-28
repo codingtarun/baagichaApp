@@ -8,7 +8,7 @@
  * tips, and task completion.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -16,22 +16,24 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Dimensions,
   Share,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { RESULTS, openSettings } from 'react-native-permissions';
+import LinearGradient from 'react-native-linear-gradient';
 
 import { Colors } from '../theme/colors';
-import { globalStyle } from '../theme/style';
+import { Space, Radius, Shadows } from '../theme/style';
 import { Typography } from '../typography';
 import { useSpraySchedule, TANK_OPTIONS } from '../hooks/useSpraySchedule';
+import { useCurrentLocation } from '../hooks/useCurrentLocation';
 import { useAuthStore } from '../store/authStore';
 import { navigateToLogin } from '../navigation/navigationRef';
 import { showToast } from '../store/toastStore';
 import type { SprayStage, SprayChemical, SprayDiseaseAlert } from '../services/sprayApi';
 
-const { width: SCREEN_W } = Dimensions.get('window');
+
 
 const SEVERITY_COLORS: Record<string, { bg: string; color: string; icon: string }> = {
   critical: { bg: '#fee2e2', color: '#dc2626', icon: 'alert-octagon' },
@@ -70,10 +72,41 @@ export default function SprayScreen(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<'fungicide' | 'insecticide' | 'tips'>('fungicide');
   const [markingDone, setMarkingDone] = useState(false);
 
+  const {
+    location: currentLocation,
+    permissionStatus: locPermissionStatus,
+    loading: locLoading,
+    getLocation,
+  } = useCurrentLocation();
+
+  // Auto-prompt location permission once on first spray screen visit
+  const hasAutoPrompted = useRef(false);
+  useEffect(() => {
+    if (
+      !hasAutoPrompted.current &&
+      (locPermissionStatus === RESULTS.DENIED || locPermissionStatus === RESULTS.LIMITED)
+    ) {
+      hasAutoPrompted.current = true;
+      const timer = setTimeout(() => {
+        getLocation();
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [locPermissionStatus, getLocation]);
+
+  const handleLocationPress = useCallback(async () => {
+    if (locPermissionStatus === RESULTS.BLOCKED || locPermissionStatus === RESULTS.UNAVAILABLE) {
+      showToast('Please enable location permission in settings', 'warning');
+      await openSettings();
+      return;
+    }
+    await getLocation();
+  }, [locPermissionStatus, getLocation]);
+
   const stage = stages[selectedStageIndex];
   const fruits = data?.fruit_config ?? {};
   const regions = ['hp', 'kashmir'];
-  const regionLabels: Record<string, string> = { hp: 'Himachal Pradesh', kashmir: 'Kashmir' };
+  // Region labels are displayed via regionLabelsHi
   const regionLabelsHi: Record<string, string> = { hp: 'हिमाचल प्रदेश', kashmir: 'कश्मीर' };
 
   const handleMarkDone = useCallback(async () => {
@@ -89,13 +122,14 @@ export default function SprayScreen(): React.JSX.Element {
 
   const handleShare = useCallback(async () => {
     if (!stage) return;
-    const text = `🍎 Spray Schedule\n📍 ${data?.location?.name ?? 'Himachal Pradesh'} | ${stage.name} (${stage.nameHi})\n📅 ${stage.timing}\n\n${stage.desc ?? ''}\n\nvia Baagicha App`;
+    const locationName = currentLocation?.name ?? data?.location?.name ?? 'Himachal Pradesh';
+    const text = `🍎 Spray Schedule\n📍 ${locationName} | ${stage.name} (${stage.nameHi})\n📅 ${stage.timing}\n\n${stage.desc ?? ''}\n\nvia Baagicha App`;
     try {
       await Share.share({ message: text });
     } catch {
       // User cancelled
     }
-  }, [stage, data]);
+  }, [stage, data, currentLocation]);
 
   // ── Adjust dose based on tank size ──
   const adjustDose = useCallback(
@@ -138,23 +172,48 @@ export default function SprayScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* ── Header ── */}
-      <View style={styles.header}>
-        <View>
-          <Typography variant="displayHeading" style={styles.title}>
-            छिड़काव कैलेंडर
-          </Typography>
-          <Typography variant="bodySmall" color={Colors.gray400}>
-            Apple Spray Schedule 2026
-          </Typography>
+      {/* ── Gradient Header ── */}
+      <LinearGradient
+        colors={[Colors.primary600, Colors.primary500, Colors.primary700]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.heroGradient}
+      >
+        <View style={styles.header}>
+          <View>
+            <Typography variant="displayHeading" style={styles.title}>
+              छिड़काव कैलेंडर
+            </Typography>
+            <Typography variant="bodySmall" style={styles.subtitle}>
+              Apple Spray Schedule 2026
+            </Typography>
+          </View>
+          <TouchableOpacity
+            onPress={handleLocationPress}
+            activeOpacity={0.7}
+            style={[
+              styles.locationTag,
+              !currentLocation && locPermissionStatus !== RESULTS.GRANTED && styles.locationTagPrompt,
+            ]}
+          >
+            {locLoading ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <Icon name="map-marker" size={12} color={Colors.white} />
+            )}
+            <Typography variant="caption" style={styles.locationText}>
+              {locLoading
+                ? 'Getting location…'
+                : currentLocation?.name ?? data?.location?.name ?? 'Himachal Pradesh'}
+              {' · '}
+              {data?.location?.altitude ?? 8800}ft
+            </Typography>
+            {!currentLocation && locPermissionStatus !== RESULTS.GRANTED && !locLoading && (
+              <Icon name="crosshairs-gps" size={12} color={Colors.white} />
+            )}
+          </TouchableOpacity>
         </View>
-        <View style={styles.locationTag}>
-          <Icon name="map-marker" size={12} color={Colors.primary} />
-          <Typography variant="caption" style={styles.locationText}>
-            {data?.location?.name ?? 'Himachal Pradesh'} · {data?.location?.altitude ?? 8800}ft
-          </Typography>
-        </View>
-      </View>
+      </LinearGradient>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -231,7 +290,7 @@ export default function SprayScreen(): React.JSX.Element {
 
         {/* ── Tank Calculator ── */}
         <View style={styles.tankBar}>
-          <View style={globalStyle.row}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Icon name="flask" size={16} color={Colors.primary} />
             <Typography variant="caption" style={styles.tankLabel}>टंकी साइज़</Typography>
           </View>
@@ -380,13 +439,13 @@ function StageHero({ stage, onShare, onMarkDone, markingDone }: {
 
   return (
     <View style={[styles.stageHero, { borderLeftColor: stage.color }]}>
-      <View style={globalStyle.rowBetween}>
-        <View style={globalStyle.row}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View style={[styles.stageHeroIconWrap, { backgroundColor: stage.color + '18' }]}>
             <Icon name={stage.icon.replace('fas fa-', '').replace(/-/g, '-') as any} size={20} color={stage.color} />
           </View>
           <View>
-            <View style={globalStyle.row}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Typography variant="caption" style={styles.stageNoBadge}>Spray {stage.no}</Typography>
               <View style={[styles.statusChip, { backgroundColor: statusCfg.bg }]}>
                 <Typography variant="overline" style={{ fontSize: 9, color: statusCfg.color }}>
@@ -411,7 +470,7 @@ function StageHero({ stage, onShare, onMarkDone, markingDone }: {
         </Typography>
       )}
 
-      <View style={[globalStyle.row, { marginTop: 12, gap: 8 }]}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 8 }}>
         <TouchableOpacity onPress={onMarkDone} disabled={markingDone} activeOpacity={0.8} style={styles.markDoneBtn}>
           {markingDone ? (
             <ActivityIndicator size="small" color={Colors.white} />
@@ -541,7 +600,7 @@ function ChemicalList({ chemicals, adjustDose }: {
     <View style={styles.chemList}>
       {chemicals.map((c, i) => (
         <View key={i} style={styles.chemCard}>
-          <View style={globalStyle.rowBetween}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography variant="bodySmall" style={styles.chemName}>{c.name}</Typography>
             {c.phi && (
               <View style={styles.phiBadge}>
@@ -595,7 +654,15 @@ function TipsList({ tips }: { tips: string[] }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
+  },
+  heroGradient: {
+    paddingTop: 12,
+    paddingBottom: 16,
+    borderBottomLeftRadius: Radius.xl,
+    borderBottomRightRadius: Radius.xl,
+    ...Shadows.medium,
+    zIndex: 10,
   },
   centered: {
     alignItems: 'center',
@@ -622,25 +689,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingHorizontal: Space[4],
+    paddingTop: Space[2],
   },
   title: {
-    fontSize: 20,
-    lineHeight: 24,
+    fontSize: 22,
+    fontWeight: '800',
+    lineHeight: 28,
+    color: Colors.white,
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 2,
   },
   locationTag: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.primary + '10',
+    backgroundColor: 'rgba(255,255,255,0.15)',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: Radius.full,
+  },
+  locationTagPrompt: {
+    backgroundColor: Colors.accent500 + '30',
+    borderWidth: 1,
+    borderColor: Colors.accent500,
   },
   locationText: {
-    color: Colors.primary,
+    color: Colors.white,
     fontWeight: '600',
   },
 
@@ -666,14 +744,11 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 14,
-    backgroundColor: Colors.gray50,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.surfaceSubtle,
   },
   fruitPillActive: {
     backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   fruitPillSoon: {
     opacity: 0.6,
@@ -712,14 +787,11 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: Colors.gray50,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surfaceSubtle,
   },
   regionTabActive: {
-    backgroundColor: Colors.primary + '12',
-    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + '15',
   },
   regionTabText: {
     color: Colors.gray600,
@@ -739,11 +811,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: Colors.gray50,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray100,
+    paddingHorizontal: Space[4],
+    paddingVertical: Space[3],
+    backgroundColor: Colors.surface,
+    marginHorizontal: Space[4],
+    marginTop: Space[3],
+    borderRadius: Radius.lg,
+    ...Shadows.subtle,
   },
   tankLabel: {
     marginLeft: 6,
@@ -757,14 +831,11 @@ const styles = StyleSheet.create({
   tankBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 10,
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.surfaceSubtle,
   },
   tankBtnActive: {
     backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   tankBtnText: {
     color: Colors.gray600,
@@ -786,18 +857,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 14,
-    backgroundColor: Colors.gray50,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.surfaceSubtle,
     minWidth: 80,
   },
   stagePillActive: {
     backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   stagePillDone: {
-    borderColor: Colors.success + '40',
+    backgroundColor: Colors.success + '10',
   },
   stagePillLabel: {
     color: Colors.gray800,
@@ -844,13 +912,11 @@ const styles = StyleSheet.create({
 
   // Stage hero
   stageHero: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
-    borderLeftWidth: 4,
-    gap: 10,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    padding: Space[4],
+    gap: Space[3],
+    ...Shadows.medium,
   },
   stageHeroIconWrap: {
     width: 44,
@@ -940,10 +1006,10 @@ const styles = StyleSheet.create({
   },
   diseaseCard: {
     width: 220,
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    borderWidth: 1,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
     overflow: 'hidden',
+    ...Shadows.medium,
   },
   diseaseHero: {
     height: 80,
@@ -1045,12 +1111,11 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   chemCard: {
-    backgroundColor: Colors.gray50,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
-    gap: 6,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Space[4],
+    gap: Space[2],
+    ...Shadows.subtle,
   },
   chemName: {
     fontWeight: '700',
@@ -1086,11 +1151,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     alignItems: 'flex-start',
-    backgroundColor: Colors.gray50,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    backgroundColor: Colors.surfaceSubtle,
+    padding: Space[3],
+    borderRadius: Radius.lg,
   },
   tipNumber: {
     width: 24,

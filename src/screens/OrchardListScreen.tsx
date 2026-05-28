@@ -13,8 +13,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -49,128 +50,137 @@ export default function OrchardListScreen(): React.JSX.Element {
   );
 
   const handleDelete = useCallback(
-    (id: number) => {
-      removeOrchard(id);
+    (id: number, name: string) => {
+      Alert.alert(
+        'Delete Orchard?',
+        `Are you sure you want to delete "${name}"? This action cannot be undone.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: () => removeOrchard(id) },
+        ]
+      );
     },
     [removeOrchard]
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
+
   return (
-    <ScreenLayout refreshing={refreshing} onRefresh={refresh}>
-      {/* Header */}
-      <View style={styles.header}>
-        <PrimaryHeading style={styles.title}>My Orchards</PrimaryHeading>
-        <HindiText style={styles.subtitleHi}>मेरे बाग</HindiText>
-      </View>
-
-      {/* Content */}
-      {loading && !refreshing ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+    <View style={styles.screenWrapper}>
+      <ScreenLayout refreshing={refreshing} onRefresh={refresh}>
+        {/* Header */}
+        <View style={styles.header}>
+          <PrimaryHeading style={styles.title}>My Orchards</PrimaryHeading>
+          <HindiText style={styles.subtitleHi}>मेरे बाग</HindiText>
         </View>
-      ) : error ? (
-        <View style={styles.centered}>
-          <Icon name="alert-circle-outline" size={48} color={Colors.danger} />
-          <Typography variant="bodyMuted" center style={styles.errorText}>
-            {error}
-          </Typography>
-          <TouchableOpacity style={styles.retryButton} onPress={refresh} activeOpacity={0.8}>
-            <Typography variant="button" style={styles.retryButtonText}>
-              Retry / फिर से कोशिश करें
+
+        {/* Content */}
+        {loading && !refreshing ? (
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+          </View>
+        ) : error ? (
+          <View style={styles.centered}>
+            <Icon name="alert-circle-outline" size={48} color={Colors.danger} />
+            <Typography variant="bodyMuted" center style={styles.errorText}>
+              {error}
             </Typography>
-          </TouchableOpacity>
-        </View>
-      ) : orchards.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Icon name="sprout" size={64} color={Colors.gray300} />
-          <Typography variant="body" center style={styles.emptyTitle}>
-            No orchards yet
-          </Typography>
-          <HindiText center style={styles.emptyTitleHi}>
-            अभी तक कोई बाग नहीं
-          </HindiText>
-          <Typography variant="bodyMuted" center style={styles.emptyDesc}>
-            Add your first orchard to track spray schedules, monitor health, and get personalised predictions.
-          </Typography>
-          <TouchableOpacity style={styles.primaryButton} onPress={goToCreate} activeOpacity={0.8}>
-            <Typography variant="button" style={styles.primaryButtonText}>
-              Add Orchard / बाग जोड़ें
-            </Typography>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={styles.listContainer}>
-          {orchards.map((orchard) => (
-            <TouchableOpacity
-              key={orchard.id}
-              style={styles.orchardCard}
-              onPress={() => goToDetail(orchard.id)}
-              activeOpacity={0.85}
-            >
-              <View style={styles.cardHeader}>
-                <View style={styles.cardTitleRow}>
-                  <Typography variant="body" style={styles.orchardName}>
-                    {orchard.orchard_name}
-                  </Typography>
-                  {orchard.is_primary && (
-                    <View style={styles.badge}>
-                      <Typography variant="caption" style={styles.badgeText}>
-                        Primary
-                      </Typography>
-                    </View>
-                  )}
-                </View>
-                <Typography variant="captionMuted" style={styles.locationText}>
-                  {orchard.village && `${orchard.village}, `}
-                  {orchard.district}, {orchard.state}
-                </Typography>
-              </View>
-
-              <View style={styles.cardStats}>
-                <StatItem icon="tree" value={orchard.total_trees ?? 0} label="Trees" />
-                <StatItem icon="grid" value={orchard.blocks_count ?? 0} label="Blocks" />
-                <StatItem icon="fruit-cherries" value={orchard.varieties_count ?? 0} label="Varieties" />
-                <StatItem
-                  icon="ruler-square"
-                  value={orchard.area_local_value ?? 0}
-                  label={orchard.area_unit ?? 'Area'}
-                />
-              </View>
-
-              <View style={styles.cardActions}>
-                <TouchableOpacity
-                  style={styles.actionBtn}
-                  onPress={() => goToEdit(orchard.id)}
-                  activeOpacity={0.7}
-                >
-                  <Icon name="pencil-outline" size={18} color={Colors.primary} />
-                  <Typography variant="caption" style={styles.actionText}>
-                    Edit
-                  </Typography>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionBtn}
-                  onPress={() => handleDelete(orchard.id)}
-                  activeOpacity={0.7}
-                >
-                  <Icon name="trash-can-outline" size={18} color={Colors.danger} />
-                  <Typography variant="caption" style={[styles.actionText, { color: Colors.danger }]}>
-                    Delete
-                  </Typography>
-                </TouchableOpacity>
-              </View>
+            <TouchableOpacity style={styles.retryButton} onPress={refresh} activeOpacity={0.8}>
+              <Typography variant="button" style={styles.retryButtonText}>
+                Retry / फिर से कोशिश करें
+              </Typography>
             </TouchableOpacity>
-          ))}
-        </View>
-      )}
+          </View>
+        ) : orchards.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Icon name="sprout" size={64} color={Colors.gray300} />
+            <Typography variant="body" center style={styles.emptyTitle}>
+              No orchards yet
+            </Typography>
+            <HindiText center style={styles.emptyTitleHi}>
+              अभी तक कोई बाग नहीं
+            </HindiText>
+            <Typography variant="bodyMuted" center style={styles.emptyDesc}>
+              Add your first orchard to track spray schedules, monitor health, and get personalised predictions.
+            </Typography>
+            <TouchableOpacity style={styles.primaryButton} onPress={goToCreate} activeOpacity={0.8}>
+              <Typography variant="button" style={styles.primaryButtonText}>
+                Add Orchard / बाग जोड़ें
+              </Typography>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.listContainer}>
+            {orchards.map((orchard) => (
+              <TouchableOpacity
+                key={orchard.id}
+                style={styles.orchardCard}
+                onPress={() => goToDetail(orchard.id)}
+                activeOpacity={0.85}
+              >
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardTitleRow}>
+                    <Typography variant="body" style={styles.orchardName}>
+                      {orchard.orchard_name}
+                    </Typography>
 
-      {/* Floating Add Button */}
+                  </View>
+                  <Typography variant="captionMuted" style={styles.locationText}>
+                    {orchard.village && `${orchard.village}, `}
+                    {orchard.district}, {orchard.state}
+                  </Typography>
+                </View>
+
+                <View style={styles.cardStats}>
+                  <StatItem icon="tree" value={orchard.total_trees ?? 0} label="Trees" />
+                  <StatItem icon="grid" value={orchard.blocks_count ?? 0} label="Blocks" />
+                  <StatItem icon="fruit-cherries" value={orchard.varieties_count ?? 0} label="Varieties" />
+                  <StatItem
+                    icon="ruler-square"
+                    value={orchard.area_local_value ?? 0}
+                    label={orchard.area_unit ?? 'Area'}
+                  />
+                </View>
+
+                <View style={styles.cardActions}>
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => goToEdit(orchard.id)}
+                    activeOpacity={0.7}
+                  >
+                    <Icon name="pencil-outline" size={18} color={Colors.primary} />
+                    <Typography variant="caption" style={styles.actionText}>
+                      Edit
+                    </Typography>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => handleDelete(orchard.id, orchard.orchard_name)}
+                    activeOpacity={0.7}
+                  >
+                    <Icon name="trash-can-outline" size={18} color={Colors.danger} />
+                    <Typography variant="caption" style={[styles.actionText, { color: Colors.danger }]}>
+                      Delete
+                    </Typography>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </ScreenLayout>
+
+      {/* Floating Add Button — outside ScrollView so it stays fixed above bottom nav */}
       {!loading && orchards.length > 0 && (
         <TouchableOpacity style={styles.fab} onPress={goToCreate} activeOpacity={0.85}>
           <Icon name="plus" size={28} color={Colors.white} />
         </TouchableOpacity>
       )}
-    </ScreenLayout>
+    </View>
   );
 }
 
@@ -189,6 +199,9 @@ function StatItem({ icon, value, label }: { icon: string; value: number; label: 
 }
 
 const styles = StyleSheet.create({
+  screenWrapper: {
+    flex: 1,
+  },
   header: {
     paddingHorizontal: 20,
     paddingTop: 8,
@@ -274,10 +287,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     shadowColor: Colors.gray400,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 5,
   },
   cardHeader: {
     marginBottom: 12,
@@ -350,7 +363,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 110,
+    bottom: 100,
     width: 56,
     height: 56,
     borderRadius: 28,

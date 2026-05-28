@@ -15,7 +15,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -40,6 +40,12 @@ export default function OrchardDetailScreen(): React.JSX.Element {
   const [deletingBlock, setDeletingBlock] = useState<number | null>(null);
   const [deletingVariety, setDeletingVariety] = useState<number | null>(null);
 
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
+
   const goToEditOrchard = useCallback(() => {
     navigation.navigate('OrchardForm', { orchardId });
   }, [navigation, orchardId]);
@@ -58,6 +64,16 @@ export default function OrchardDetailScreen(): React.JSX.Element {
   const goToAddVariety = useCallback(() => {
     navigation.navigate('OrchardVarietyForm', { orchardId });
   }, [navigation, orchardId]);
+
+  const goToVarietyDetail = useCallback(
+    (slug: string) => {
+      navigation.navigate('Discover' as never, {
+        screen: 'VarietyDetail',
+        params: { slug },
+      } as never);
+    },
+    [navigation]
+  );
 
   const goToEditVariety = useCallback(
     (varietyId: number) => {
@@ -167,7 +183,7 @@ export default function OrchardDetailScreen(): React.JSX.Element {
           <View style={styles.statsRow}>
             <StatBadge icon="tree" label="Trees" value={orchard.total_trees ?? 0} />
             <StatBadge icon="ruler-square" label={orchard.area_unit ?? 'Area'} value={orchard.area_local_value ?? 0} />
-            <StatBadge icon="chart-bar" label="Age (yrs)" value={orchard.avg_tree_age_years ?? 0} />
+            <StatBadge icon="chart-bar" label="Blocks" value={orchard.blocks?.length ?? 0} />
           </View>
 
           {orchard.microclimate_notes && (
@@ -218,7 +234,10 @@ export default function OrchardDetailScreen(): React.JSX.Element {
                       {block.name}
                     </Typography>
                     <Typography variant="captionMuted">
-                      {block.variety?.name_en ?? 'No variety'} • {block.plant_count ?? 0} trees
+                      {block.block_varieties && block.block_varieties.length > 0
+                        ? block.block_varieties.map((bv) => `${bv.variety?.name_en ?? 'Unknown'}${bv.rootstock ? ` (${bv.rootstock.name})` : ''}`).join(', ')
+                        : 'No variety'}
+                      {' • '}{block.plant_count ?? 0} trees
                     </Typography>
                   </View>
                   <View style={styles.itemActions}>
@@ -268,20 +287,18 @@ export default function OrchardDetailScreen(): React.JSX.Element {
               <View key={variety.id} style={styles.itemCard}>
                 <View style={styles.itemRow}>
                   <View style={styles.itemInfo}>
-                    <View style={styles.varietyNameRow}>
-                      <Typography variant="body" style={styles.itemName}>
+                    <TouchableOpacity
+                      onPress={() => variety.variety?.slug && goToVarietyDetail(variety.variety.slug)}
+                      activeOpacity={0.7}
+                      disabled={!variety.variety?.slug}
+                    >
+                      <Typography variant="body" style={[styles.itemName, variety.variety?.slug && styles.itemNameLink]}>
                         {variety.variety_name_custom ?? variety.variety?.name_en ?? 'Unknown'}
                       </Typography>
-                      {variety.is_primary_variety && (
-                        <View style={styles.primaryBadge}>
-                          <Typography variant="caption" style={styles.primaryBadgeText}>
-                            Primary
-                          </Typography>
-                        </View>
-                      )}
-                    </View>
+                    </TouchableOpacity>
                     <Typography variant="captionMuted">
                       {variety.num_trees ?? 0} trees • Planted {variety.planted_year ?? '—'}
+                      {variety.rootstock ? ` • ${variety.rootstock.name}` : ''}
                     </Typography>
                   </View>
                   <View style={styles.itemActions}>
@@ -508,6 +525,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.gray800,
     marginBottom: 2,
+  },
+  itemNameLink: {
+    color: Colors.primary,
+    textDecorationLine: 'underline',
   },
   varietyNameRow: {
     flexDirection: 'row',

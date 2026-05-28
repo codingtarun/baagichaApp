@@ -282,7 +282,6 @@ export interface Orchard {
   village: string;
   district: string;
   location: string;
-  is_primary: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════

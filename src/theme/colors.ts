@@ -1,81 +1,172 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * BAAGICHA — COLOR THEME
+ * BAAGICHA — COLOR THEME (Option A: Fresh Mint + Harvest Gold)
  * ═══════════════════════════════════════════════════════════════
  *
- * LEARN: In React Native, we centralize all colors in one file.
- * This is called a "design token" approach. Instead of writing
- * '#3a7d44' everywhere, we use Colors.primary. If we ever need
- * to change the brand color, we change it in ONE place.
- *
- * These colors are extracted directly from the Laravel web app's
- * CSS custom properties (style.css :root).
+ * Modern light-green palette optimized for outdoor readability.
+ *   • Primary: Fresh mint green — growth, nature, trust
+ *   • Accent: Warm harvest gold — Himachali apples, sun, energy
+ *   • Background: Light mint tint — easy on eyes in sunlight
+ *   • Surfaces: Clean white with subtle warmth
  */
 
-export const Colors = {
-  // ── Brand Colors ──
-  // These define the app's identity - the green and gold theme
-  bgPrimary: '#1a2e1a', // Dark green - used for header backgrounds
-  bgSecondary: '#2d4a2d', // Slightly lighter dark green
-  primary: '#3a7d44', // Main green - buttons, active states, links
-  primaryLight: '#52a85f', // Light green - gradients, hover states
-  accent: '#e8b84b', // Gold/amber - highlights, badges, progress bars
-  accentLight: '#f5d07a', // Light gold - soft backgrounds
+// ═══════════════════════════════════════════════════════════════
+// 1. CORE PALETTE
+// ═══════════════════════════════════════════════════════════════
 
-  // ── Status Colors ──
-  // Semantic colors for success, warnings, errors, and info
-  success: '#22c55e', // Green checkmarks, good spray conditions
-  warning: '#f59e0b', // Amber cautions, medium risk
-  danger: '#ef4444', // Red errors, critical alerts, high risk
-  info: '#3b82f6', // Blue info badges, links
+const Core = {
+  // Primary — Fresh mint green (modern, airy, outdoor-readable)
+  primary50:  '#ecfdf3',
+  primary100: '#d1fae1',
+  primary200: '#a7f3c9',
+  primary300: '#6ee7a3',
+  primary400: '#34d376',
+  primary500: '#2D9E4F', // Main brand color
+  primary600: '#1B7A3A',
+  primary700: '#166534',
+  primary800: '#14522d',
+  primary900: '#052e16',
 
-  // ── Gray Scale ──
-  // LEARN: Using a numbered gray scale (50-900) is a common design
-  // pattern from Tailwind CSS. It gives us predictable light-to-dark
-  // steps. 50 is nearly white, 900 is nearly black.
-  gray50: '#f8fafc', // Page background - very light gray
-  gray100: '#f1f5f9', // Card backgrounds, input fields
-  gray200: '#e2e8f0', // Borders, dividers
-  gray300: '#cbd5e1', // Disabled states, scrollbar thumbs
-  gray400: '#94a3b8', // Secondary text, placeholders
-  gray500: '#64748b', // Muted text, timestamps
-  gray600: '#475569', // Body text on light backgrounds
-  gray700: '#334155', // Headings, strong text
-  gray800: '#1e293b', // Dark text, almost black
-  gray900: '#0f172a', // Deepest dark - used for text on light bg
+  // Accent — Harvest gold (warmth, prosperity, Himachali harvest)
+  accent50:  '#fffbeb',
+  accent100: '#fef3c7',
+  accent200: '#fde68a',
+  accent300: '#fcd34d',
+  accent400: '#fbbf24',
+  accent500: '#F5A623', // Main accent
+  accent600: '#d97706',
+  accent700: '#b45309',
+  accent800: '#92400e',
+  accent900: '#78350f',
 
-  // ── Base Colors ──
-  white: '#ffffff',
-  black: '#000000',
-
-  // ── Priority Colors ──
-  // LEARN: These are "derived" colors used for specific UI patterns.
-  // They map to the priorityMeta object in the home screen data.
-  priorityEssential: '#dc2626', // Red - must do tasks
-  priorityRecommended: '#f59e0b', // Amber - should do tasks
-  priorityConditional: '#60a5fa', // Blue - do if needed tasks
-
-  // ── Severity Colors ──
-  // Used for alert severity levels
-  sevCritical: '#dc2626',
-  sevHigh: '#f97316',
-  sevMedium: '#f59e0b',
-  sevLow: '#22c55e',
+  // Neutral — Sage slate (softer than pure gray, matches green theme)
+  slate50:  '#F7FAF5',
+  slate100: '#eef4ea',
+  slate200: '#dce8d5',
+  slate300: '#b8d0ab',
+  slate400: '#8eb37e',
+  slate500: '#6a9560',
+  slate600: '#4a7345',
+  slate700: '#365a33',
+  slate800: '#244022',
+  slate900: '#132612',
 } as const;
 
-// ── Color Helpers ──
-// LEARN: TypeScript 'as const' makes this object readonly and
-// gives us literal types. Colors.primary is the LITERAL string
-// '#3a7d44', not just 'string'. This helps with autocomplete
-// and catching typos at compile time.
+// ═══════════════════════════════════════════════════════════════
+// 2. SEMANTIC COLORS
+// ═══════════════════════════════════════════════════════════════
 
-/**
- * Helper to get a priority color from a priority string.
- * LEARN: Using a Record type ensures we handle all cases.
- *
- * @param priority - 'essential' | 'recommended' | 'conditional'
- * @returns The hex color string
- */
+const Semantic = {
+  success: '#22c55e',
+  successLight: '#dcfce7',
+  warning: '#f59e0b',
+  warningLight: '#fef3c7',
+  danger: '#ef4444',
+  dangerLight: '#fee2e2',
+  info: '#0ea5e9',
+  infoLight: '#e0f2fe',
+} as const;
+
+// ═══════════════════════════════════════════════════════════════
+// 3. SURFACE COLORS
+// ═══════════════════════════════════════════════════════════════
+
+const Surface = {
+  background: Core.slate50,
+  surface: '#ffffff',
+  surfaceSubtle: Core.slate100,
+  surfaceElevated: '#ffffff',
+  surfaceOverlay: 'rgba(19, 38, 18, 0.45)',
+} as const;
+
+// ═══════════════════════════════════════════════════════════════
+// 4. EXPORTED COLORS
+// ═══════════════════════════════════════════════════════════════
+
+export const Colors = {
+  // ── Brand Aliases (Legacy Support) ──
+  bgPrimary: Core.primary800,
+  bgSecondary: Core.primary700,
+  primary: Core.primary500,
+  primaryLight: Core.primary400,
+  accent: Core.accent500,
+  accentLight: Core.accent400,
+
+  // ── Status Aliases (Legacy Support) ──
+  success: Semantic.success,
+  warning: Semantic.warning,
+  danger: Semantic.danger,
+  info: Semantic.info,
+
+  // ── Gray Scale Aliases (Legacy Support) ──
+  // Mapped to sage slate for thematic consistency
+  gray50:  Core.slate50,
+  gray100: Core.slate100,
+  gray200: Core.slate200,
+  gray300: Core.slate300,
+  gray400: Core.slate400,
+  gray500: Core.slate500,
+  gray600: Core.slate600,
+  gray700: Core.slate700,
+  gray800: Core.slate800,
+  gray900: Core.slate900,
+
+  // ── Base ──
+  white: '#ffffff',
+  black: '#000000',
+  transparent: 'transparent',
+
+  // ── Surface (New) ──
+  background: Surface.background,
+  surface: Surface.surface,
+  surfaceSubtle: Surface.surfaceSubtle,
+  surfaceElevated: Surface.surfaceElevated,
+  surfaceOverlay: Surface.surfaceOverlay,
+
+  // ── Primary Scale ──
+  primary50: Core.primary50,
+  primary100: Core.primary100,
+  primary200: Core.primary200,
+  primary300: Core.primary300,
+  primary400: Core.primary400,
+  primary500: Core.primary500,
+  primary600: Core.primary600,
+  primary700: Core.primary700,
+  primary800: Core.primary800,
+  primary900: Core.primary900,
+
+  // ── Accent Scale ──
+  accent50: Core.accent50,
+  accent100: Core.accent100,
+  accent200: Core.accent200,
+  accent300: Core.accent300,
+  accent400: Core.accent400,
+  accent500: Core.accent500,
+  accent600: Core.accent600,
+  accent700: Core.accent700,
+  accent800: Core.accent800,
+  accent900: Core.accent900,
+
+  // ── Semantic Scale ──
+  successLight: Semantic.successLight,
+  warningLight: Semantic.warningLight,
+  dangerLight: Semantic.dangerLight,
+  infoLight: Semantic.infoLight,
+
+  // ── Priority / Severity (Legacy) ──
+  priorityEssential: Semantic.danger,
+  priorityRecommended: Semantic.warning,
+  priorityConditional: Semantic.info,
+  sevCritical: Semantic.danger,
+  sevHigh: '#f97316',
+  sevMedium: Semantic.warning,
+  sevLow: Semantic.success,
+} as const;
+
+// ═══════════════════════════════════════════════════════════════
+// 5. COLOR HELPERS
+// ═══════════════════════════════════════════════════════════════
+
 export const getPriorityColor = (
   priority: 'essential' | 'recommended' | 'conditional',
 ): string => {
@@ -87,12 +178,6 @@ export const getPriorityColor = (
   return map[priority] ?? Colors.gray400;
 };
 
-/**
- * Helper to get a severity color from a severity string.
- *
- * @param severity - 'critical' | 'high' | 'medium' | 'low'
- * @returns The hex color string
- */
 export const getSeverityColor = (
   severity: 'critical' | 'high' | 'medium' | 'low',
 ): string => {
@@ -103,4 +188,16 @@ export const getSeverityColor = (
     low: Colors.sevLow,
   };
   return map[severity] ?? Colors.gray400;
+};
+
+export const getPriorityPair = (
+  priority: 'critical' | 'high' | 'medium' | 'low',
+): { bg: string; text: string } => {
+  const map: Record<string, { bg: string; text: string }> = {
+    critical: { bg: Colors.dangerLight, text: Colors.danger },
+    high:     { bg: Colors.warningLight, text: '#b45309' },
+    medium:   { bg: '#fef9c3', text: '#a16207' },
+    low:      { bg: Colors.infoLight, text: Colors.info },
+  };
+  return map[priority] ?? { bg: Colors.gray100, text: Colors.gray500 };
 };

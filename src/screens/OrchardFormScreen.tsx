@@ -27,6 +27,9 @@ import { Colors } from '../theme/colors';
 import { Typography, PrimaryHeading, HindiText } from '../typography';
 import { showToast } from '../store/toastStore';
 import { createOrchard, updateOrchard, fetchOrchard, type CreateOrchardRequest } from '../services/orchardApi';
+
+import { useLocations } from '../hooks/useLocations';
+import FormDropdown from '../components/FormDropdown';
 import type { MyOrchardStackParamList } from '../navigation/stacks/MyOrchardStack';
 
 type NavProp = NativeStackNavigationProp<MyOrchardStackParamList>;
@@ -37,6 +40,8 @@ const FARMING_TYPES = [
   { value: 'integrated', label: 'Integrated', labelHi: 'एकीकृत' },
   { value: 'organic', label: 'Organic', labelHi: 'जैविक' },
   { value: 'transitioning_organic', label: 'Transitioning to Organic', labelHi: 'जैविक में परिवर्तन' },
+  { value: 'regenerative', label: 'Regenerative', labelHi: 'पुनर्जीवी' },
+  { value: 'transitioning_regenerative', label: 'Transitioning to Regenerative', labelHi: 'पुनर्जीवी में परिवर्तन' },
 ];
 
 const IRRIGATION_TYPES = [
@@ -48,10 +53,10 @@ const IRRIGATION_TYPES = [
 ];
 
 const AREA_UNITS = [
-  { value: 'bigha', label: 'Bigha (HP)', labelHi: 'बीघा' },
-  { value: 'kanal', label: 'Kanal (J&K)', labelHi: 'कनाल' },
-  { value: 'nali', label: 'Nali (UK)', labelHi: 'नाली' },
-  { value: 'hectare', label: 'Hectare', labelHi: 'हेक्टेयर' },
+  { value: 'bigha', label: 'Bigha (HP)' },
+  { value: 'kanal', label: 'Kanal (J&K)' },
+  { value: 'nali', label: 'Nali (UK)' },
+  { value: 'hectare', label: 'Hectare' },
 ];
 
 const ASPECTS = [
@@ -82,6 +87,8 @@ export default function OrchardFormScreen(): React.JSX.Element {
   const orchardId = route.params?.orchardId;
   const isEditing = !!orchardId;
 
+  const { states, districts, loadingStates, loadingDistricts, loadDistricts } = useLocations();
+
   const [form, setForm] = useState<CreateOrchardRequest>({
     orchard_name: '',
     state: '',
@@ -93,6 +100,12 @@ export default function OrchardFormScreen(): React.JSX.Element {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
 
+  // Variety management moved to OrchardVarietyFormScreen after orchard creation
+
+  useEffect(() => {
+    // Rootstocks and varieties are managed separately in OrchardVarietyFormScreen
+  }, []);
+
   useEffect(() => {
     if (!orchardId) return;
     fetchOrchard(orchardId)
@@ -100,7 +113,6 @@ export default function OrchardFormScreen(): React.JSX.Element {
         const o = res.data;
         setForm({
           orchard_name: o.orchard_name,
-          is_primary: o.is_primary,
           state: o.state,
           district: o.district,
           tehsil: o.tehsil ?? undefined,
@@ -112,7 +124,9 @@ export default function OrchardFormScreen(): React.JSX.Element {
           area_unit: (o.area_unit as any) ?? undefined,
           area_local_value: o.area_local_value ?? undefined,
           total_trees: o.total_trees ?? undefined,
-          avg_tree_age_years: o.avg_tree_age_years ?? undefined,
+          trees_below_7: o.trees_below_7 ?? undefined,
+          trees_between_7_15: o.trees_between_7_15 ?? undefined,
+          trees_above_15: o.trees_above_15 ?? undefined,
           farming_type: o.farming_type as any,
           irrigation_type: (o.irrigation_type as any) ?? undefined,
           has_cold_storage: o.has_cold_storage,
@@ -125,13 +139,30 @@ export default function OrchardFormScreen(): React.JSX.Element {
           microclimate_notes: o.microclimate_notes ?? undefined,
           primary_market: (o.primary_market as any) ?? undefined,
         });
+
       })
       .catch(() => showToast('Failed to load orchard', 'error'))
       .finally(() => setLoading(false));
   }, [orchardId]);
 
+  // Load districts when state changes (from existing data or user selection)
+  useEffect(() => {
+    if (!form.state || states.length === 0) return;
+    const matched = states.find((s) => s.name === form.state);
+    if (matched) {
+      loadDistricts(matched.id);
+    }
+  }, [form.state, states, loadDistricts]);
+
   const updateField = useCallback(<K extends keyof CreateOrchardRequest>(field: K, value: CreateOrchardRequest[K]) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      // Reset district when state changes
+      if (field === 'state') {
+        next.district = '';
+      }
+      return next;
+    });
     setErrors((prev) => {
       const next = { ...prev };
       delete next[field];
@@ -143,15 +174,31 @@ export default function OrchardFormScreen(): React.JSX.Element {
     setForm((prev) => ({ ...prev, [field]: !prev[field] }));
   }, []);
 
+  const handleStateChange = useCallback(
+    (stateName: string) => {
+      updateField('state', stateName);
+      const matched = states.find((s) => s.name === stateName);
+      if (matched) {
+        loadDistricts(matched.id);
+      }
+    },
+    [states, updateField, loadDistricts]
+  );
+
+  // Rootstock and variety management moved to OrchardVarietyFormScreen
+
+  // Variety management moved to OrchardVarietyFormScreen
+
   const handleSave = useCallback(async () => {
     setSaving(true);
     setErrors({});
     try {
+      const payload = { ...form };
       if (isEditing && orchardId) {
-        await updateOrchard(orchardId, form);
+        await updateOrchard(orchardId, payload);
         showToast('Orchard updated', 'success');
       } else {
-        await createOrchard(form);
+        await createOrchard(payload);
         showToast('Orchard created', 'success');
       }
       navigation.goBack();
@@ -167,6 +214,9 @@ export default function OrchardFormScreen(): React.JSX.Element {
     }
   }, [form, isEditing, orchardId, navigation]);
 
+  const stateOptions = states.map((s) => ({ value: s.name, label: s.name }));
+  const districtOptions = districts.map((d) => ({ value: d.name, label: d.name }));
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -178,84 +228,122 @@ export default function OrchardFormScreen(): React.JSX.Element {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
-            <Icon name="arrow-left" size={24} color={Colors.gray700} />
-          </TouchableOpacity>
-          <PrimaryHeading style={styles.title}>
-            {isEditing ? 'Edit Orchard' : 'New Orchard'}
-          </PrimaryHeading>
-          <HindiText style={styles.subtitleHi}>
-            {isEditing ? 'बाग संपादित करें' : 'नया बाग'}
-          </HindiText>
+        <View style={styles.contentWrapper}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
+              <Icon name="arrow-left" size={24} color={Colors.gray700} />
+            </TouchableOpacity>
+            <PrimaryHeading style={styles.title}>
+              {isEditing ? 'Edit Orchard' : 'New Orchard'}
+            </PrimaryHeading>
+            <HindiText style={styles.subtitleHi}>
+              {isEditing ? 'बाग संपादित करें' : 'नया बाग'}
+            </HindiText>
+          </View>
+
+          <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            {/* Basic Info */}
+            <FormSection title="Basic Info / मूल जानकारी">
+              <FormInput label="Orchard Name / बाग का नाम *" value={form.orchard_name} onChangeText={(t) => updateField('orchard_name', t)} error={errors.orchard_name} />
+              <FormDropdown
+                label="State / राज्य *"
+                value={form.state}
+                options={stateOptions}
+                onChange={handleStateChange}
+                placeholder="Select state"
+                error={errors.state}
+                loading={loadingStates}
+              />
+              <FormDropdown
+                label="District / जिला *"
+                value={form.district}
+                options={districtOptions}
+                onChange={(v) => updateField('district', v)}
+                placeholder={form.state ? 'Select district' : 'Select state first'}
+                error={errors.district}
+                loading={loadingDistricts}
+                disabled={!form.state}
+              />
+              <FormInput label="Tehsil / तहसील" value={form.tehsil ?? ''} onChangeText={(t) => updateField('tehsil', t || undefined)} />
+              <FormInput label="Village / गांव" value={form.village ?? ''} onChangeText={(t) => updateField('village', t || undefined)} />
+              <FormInput label="Pincode / पिन कोड" value={form.pincode ?? ''} onChangeText={(t) => updateField('pincode', t || undefined)} keyboardType="number-pad" />
+            </FormSection>
+
+            {/* Area & Trees */}
+            <FormSection title="Area & Trees / क्षेत्र और पेड़">
+              <View style={styles.rowInputs}>
+                <View style={styles.flex1}>
+                  <FormInput label="Area Value" value={form.area_local_value?.toString() ?? ''} onChangeText={(t) => updateField('area_local_value', t ? parseFloat(t) : undefined)} keyboardType="decimal-pad" />
+                </View>
+                <View style={styles.flex1}>
+                  <FormDropdown
+                    label="Unit / इकाई"
+                    value={form.area_unit ?? ''}
+                    options={AREA_UNITS}
+                    onChange={(v) => updateField('area_unit', v as any)}
+                    placeholder="Select unit"
+                  />
+                </View>
+              </View>
+              <FormInput label="Total Trees / कुल पेड़" value={form.total_trees?.toString() ?? ''} onChangeText={(t) => updateField('total_trees', t ? parseInt(t, 10) : undefined)} keyboardType="number-pad" />
+              <View style={styles.rowInputs}>
+                <View style={styles.flex1}>
+                  <FormInput label="< 7 yrs / ७ साल से कम" value={form.trees_below_7?.toString() ?? ''} onChangeText={(t) => updateField('trees_below_7', t ? parseInt(t, 10) : undefined)} keyboardType="number-pad" />
+                </View>
+                <View style={styles.flex1}>
+                  <FormInput label="7-15 yrs / ७-१५ साल" value={form.trees_between_7_15?.toString() ?? ''} onChangeText={(t) => updateField('trees_between_7_15', t ? parseInt(t, 10) : undefined)} keyboardType="number-pad" />
+                </View>
+                <View style={styles.flex1}>
+                  <FormInput label="> 15 yrs / १५ साल से अधिक" value={form.trees_above_15?.toString() ?? ''} onChangeText={(t) => updateField('trees_above_15', t ? parseInt(t, 10) : undefined)} keyboardType="number-pad" />
+                </View>
+              </View>
+            </FormSection>
+
+            {/* Farming */}
+            <FormSection title="Farming / खेती">
+              <FormSelect label="Farming Type / खेती का प्रकार *" value={form.farming_type} options={FARMING_TYPES} onChange={(v) => updateField('farming_type', v as any)} />
+              <FormSelect label="Irrigation Type / सिंचाई का प्रकार" value={form.irrigation_type ?? ''} options={IRRIGATION_TYPES} onChange={(v) => updateField('irrigation_type', v as any)} nullable />
+              <FormSelect label="Aspect / दिशा" value={form.aspect ?? ''} options={ASPECTS} onChange={(v) => updateField('aspect', v as any)} nullable />
+              <FormSelect label="Primary Market / मुख्य बाजार" value={form.primary_market ?? ''} options={PRIMARY_MARKETS} onChange={(v) => updateField('primary_market', v as any)} nullable />
+            </FormSection>
+
+            {/* Facilities */}
+            <FormSection title="Facilities / सुविधाएँ">
+              <FormToggle label="Cold Storage / ठंडा भंडार" value={!!form.has_cold_storage} onToggle={() => toggleBool('has_cold_storage')} />
+              <FormToggle label="CA Storage / नियंत्रित वायु भंडार" value={!!form.has_ca_storage} onToggle={() => toggleBool('has_ca_storage')} />
+              <FormToggle label="Packing House / पैकिंग हाउस" value={!!form.has_packing_house} onToggle={() => toggleBool('has_packing_house')} />
+              <FormToggle label="Anti-Hail Net / ओल रोधी जाल" value={!!form.uses_anti_hail_net} onToggle={() => toggleBool('uses_anti_hail_net')} />
+              <FormToggle label="Frost Prone / पाला-प्रवण" value={!!form.is_frost_prone} onToggle={() => toggleBool('is_frost_prone')} />
+              <FormToggle label="Hail Prone / ओला-प्रवण" value={!!form.is_hail_prone} onToggle={() => toggleBool('is_hail_prone')} />
+              <FormToggle label="Near Water Body / जल निकट" value={!!form.is_near_water_body} onToggle={() => toggleBool('is_near_water_body')} />
+            </FormSection>
+
+            {/* Location Details */}
+            <FormSection title="Location Details / स्थान विवरण">
+              <FormInput label="Latitude / अक्षांश" value={form.latitude?.toString() ?? ''} onChangeText={(t) => updateField('latitude', t ? parseFloat(t) : undefined)} keyboardType="decimal-pad" />
+              <FormInput label="Longitude / देशांतर" value={form.longitude?.toString() ?? ''} onChangeText={(t) => updateField('longitude', t ? parseFloat(t) : undefined)} keyboardType="decimal-pad" />
+              <FormInput label="Altitude (meters) / ऊंचाई (मीटर)" value={form.altitude_meters?.toString() ?? ''} onChangeText={(t) => updateField('altitude_meters', t ? parseInt(t, 10) : undefined)} keyboardType="number-pad" />
+              <FormSelect label="Altitude Source / ऊंचाई स्रोत" value={form.altitude_source ?? ''} options={ALTITUDE_SOURCES} onChange={(v) => updateField('altitude_source', v as any)} nullable />
+            </FormSection>
+
+            {/* Notes */}
+            <FormSection title="Notes / नोट्स">
+              <FormInput label="Microclimate Notes / जलवायु नोट्स" value={form.microclimate_notes ?? ''} onChangeText={(t) => updateField('microclimate_notes', t || undefined)} multiline />
+            </FormSection>
+
+
+          </ScrollView>
+
+          {/* Save Button — fixed at bottom, outside ScrollView */}
+          <View style={styles.footer}>
+            <TouchableOpacity style={[styles.saveButton, saving && styles.buttonDisabled]} onPress={handleSave} disabled={saving} activeOpacity={0.8}>
+              {saving ? <ActivityIndicator color={Colors.white} /> : <Typography variant="button" style={styles.saveButtonText}>{isEditing ? 'Save Changes / परिवर्तन सहेजें' : 'Create Orchard / बाग बनाएं'}</Typography>}
+            </TouchableOpacity>
+          </View>
         </View>
-
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          {/* Basic Info */}
-          <FormSection title="Basic Info / मूल जानकारी">
-            <FormInput label="Orchard Name / बाग का नाम *" value={form.orchard_name} onChangeText={(t) => updateField('orchard_name', t)} error={errors.orchard_name} />
-            <FormInput label="State / राज्य *" value={form.state} onChangeText={(t) => updateField('state', t)} error={errors.state} />
-            <FormInput label="District / जिला *" value={form.district} onChangeText={(t) => updateField('district', t)} error={errors.district} />
-            <FormInput label="Tehsil / तहसील" value={form.tehsil ?? ''} onChangeText={(t) => updateField('tehsil', t || undefined)} />
-            <FormInput label="Village / गांव" value={form.village ?? ''} onChangeText={(t) => updateField('village', t || undefined)} />
-            <FormInput label="Pincode / पिन कोड" value={form.pincode ?? ''} onChangeText={(t) => updateField('pincode', t || undefined)} keyboardType="number-pad" />
-          </FormSection>
-
-          {/* Area & Trees */}
-          <FormSection title="Area & Trees / क्षेत्र और पेड़">
-            <View style={styles.rowInputs}>
-              <View style={styles.flex1}>
-                <FormInput label="Area Value" value={form.area_local_value?.toString() ?? ''} onChangeText={(t) => updateField('area_local_value', t ? parseFloat(t) : undefined)} keyboardType="decimal-pad" />
-              </View>
-              <View style={styles.flex1}>
-                <FormSelect label="Unit / इकाई" value={form.area_unit ?? ''} options={AREA_UNITS} onChange={(v) => updateField('area_unit', v as any)} nullable />
-              </View>
-            </View>
-            <FormInput label="Total Trees / कुल पेड़" value={form.total_trees?.toString() ?? ''} onChangeText={(t) => updateField('total_trees', t ? parseInt(t, 10) : undefined)} keyboardType="number-pad" />
-            <FormInput label="Avg Tree Age (years) / औसत उम्र" value={form.avg_tree_age_years?.toString() ?? ''} onChangeText={(t) => updateField('avg_tree_age_years', t ? parseInt(t, 10) : undefined)} keyboardType="number-pad" />
-          </FormSection>
-
-          {/* Farming */}
-          <FormSection title="Farming / खेती">
-            <FormSelect label="Farming Type / खेती का प्रकार *" value={form.farming_type} options={FARMING_TYPES} onChange={(v) => updateField('farming_type', v as any)} />
-            <FormSelect label="Irrigation Type / सिंचाई का प्रकार" value={form.irrigation_type ?? ''} options={IRRIGATION_TYPES} onChange={(v) => updateField('irrigation_type', v as any)} nullable />
-            <FormSelect label="Aspect / दिशा" value={form.aspect ?? ''} options={ASPECTS} onChange={(v) => updateField('aspect', v as any)} nullable />
-            <FormSelect label="Primary Market / मुख्य बाजार" value={form.primary_market ?? ''} options={PRIMARY_MARKETS} onChange={(v) => updateField('primary_market', v as any)} nullable />
-          </FormSection>
-
-          {/* Facilities */}
-          <FormSection title="Facilities / सुविधाएँ">
-            <FormToggle label="Cold Storage / ठंडा भंडार" value={!!form.has_cold_storage} onToggle={() => toggleBool('has_cold_storage')} />
-            <FormToggle label="CA Storage / नियंत्रित वायु भंडार" value={!!form.has_ca_storage} onToggle={() => toggleBool('has_ca_storage')} />
-            <FormToggle label="Packing House / पैकिंग हाउस" value={!!form.has_packing_house} onToggle={() => toggleBool('has_packing_house')} />
-            <FormToggle label="Anti-Hail Net / ओल रोधी जाल" value={!!form.uses_anti_hail_net} onToggle={() => toggleBool('uses_anti_hail_net')} />
-            <FormToggle label="Frost Prone / पाला-प्रवण" value={!!form.is_frost_prone} onToggle={() => toggleBool('is_frost_prone')} />
-            <FormToggle label="Hail Prone / ओला-प्रवण" value={!!form.is_hail_prone} onToggle={() => toggleBool('is_hail_prone')} />
-            <FormToggle label="Near Water Body / जल निकट" value={!!form.is_near_water_body} onToggle={() => toggleBool('is_near_water_body')} />
-            <FormToggle label="Primary Orchard / मुख्य बाग" value={!!form.is_primary} onToggle={() => toggleBool('is_primary')} />
-          </FormSection>
-
-          {/* Location Details */}
-          <FormSection title="Location Details / स्थान विवरण">
-            <FormInput label="Latitude / अक्षांश" value={form.latitude?.toString() ?? ''} onChangeText={(t) => updateField('latitude', t ? parseFloat(t) : undefined)} keyboardType="decimal-pad" />
-            <FormInput label="Longitude / देशांतर" value={form.longitude?.toString() ?? ''} onChangeText={(t) => updateField('longitude', t ? parseFloat(t) : undefined)} keyboardType="decimal-pad" />
-            <FormInput label="Altitude (meters) / ऊंचाई (मीटर)" value={form.altitude_meters?.toString() ?? ''} onChangeText={(t) => updateField('altitude_meters', t ? parseInt(t, 10) : undefined)} keyboardType="number-pad" />
-            <FormSelect label="Altitude Source / ऊंचाई स्रोत" value={form.altitude_source ?? ''} options={ALTITUDE_SOURCES} onChange={(v) => updateField('altitude_source', v as any)} nullable />
-          </FormSection>
-
-          {/* Notes */}
-          <FormSection title="Notes / नोट्स">
-            <FormInput label="Microclimate Notes / जलवायु नोट्स" value={form.microclimate_notes ?? ''} onChangeText={(t) => updateField('microclimate_notes', t || undefined)} multiline />
-          </FormSection>
-
-          {/* Save Button */}
-          <TouchableOpacity style={[styles.saveButton, saving && styles.buttonDisabled]} onPress={handleSave} disabled={saving} activeOpacity={0.8}>
-            {saving ? <ActivityIndicator color={Colors.white} /> : <Typography variant="button" style={styles.saveButtonText}>{isEditing ? 'Save Changes / परिवर्तन सहेजें' : 'Create Orchard / बाग बनाएं'}</Typography>}
-          </TouchableOpacity>
-        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -335,11 +423,13 @@ function FormToggle({ label, value, onToggle }: { label: string; value: boolean;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.gray50 },
   keyboardView: { flex: 1 },
+  contentWrapper: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
   header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },
   title: { fontSize: 26, marginTop: 8 },
   subtitleHi: { fontSize: 16, color: Colors.gray500, marginTop: 2 },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 140 },
   section: { marginBottom: 24 },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.gray700, marginBottom: 10 },
   inputGroup: { marginBottom: 14, gap: 6 },
@@ -394,6 +484,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toggleBoxActive: { backgroundColor: Colors.primary },
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 80,
+    backgroundColor: Colors.gray50,
+  },
   saveButton: {
     backgroundColor: Colors.primary,
     borderRadius: 14,
@@ -404,8 +500,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 12,
     elevation: 4,
-    marginTop: 8,
   },
   buttonDisabled: { opacity: 0.6 },
   saveButtonText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
+
 });

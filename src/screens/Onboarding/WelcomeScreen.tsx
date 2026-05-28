@@ -22,8 +22,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Colors } from '../../theme/colors';
+import { Space, Radius, Shadows } from '../../theme/style';
 import { Typography, PrimaryHeading, HindiText } from '../../typography';
 import type { OnboardingStackParamList } from '../../navigation/types';
+import LinearGradient from 'react-native-linear-gradient';
 
 type OnboardingNavProp = NativeStackNavigationProp<OnboardingStackParamList>;
 
@@ -39,66 +41,45 @@ interface Slide {
   bgColor: string;
 }
 
+const SLIDE_GRADIENTS: [string, string][] = [
+  [Colors.primary100, Colors.primary50],
+  [Colors.accent100, Colors.accent50],
+  ['#dbeafe', '#eff6ff'],
+  ['#f3e8ff', '#faf5ff'],
+  ['#ccfbf1', '#f0fdfa'],
+  ['#ffedd5', '#fff7ed'],
+];
+
 const SLIDES: Slide[] = [
   {
-    id: '1',
-    icon: '🍎',
-    title: 'Welcome to Baagicha',
-    titleHi: 'बागीचा में आपका स्वागत है',
-    description:
-      'Your all-in-one companion for apple farming in the Himalayan apple belt.',
-    descriptionHi: 'हिमालयी सेब बेल्ट में सेब की खेती के लिए आपका साथी।',
-    bgColor: '#E8F5E9',
+    id: '1', icon: '🍎', title: 'Welcome to Baagicha', titleHi: 'बागीचा में आपका स्वागत है',
+    description: 'Your all-in-one companion for apple farming in the Himalayan apple belt.',
+    descriptionHi: 'हिमालयी सेब बेल्ट में सेब की खेती के लिए आपका साथी।', bgColor: 'transparent',
   },
   {
-    id: '2',
-    icon: '🌳',
-    title: 'Manage Your Orchards',
-    titleHi: 'अपने बागों का प्रबंधन करें',
-    description:
-      'Track multiple orchards, record spray schedules, and monitor tree health in one place.',
-    descriptionHi: 'एक स्थान पर कई बागों को ट्रैक करें, स्प्रे शेड्यूल दर्ज करें।',
-    bgColor: '#FFF8E1',
+    id: '2', icon: '🌳', title: 'Manage Your Orchards', titleHi: 'अपने बागों का प्रबंधन करें',
+    description: 'Track multiple orchards, record spray schedules, and monitor tree health in one place.',
+    descriptionHi: 'एक स्थान पर कई बागों को ट्रैक करें, स्प्रे शेड्यूल दर्ज करें।', bgColor: 'transparent',
   },
   {
-    id: '3',
-    icon: '💧',
-    title: 'Never Miss a Spray',
-    titleHi: 'स्प्रे कभी न चूकें',
-    description:
-      'Get timely reminders for fungicide, pesticide, and nutrition sprays based on weather.',
-    descriptionHi: 'मौसम के आधार पर समय पर स्प्रे रिमाइंडर प्राप्त करें।',
-    bgColor: '#E3F2FD',
+    id: '3', icon: '💧', title: 'Never Miss a Spray', titleHi: 'स्प्रे कभी न चूकें',
+    description: 'Get timely reminders for fungicide, pesticide, and nutrition sprays based on weather.',
+    descriptionHi: 'मौसम के आधार पर समय पर स्प्रे रिमाइंडर प्राप्त करें।', bgColor: 'transparent',
   },
   {
-    id: '4',
-    icon: '📖',
-    title: 'Variety & Disease Guide',
-    titleHi: 'किस्म और रोग मार्गदर्शिका',
-    description:
-      'Explore apple varieties, rootstocks, and disease symptoms with expert advice.',
-    descriptionHi: 'सेब की किस्में, रूटस्टॉक और रोग लक्षणों का अन्वेषण करें।',
-    bgColor: '#F3E5F5',
+    id: '4', icon: '📖', title: 'Variety & Disease Guide', titleHi: 'किस्म और रोग मार्गदर्शिका',
+    description: 'Explore apple varieties, rootstocks, and disease symptoms with expert advice.',
+    descriptionHi: 'सेब की किस्में, रूटस्टॉक और रोग लक्षणों का अन्वेषण करें।', bgColor: 'transparent',
   },
   {
-    id: '5',
-    icon: '🌤️',
-    title: 'Weather Alerts',
-    titleHi: 'मौसम अलर्ट',
-    description:
-      'Receive hyper-local weather forecasts and frost alerts for your village.',
-    descriptionHi: 'अपने गांव के लिए स्थानीय मौसम पूर्वानुमान और पाला अलर्ट प्राप्त करें।',
-    bgColor: '#E0F7FA',
+    id: '5', icon: '🌤️', title: 'Weather Alerts', titleHi: 'मौसम अलर्ट',
+    description: 'Receive hyper-local weather forecasts and frost alerts for your village.',
+    descriptionHi: 'अपने गांव के लिए स्थानीय मौसम पूर्वानुमान और पाला अलर्ट प्राप्त करें।', bgColor: 'transparent',
   },
   {
-    id: '6',
-    icon: '🛒',
-    title: 'Shop Farming Inputs',
-    titleHi: 'कृषि इनपुट खरीदें',
-    description:
-      'Buy quality seeds, fertilizers, and tools at fair prices — delivered to your orchard.',
-    descriptionHi: 'उचित मूल्य पर बीज, उर्वरक और उपकरण खरीदें — आपके बाग तक पहुंचाएं।',
-    bgColor: '#FFF3E0',
+    id: '6', icon: '🛒', title: 'Shop Farming Inputs', titleHi: 'कृषि इनपुट खरीदें',
+    description: 'Buy quality seeds, fertilizers, and tools at fair prices — delivered to your orchard.',
+    descriptionHi: 'उचित मूल्य पर बीज, उर्वरक और उपकरण खरीदें — आपके बाग तक पहुंचाएं।', bgColor: 'transparent',
   },
 ];
 
@@ -141,23 +122,20 @@ export default function WelcomeScreen(): React.JSX.Element {
 
   const isLastSlide = currentIndex === SLIDES.length - 1;
 
-  const renderSlide = ({ item }: { item: Slide }) => (
-    <View style={[styles.slide, { backgroundColor: item.bgColor }]}>
-      <View style={styles.iconCircle}>
-        <Typography variant="displayHeading" style={styles.icon}>
-          {item.icon}
-        </Typography>
-      </View>
-      <PrimaryHeading style={styles.title}>{item.title}</PrimaryHeading>
-      <HindiText style={styles.titleHi}>{item.titleHi}</HindiText>
-      <Typography variant="body" center style={styles.description}>
-        {item.description}
-      </Typography>
-      <HindiText center style={styles.descriptionHi}>
-        {item.descriptionHi}
-      </HindiText>
-    </View>
-  );
+  const renderSlide = ({ item, index }: { item: Slide; index: number }) => {
+    const grad = SLIDE_GRADIENTS[index % SLIDE_GRADIENTS.length];
+    return (
+      <LinearGradient colors={grad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.slide}>
+        <View style={styles.iconCircle}>
+          <Typography variant="displayHeading" style={styles.icon}>{item.icon}</Typography>
+        </View>
+        <PrimaryHeading style={styles.title}>{item.title}</PrimaryHeading>
+        <HindiText style={styles.titleHi}>{item.titleHi}</HindiText>
+        <Typography variant="body" center style={styles.description}>{item.description}</Typography>
+        <HindiText center style={styles.descriptionHi}>{item.descriptionHi}</HindiText>
+      </LinearGradient>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -177,6 +155,7 @@ export default function WelcomeScreen(): React.JSX.Element {
         ref={flatListRef}
         data={SLIDES}
         renderItem={renderSlide}
+        getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
         keyExtractor={(item) => item.id}
         horizontal
         pagingEnabled
@@ -237,44 +216,44 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: Space[7],
     paddingBottom: 120,
   },
   iconCircle: {
     width: 120,
     height: 120,
-    borderRadius: 60,
+    borderRadius: Radius.full,
     backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 32,
-    shadowColor: Colors.gray400,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    marginBottom: Space[7],
+    ...Shadows.medium,
   },
   icon: {
     fontSize: 56,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
+    fontWeight: '800',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: Space[1],
+    color: Colors.gray900,
+    letterSpacing: -0.5,
   },
   titleHi: {
     fontSize: 16,
     color: Colors.gray500,
-    marginBottom: 16,
+    marginBottom: Space[5],
   },
   description: {
     color: Colors.gray600,
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 8,
+    marginBottom: Space[2],
+    fontSize: 15,
   },
   descriptionHi: {
-    fontSize: 13,
+    fontSize: 14,
     color: Colors.gray400,
     textAlign: 'center',
     lineHeight: 20,
@@ -298,27 +277,24 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   footer: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingHorizontal: Space[6],
+    paddingBottom: Space[6],
   },
   nextButton: {
     backgroundColor: Colors.primary,
-    borderRadius: 14,
-    paddingVertical: 18,
+    borderRadius: Radius.xl,
+    paddingVertical: Space[5],
     alignItems: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 4,
+    ...Shadows.strong,
   },
   getStartedButton: {
-    backgroundColor: Colors.accent,
-    shadowColor: Colors.accent,
+    backgroundColor: Colors.accent500,
+    shadowColor: Colors.accent500,
   },
   nextButtonText: {
     color: Colors.white,
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
 });

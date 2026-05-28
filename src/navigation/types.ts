@@ -9,6 +9,7 @@
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { ShopStackParamList } from './stacks/ShopStack';
 import type { MyOrchardStackParamList } from './stacks/MyOrchardStack';
+import type { HomeStackParamList } from './stacks/HomeStack';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 
@@ -107,6 +108,9 @@ export type ShopNavigationProp = NativeStackNavigationProp<ShopStackParamList>;
 
 /** Navigation prop for screens inside the My Orchard stack */
 export type MyOrchardNavigationProp = NativeStackNavigationProp<MyOrchardStackParamList>;
+
+/** Navigation prop for screens inside the Home stack */
+export type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList>;
 
 /** Route prop for VarietyDetail params */
 export type VarietyDetailRouteProp = RouteProp<DiscoverStackParamList, 'VarietyDetail'>;

@@ -1,15 +1,17 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * BAAGICHA — SECTION HEADER
+ * BAAGICHA — SECTION HEADER (Modernized)
  * ═══════════════════════════════════════════════════════════════
  *
- * Reusable section header: icon + English title + Hindi subtitle + optional "View All" link.
+ * Bold, clean section header with optional icon badge and action.
+ * Updated for stronger visual hierarchy and modern spacing.
  */
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../theme/colors';
+import { Space, Radius } from '../theme/style';
 import { Typography } from '../typography';
 import PressableScale from './PressableScale';
 
@@ -17,13 +19,13 @@ interface SectionHeaderProps {
   icon?: string;
   iconColor?: string;
   title: string;
-  titleHi: string;
+  titleHi?: string;
   actionLabel?: string;
   onAction?: () => void;
 }
 
 export default function SectionHeader({
-  icon = 'circle-small',
+  icon,
   iconColor = Colors.primary,
   title,
   titleHi,
@@ -33,23 +35,29 @@ export default function SectionHeader({
   return (
     <View style={styles.container}>
       <View style={styles.left}>
-        <View style={[styles.iconCircle, { backgroundColor: iconColor + '18' }]}>
-          <Icon name={icon} size={14} color={iconColor} />
-        </View>
+        {icon && (
+          <View style={[styles.iconCircle, { backgroundColor: iconColor + '15' }]}>
+            <Icon name={icon} size={16} color={iconColor} />
+          </View>
+        )}
         <View>
           <Typography variant="sectionTitle" style={styles.title}>
             {title}
           </Typography>
-          <Typography variant="hindiDisplaySection" style={styles.titleHi}>
-            {titleHi}
-          </Typography>
+          {titleHi && (
+            <Typography variant="hindiDisplaySection" style={styles.titleHi}>
+              {titleHi}
+            </Typography>
+          )}
         </View>
       </View>
       {actionLabel && onAction && (
         <PressableScale onPress={onAction}>
-          <Typography variant="link" style={styles.action}>
-            {actionLabel}
-          </Typography>
+          <View style={styles.actionPill}>
+            <Typography variant="caption" style={styles.actionText}>
+              {actionLabel}
+            </Typography>
+          </View>
         </PressableScale>
       )}
     </View>
@@ -61,30 +69,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: Space[3],
+    paddingHorizontal: Space[4],
   },
   left: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: Space[3],
   },
   iconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 32,
+    height: 32,
+    borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     fontSize: 17,
+    fontWeight: '800',
     lineHeight: 22,
+    color: Colors.gray900,
+    letterSpacing: -0.3,
   },
   titleHi: {
     fontSize: 12,
     lineHeight: 16,
-    marginTop: 1,
+    marginTop: 2,
+    color: Colors.gray500,
   },
-  action: {
-    fontSize: 13,
+  actionPill: {
+    backgroundColor: Colors.primary + '10',
+    paddingHorizontal: Space[3],
+    paddingVertical: 6,
+    borderRadius: Radius.full,
+  },
+  actionText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.primary,
   },
 });

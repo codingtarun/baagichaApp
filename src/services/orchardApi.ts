@@ -22,7 +22,6 @@ export interface ApiResponse<T> {
 export interface Orchard {
   id: number;
   orchard_name: string;
-  is_primary: boolean;
   state: string;
   district: string;
   tehsil: string | null;
@@ -39,7 +38,9 @@ export interface Orchard {
   area_local_value: number | null;
   area_hectare: number | null;
   total_trees: number | null;
-  avg_tree_age_years: number | null;
+  trees_below_7: number | null;
+  trees_between_7_15: number | null;
+  trees_above_15: number | null;
   farming_type: string;
   irrigation_type: string | null;
   has_cold_storage: boolean;
@@ -62,11 +63,11 @@ export interface Orchard {
 export interface OrchardDetail extends Orchard {
   varieties: OrchardVariety[];
   blocks: OrchardBlock[];
+
 }
 
 export interface CreateOrchardRequest {
   orchard_name: string;
-  is_primary?: boolean;
   state: string;
   district: string;
   tehsil?: string;
@@ -80,8 +81,10 @@ export interface CreateOrchardRequest {
   area_unit?: 'bigha' | 'kanal' | 'nali' | 'hectare';
   area_local_value?: number;
   total_trees?: number;
-  avg_tree_age_years?: number;
-  farming_type: 'conventional' | 'integrated' | 'organic' | 'transitioning_organic';
+  trees_below_7?: number;
+  trees_between_7_15?: number;
+  trees_above_15?: number;
+  farming_type: 'conventional' | 'integrated' | 'organic' | 'transitioning_organic' | 'regenerative' | 'transitioning_regenerative';
   irrigation_type?: 'rain_fed' | 'drip' | 'sprinkler' | 'flood' | 'mixed';
   has_cold_storage?: boolean;
   has_ca_storage?: boolean;
@@ -92,21 +95,28 @@ export interface CreateOrchardRequest {
   is_near_water_body?: boolean;
   microclimate_notes?: string;
   primary_market?: 'mandi' | 'direct_buyer' | 'cooperative' | 'export' | 'mixed';
+  variety_ids?: number[];
 }
 
 export interface UpdateOrchardRequest extends Partial<CreateOrchardRequest> {}
 
 // ── Block Types ──
 
+export interface BlockVariety {
+  id: number;
+  variety_id: number;
+  rootstock_id: number;
+  variety?: { id: number; name_en: string; name_hi: string; slug: string } | null;
+  rootstock?: { id: number; name: string } | null;
+}
+
 export interface OrchardBlock {
   id: number;
   user_orchard_id: number;
   name: string;
-  variety_id: number | null;
-  rootstock_id: number | null;
-  area_kanal: number | null;
+  area_unit: string | null;
+  area_local_value: number | null;
   plant_count: number | null;
-  tree_age_years: number | null;
   spacing_meters: string | null;
   soil_type: string | null;
   soil_ph: number | null;
@@ -118,17 +128,15 @@ export interface OrchardBlock {
   frost_pocket_risk: string | null;
   created_at: string;
   updated_at: string;
-  variety?: { id: number; name_en: string; name_hi: string } | null;
-  rootstock?: { id: number; name: string } | null;
+  block_varieties?: BlockVariety[];
 }
 
 export interface CreateBlockRequest {
   name: string;
-  variety_id?: number;
-  rootstock_id?: number;
-  area_kanal?: number;
+  block_varieties?: { variety_id: number; rootstock_id: number }[];
+  area_unit?: 'bigha' | 'kanal' | 'nali' | 'hectare';
+  area_local_value?: number;
   plant_count?: number;
-  tree_age_years?: number;
   spacing_meters?: string;
   soil_type?: 'loam' | 'clay' | 'sandy' | 'silty' | 'peaty';
   soil_ph?: number;
@@ -148,25 +156,22 @@ export interface OrchardVariety {
   id: number;
   user_orchard_id: number;
   variety_id: number;
+  rootstock_id: number;
   variety_name_custom: string | null;
-  is_primary_variety: boolean;
   num_trees: number | null;
-  tree_age_years: number | null;
-  rootstock: string | null;
   planted_year: number | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
-  variety?: { id: number; name_en: string; name_hi: string } | null;
+  variety?: { id: number; name_en: string; name_hi: string; slug: string } | null;
+  rootstock?: { id: number; name: string; name_hi: string | null } | null;
 }
 
 export interface CreateOrchardVarietyRequest {
   variety_id: number;
   variety_name_custom?: string;
-  is_primary_variety?: boolean;
   num_trees?: number;
-  tree_age_years?: number;
-  rootstock?: string;
+  rootstock_id: number;
   planted_year?: number;
   notes?: string;
 }
