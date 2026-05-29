@@ -11,6 +11,7 @@ import React from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../theme/colors';
+import { Shadows, Radius } from '../theme/style';
 import { Typography } from '../typography';
 import ScreenLayout from '../components/ScreenLayout';
 import PressableScale from '../components/PressableScale';
@@ -97,7 +98,7 @@ export default function WeatherScreen(): React.JSX.Element {
             <View key={i} style={styles.hourCard}>
               <Typography variant="caption" style={{ color: Colors.gray500 }}>{h.time}</Typography>
               <Icon name={h.icon as any} size={24} color={h.iconColor} style={{ marginVertical: 8 }} />
-              <Typography variant="body" style={{ fontWeight: '700', color: Colors.gray800 }}>{h.temp}°</Typography>
+              <Typography variant="body" style={{ fontWeight: '700', color: Colors.gray900 }}>{h.temp}°</Typography>
             </View>
           ))}
         </ScrollView>
@@ -113,7 +114,7 @@ export default function WeatherScreen(): React.JSX.Element {
               <PressableScale key={i} scale={0.98}>
                 <View style={styles.dailyRow}>
                   <View style={styles.dailyDay}>
-                    <Typography variant="body" style={{ fontWeight: '700', color: Colors.gray800 }}>{d.day}</Typography>
+                    <Typography variant="body" style={{ fontWeight: '700', color: Colors.gray900 }}>{d.day}</Typography>
                     <Typography variant="hindiMicro">{d.dayHi}</Typography>
                   </View>
                   <Icon name={d.icon as any} size={22} color={d.iconColor} style={{ marginHorizontal: 10 }} />
@@ -125,7 +126,7 @@ export default function WeatherScreen(): React.JSX.Element {
                     </View>
                   </View>
                   <View style={styles.dailyTemps}>
-                    <Typography variant="bodySmall" style={{ fontWeight: '700', color: Colors.gray800 }}>{d.high}°</Typography>
+                    <Typography variant="bodySmall" style={{ fontWeight: '700', color: Colors.gray900 }}>{d.high}°</Typography>
                     <Typography variant="caption" style={{ color: Colors.gray400 }}>{d.low}°</Typography>
                   </View>
                   <View style={[styles.dailySuit, { backgroundColor: suit.bg }]}>
@@ -154,12 +155,12 @@ function MetaPill({ icon, label }: { icon: string; label: string }) {
 
 const styles = StyleSheet.create({
   currentCard: {
-    backgroundColor: Colors.bgPrimary,
+    backgroundColor: Colors.surface,
     marginHorizontal: 16,
     marginTop: 12,
-    borderRadius: 20,
+    borderRadius: Radius['2xl'],
     padding: 20,
-    overflow: 'hidden',
+    ...Shadows.medium,
   },
   currentTop: {
     flexDirection: 'row',
@@ -169,11 +170,11 @@ const styles = StyleSheet.create({
   },
   currentTemp: {
     fontSize: 48,
-    color: Colors.white,
+    color: Colors.gray900,
     lineHeight: 52,
   },
   currentCondition: {
-    color: 'rgba(255,255,255,0.8)',
+    color: Colors.gray500,
     marginTop: 4,
   },
   currentMeta: {
@@ -186,10 +187,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: Colors.surfaceSubtle,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 10,
+    borderRadius: Radius.full,
   },
   suitBanner: {
     flexDirection: 'row',
@@ -197,7 +198,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: Radius.full,
     alignSelf: 'flex-start',
   },
   suitText: {
@@ -208,12 +209,11 @@ const styles = StyleSheet.create({
   },
   hourCard: {
     width: 72,
-    backgroundColor: Colors.white,
-    borderRadius: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
     padding: 10,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
+    ...Shadows.subtle,
   },
   dailyList: {
     gap: 8,
@@ -221,11 +221,10 @@ const styles = StyleSheet.create({
   dailyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: 14,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
     padding: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
+    ...Shadows.subtle,
   },
   dailyDay: {
     width: 50,

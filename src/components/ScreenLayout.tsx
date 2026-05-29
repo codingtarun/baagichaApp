@@ -38,6 +38,7 @@ const COMPACT_THRESHOLD = 50;
 interface ScreenLayoutProps {
   children: React.ReactNode;
   /** Extra padding at bottom (default 100 covers bottom tab bar) */
+  /** Extra padding at bottom (default 120px covers custom tab bar + safe area) */
   bottomPadding?: number;
   /** Props passed through to GlobalHeader */
   headerProps?: Omit<React.ComponentProps<typeof GlobalHeader>, 'scrollProgress'>;
@@ -48,7 +49,7 @@ interface ScreenLayoutProps {
 
 export default function ScreenLayout({
   children,
-  bottomPadding = 100,
+  bottomPadding = 120,
   headerProps,
   refreshing,
   onRefresh,
@@ -100,7 +101,7 @@ export default function ScreenLayout({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,

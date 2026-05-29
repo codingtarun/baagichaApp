@@ -1,13 +1,10 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * BAAGICHA — GLOBAL STYLES (Modernized)
+ * BAAGICHA — GLOBAL STYLES (LeafSnap Style)
  * ═══════════════════════════════════════════════════════════════
  *
- * LEARN: StyleSheet.create() converts JS style objects into
- * optimized references for better bridge performance.
- *
- * UPDATED: Added 8px spacing grid, 3-level shadow system,
- * and modern card variants.
+ * Warm cream background, large rounded cards (24px),
+ * subtle shadows, clean pill buttons.
  */
 
 import { StyleSheet } from 'react-native';
@@ -17,8 +14,6 @@ import { Fonts } from '../typography/fonts';
 // ═══════════════════════════════════════════════════════════════
 // SPACING TOKENS (8px Grid)
 // ═══════════════════════════════════════════════════════════════
-// LEARN: Using a consistent 8px grid creates visual rhythm.
-// All margins, paddings, and gaps should use these values.
 
 const Space = {
   1: 4,
@@ -43,38 +38,35 @@ const Radius = {
   lg: 16,
   xl: 20,
   '2xl': 24,
+  '3xl': 28,
   full: 999,
 } as const;
 
 // ═══════════════════════════════════════════════════════════════
-// SHADOW TOKENS (3 levels only — no more random values)
+// SHADOW TOKENS
 // ═══════════════════════════════════════════════════════════════
-// LEARN: Consistent shadows create depth hierarchy.
-//   subtle  = seated elements (inputs, small chips)
-//   medium  = cards, lists (primary content containers)
-//   strong  = floating elements (FABs, modals, toasts)
 
 const Shadows = {
   subtle: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
-    shadowRadius: 2,
+    shadowRadius: 3,
     elevation: 1,
   },
   medium: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowRadius: 12,
+    elevation: 4,
   },
   strong: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 8,
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 10,
   },
 } as const;
 
@@ -109,23 +101,23 @@ export const globalStyle = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
-  // ── Modern Cards ──
+  // ── Modern Cards (LeafSnap style: white, 24px radius, subtle shadow) ──
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
+    borderRadius: Radius['2xl'],
     padding: Space[4],
     ...Shadows.medium,
   },
   cardFlat: {
     backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
+    borderRadius: Radius['2xl'],
     padding: Space[4],
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.04)',
   },
   cardSubtle: {
     backgroundColor: Colors.surfaceSubtle,
-    borderRadius: Radius.lg,
+    borderRadius: Radius['2xl'],
     padding: Space[4],
   },
 
@@ -147,27 +139,25 @@ export const globalStyle = StyleSheet.create({
     height: 80,
   },
 
-  // ── Filter Pills (Legacy) ──
+  // ── Filter Pills (LeafSnap style) ──
   filterPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: Radius.md,
     backgroundColor: Colors.white,
+    ...Shadows.subtle,
   },
   filterPillActive: {
     backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   filterPillText: {
     fontFamily: Fonts.body,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 16,
-    color: Colors.gray600,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+    color: Colors.gray700,
   },
   filterPillTextActive: {
     color: Colors.white,
@@ -186,7 +176,7 @@ export const globalStyle = StyleSheet.create({
   // ── Input (Modern) ──
   input: {
     backgroundColor: Colors.surfaceSubtle,
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     paddingHorizontal: Space[4],
     paddingVertical: Space[3],
     fontSize: 15,
@@ -197,6 +187,41 @@ export const globalStyle = StyleSheet.create({
   inputFocused: {
     borderColor: Colors.primary300,
     backgroundColor: Colors.white,
+  },
+
+  // ── Primary Button (LeafSnap: full pill, solid green) ──
+  button: {
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.full,
+    paddingVertical: 14,
+    paddingHorizontal: Space[6],
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.subtle,
+  },
+  buttonText: {
+    fontFamily: Fonts.body,
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.white,
+  },
+
+  // ── Secondary Button (outlined) ──
+  buttonSecondary: {
+    backgroundColor: Colors.white,
+    borderRadius: Radius.full,
+    paddingVertical: 14,
+    paddingHorizontal: Space[6],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+  },
+  buttonSecondaryText: {
+    fontFamily: Fonts.body,
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.primary,
   },
 });
 

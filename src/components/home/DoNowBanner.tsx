@@ -115,7 +115,8 @@ export default function DoNowBanner({
   const daysLeft = 12;
 
   return (
-    <View style={styles.card}>
+    <View style={styles.cardShadow}>
+      <View style={styles.cardInner}>
       {/* ── Hero ── */}
       <View style={styles.hero}>
         <View style={styles.heroTop}>
@@ -256,6 +257,7 @@ export default function DoNowBanner({
           </View>
         </View>
       )}
+      </View>
     </View>
   );
 }
@@ -275,25 +277,26 @@ function SectionDotTitle({ title, titleHi, iconColor = Colors.primary }: { title
 // ── Styles ──
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Colors.white,
-    borderRadius: 20,
+  cardShadow: {
+    borderRadius: 24,
     marginHorizontal: 16,
     marginTop: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  cardInner: {
+    backgroundColor: Colors.white,
+    borderRadius: 24,
+    overflow: 'hidden',
   },
   hero: {
-    backgroundColor: Colors.bgPrimary,
+    backgroundColor: Colors.primary,
     padding: 16,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   heroTop: {
     flexDirection: 'row',
@@ -436,11 +439,9 @@ const styles = StyleSheet.create({
   },
   watchChip: {
     width: 160,
-    backgroundColor: Colors.gray50,
-    borderRadius: 14,
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: 16,
     padding: 12,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
     gap: 6,
   },
   watchChipTop: {
@@ -464,11 +465,9 @@ const styles = StyleSheet.create({
   },
   sprayChip: {
     width: 180,
-    backgroundColor: Colors.gray50,
-    borderRadius: 14,
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: 16,
     padding: 12,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
     gap: 6,
   },
   sprayChipHead: {
@@ -516,10 +515,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.surfaceSubtle,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 12,
   },
   soilName: {
     flex: 1,

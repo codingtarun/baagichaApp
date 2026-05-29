@@ -199,30 +199,31 @@ export default function BlogDetailScreen(): React.JSX.Element {
             </Typography>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedScroll}>
               {post.related.map((rel) => (
-                <TouchableOpacity
-                  key={rel.slug}
-                  style={styles.relatedCard}
-                  onPress={() => navigation.navigate('BlogDetail', { slug: rel.slug })}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.relatedThumb}>
-                    {rel.category && (
-                      <View style={[styles.relatedCat, { backgroundColor: rel.category.color }]}>
-                        <Typography variant="overline" color={Colors.white} style={{ fontSize: 8 }}>
-                          {rel.category.name_en}
-                        </Typography>
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.relatedBody}>
-                    <Typography variant="cardTitle" lines={2} style={{ fontSize: 12, lineHeight: 16 }}>
-                      {rel.title_en}
-                    </Typography>
-                    <Typography variant="metaText" color={Colors.gray400}>
-                      {rel.reading_time_min} min read
-                    </Typography>
-                  </View>
-                </TouchableOpacity>
+                <View key={rel.slug} style={styles.relatedCardShadow}>
+                  <TouchableOpacity
+                    style={styles.relatedCardInner}
+                    onPress={() => navigation.navigate('BlogDetail', { slug: rel.slug })}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.relatedThumb}>
+                      {rel.category && (
+                        <View style={[styles.relatedCat, { backgroundColor: rel.category.color }]}>
+                          <Typography variant="overline" color={Colors.white} style={{ fontSize: 8 }}>
+                            {rel.category.name_en}
+                          </Typography>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.relatedBody}>
+                      <Typography variant="cardTitle" lines={2} style={{ fontSize: 12, lineHeight: 16 }}>
+                        {rel.title_en}
+                      </Typography>
+                      <Typography variant="metaText" color={Colors.gray400}>
+                        {rel.reading_time_min} min read
+                      </Typography>
+                    </View>
+                  </TouchableOpacity>
+                </View>
               ))}
             </ScrollView>
           </View>
@@ -305,11 +306,11 @@ function BodyContent({ html }: { html: string }) {
 // ── Styles ──
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
+  container: { flex: 1, backgroundColor: Colors.background },
   centered: { alignItems: 'center', justifyContent: 'center' },
   loadingText: { marginTop: 16 },
   errorText: { marginTop: 12, textAlign: 'center' },
-  retryBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: Colors.gray100, borderRadius: 8 },
+  retryBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: Colors.surfaceSubtle, borderRadius: 999 },
 
   // Hero
   hero: { position: 'relative', width: SCREEN_W, height: 200, overflow: 'hidden' },
@@ -324,15 +325,15 @@ const styles = StyleSheet.create({
   authorChip: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   authorAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
   metaPills: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  metaPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: Colors.gray50, borderRadius: 12, borderWidth: 1, borderColor: Colors.gray200 },
+  metaPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: Colors.white, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 3, elevation: 1 },
 
   // Identity
   identity: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 },
   title: { fontSize: 22, lineHeight: 28 },
-  hindiToggle: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 10, paddingVertical: 4, backgroundColor: Colors.gray50, borderRadius: 12, borderWidth: 1, borderColor: Colors.gray200 },
+  hindiToggle: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 10, paddingVertical: 4, backgroundColor: Colors.white, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 3, elevation: 1 },
 
   // Excerpt
-  excerptBox: { marginHorizontal: 16, marginTop: 12, padding: 14, backgroundColor: Colors.gray50, borderRadius: 12, borderLeftWidth: 3, borderLeftColor: Colors.info },
+  excerptBox: { marginHorizontal: 16, marginTop: 12, padding: 14, backgroundColor: Colors.white, borderRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
   excerptText: { fontStyle: 'italic', lineHeight: 22 },
 
   // Body
@@ -345,15 +346,16 @@ const styles = StyleSheet.create({
 
   // Gallery
   galleryScroll: { gap: 8, paddingBottom: 8 },
-  galleryThumb: { width: 120, height: 80, borderRadius: 10, borderWidth: 2, borderColor: Colors.gray100 },
+  galleryThumb: { width: 120, height: 80, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 3, elevation: 1 },
 
   // Tags
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tagChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, backgroundColor: Colors.gray50, borderRadius: 20, borderWidth: 1, borderColor: Colors.gray200 },
+  tagChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, backgroundColor: Colors.white, borderRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 3, elevation: 1 },
 
   // Related
   relatedScroll: { gap: 12, paddingBottom: 8 },
-  relatedCard: { width: 180, backgroundColor: Colors.gray50, borderRadius: 14, padding: 10, borderWidth: 1, borderColor: Colors.gray200, overflow: 'hidden' },
+  relatedCardShadow: { width: 180, borderRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  relatedCardInner: { backgroundColor: Colors.white, borderRadius: 20, padding: 10, overflow: 'hidden' },
   relatedThumb: { width: '100%', height: 90, borderRadius: 10, backgroundColor: Colors.gray100, marginBottom: 8, position: 'relative' },
   relatedCat: { position: 'absolute', top: 6, left: 6, borderRadius: 6, paddingVertical: 2, paddingHorizontal: 6 },
   relatedBody: { gap: 4 },

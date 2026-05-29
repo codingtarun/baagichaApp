@@ -121,36 +121,37 @@ export default function BlogListScreen(): React.JSX.Element {
           </Typography>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredScroll}>
             {featured.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.featuredCard}
-                onPress={() => navigation.navigate('BlogDetail', { slug: item.slug })}
-                activeOpacity={0.7}
-              >
-                {item.featured_image ? (
-                  <Image source={{ uri: item.featured_image }} style={styles.featuredImg} />
-                ) : (
-                  <View style={[styles.featuredImg, { backgroundColor: Colors.gray100, alignItems: 'center', justifyContent: 'center' }]}>
-                    <Icon name="newspaper" size={24} color={Colors.gray400} />
-                  </View>
-                )}
-                <View style={styles.featuredOverlay} />
-                <View style={styles.featuredBody}>
-                  {item.category && (
-                    <View style={[styles.featuredCat, { backgroundColor: item.category.color }]}>
-                      <Typography variant="overline" color={Colors.white} style={{ fontSize: 9 }}>
-                        {item.category.name_en}
-                      </Typography>
+              <View key={item.id} style={styles.featuredCardShadow}>
+                <TouchableOpacity
+                  style={styles.featuredCardInner}
+                  onPress={() => navigation.navigate('BlogDetail', { slug: item.slug })}
+                  activeOpacity={0.7}
+                >
+                  {item.featured_image ? (
+                    <Image source={{ uri: item.featured_image }} style={styles.featuredImg} />
+                  ) : (
+                    <View style={[styles.featuredImg, { backgroundColor: Colors.gray100, alignItems: 'center', justifyContent: 'center' }]}>
+                      <Icon name="newspaper" size={24} color={Colors.gray400} />
                     </View>
                   )}
-                  <Typography variant="cardTitle" color={Colors.white} lines={2} style={styles.featuredTitle}>
-                    {item.title_en}
-                  </Typography>
-                  <Typography variant="metaText" color="rgba(255,255,255,0.75)" style={styles.featuredMeta}>
-                    {item.reading_time_min} min read
-                  </Typography>
-                </View>
-              </TouchableOpacity>
+                  <View style={styles.featuredOverlay} />
+                  <View style={styles.featuredBody}>
+                    {item.category && (
+                      <View style={[styles.featuredCat, { backgroundColor: item.category.color }]}>
+                        <Typography variant="overline" color={Colors.white} style={{ fontSize: 9 }}>
+                          {item.category.name_en}
+                        </Typography>
+                      </View>
+                    )}
+                    <Typography variant="cardTitle" color={Colors.white} lines={2} style={styles.featuredTitle}>
+                      {item.title_en}
+                    </Typography>
+                    <Typography variant="metaText" color="rgba(255,255,255,0.75)" style={styles.featuredMeta}>
+                      {item.reading_time_min} min read
+                    </Typography>
+                  </View>
+                </TouchableOpacity>
+              </View>
             ))}
           </ScrollView>
         </View>
@@ -200,11 +201,12 @@ function BlogCard({
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.7}
-      style={styles.card}
-    >
+    <View style={styles.cardShadow}>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.7}
+        style={styles.cardInner}
+      >
       {/* Thumbnail */}
       <View style={styles.cardThumb}>
         {item.featured_image ? (
@@ -245,7 +247,8 @@ function BlogCard({
           </Typography>
         </View>
       </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -254,7 +257,7 @@ function BlogCard({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
   },
 
   // Page header
@@ -292,10 +295,9 @@ const styles = StyleSheet.create({
 
   // Filter pills
   filterScroller: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
     paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray200,
+    borderBottomWidth: 0,
   },
   filterPillsRow: {
     paddingHorizontal: 12,
@@ -315,10 +317,20 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 8,
   },
-  featuredCard: {
+  featuredCardShadow: {
     width: 260,
     height: 160,
-    borderRadius: 16,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  featuredCardInner: {
+    width: 260,
+    height: 160,
+    borderRadius: 20,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -365,13 +377,19 @@ const styles = StyleSheet.create({
   },
 
   // Card
-  card: {
+  cardShadow: {
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardInner: {
     flexDirection: 'row',
-    backgroundColor: Colors.gray50,
-    borderRadius: 16,
+    backgroundColor: Colors.white,
+    borderRadius: 20,
     padding: 10,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
     overflow: 'hidden',
     gap: 12,
   },
@@ -435,8 +453,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingHorizontal: 20,
     paddingVertical: 8,
-    backgroundColor: Colors.gray100,
-    borderRadius: 8,
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: 999,
   },
   loadMore: {
     paddingVertical: 16,

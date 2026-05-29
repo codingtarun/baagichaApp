@@ -1,13 +1,11 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * BAAGICHA — COLOR THEME (Option A: Fresh Mint + Harvest Gold)
+ * BAAGICHA — COLOR THEME (LeafSnap Style)
  * ═══════════════════════════════════════════════════════════════
  *
- * Modern light-green palette optimized for outdoor readability.
- *   • Primary: Fresh mint green — growth, nature, trust
- *   • Accent: Warm harvest gold — Himachali apples, sun, energy
- *   • Background: Light mint tint — easy on eyes in sunlight
- *   • Surfaces: Clean white with subtle warmth
+ * Warm cream background, bright medium green primary,
+ * clean white cards, dark charcoal text.
+ * Matches the reference app design exactly.
  */
 
 // ═══════════════════════════════════════════════════════════════
@@ -15,41 +13,41 @@
 // ═══════════════════════════════════════════════════════════════
 
 const Core = {
-  // Primary — Fresh mint green (modern, airy, outdoor-readable)
+  // Primary — Bright medium green (like LeafSnap)
   primary50:  '#ecfdf3',
   primary100: '#d1fae1',
   primary200: '#a7f3c9',
   primary300: '#6ee7a3',
   primary400: '#34d376',
-  primary500: '#2D9E4F', // Main brand color
-  primary600: '#1B7A3A',
-  primary700: '#166534',
-  primary800: '#14522d',
-  primary900: '#052e16',
+  primary500: '#3CB371', // Main brand color — bright medium green
+  primary600: '#2E9A5E',
+  primary700: '#258B52',
+  primary800: '#1B7A3A',
+  primary900: '#14522d',
 
-  // Accent — Harvest gold (warmth, prosperity, Himachali harvest)
+  // Accent — Warm harvest gold
   accent50:  '#fffbeb',
   accent100: '#fef3c7',
   accent200: '#fde68a',
   accent300: '#fcd34d',
   accent400: '#fbbf24',
-  accent500: '#F5A623', // Main accent
+  accent500: '#F5A623',
   accent600: '#d97706',
   accent700: '#b45309',
   accent800: '#92400e',
   accent900: '#78350f',
 
-  // Neutral — Sage slate (softer than pure gray, matches green theme)
-  slate50:  '#F7FAF5',
-  slate100: '#eef4ea',
-  slate200: '#dce8d5',
-  slate300: '#b8d0ab',
-  slate400: '#8eb37e',
-  slate500: '#6a9560',
-  slate600: '#4a7345',
-  slate700: '#365a33',
-  slate800: '#244022',
-  slate900: '#132612',
+  // Neutral — Clean grays (not sage-tinted, cleaner)
+  slate50:  '#F5F0E8',  // Warm cream background
+  slate100: '#EDE8E0',
+  slate200: '#E0DAD2',
+  slate300: '#C8C0B6',
+  slate400: '#A8A199',
+  slate500: '#8E8E93',
+  slate600: '#6B6B6E',
+  slate700: '#48484A',
+  slate800: '#2D2D2D',
+  slate900: '#1A1A1A',  // Near-black text
 } as const;
 
 // ═══════════════════════════════════════════════════════════════
@@ -74,9 +72,9 @@ const Semantic = {
 const Surface = {
   background: Core.slate50,
   surface: '#ffffff',
-  surfaceSubtle: Core.slate100,
+  surfaceSubtle: '#F7F5F2',
   surfaceElevated: '#ffffff',
-  surfaceOverlay: 'rgba(19, 38, 18, 0.45)',
+  surfaceOverlay: 'rgba(0, 0, 0, 0.45)',
 } as const;
 
 // ═══════════════════════════════════════════════════════════════
@@ -85,8 +83,8 @@ const Surface = {
 
 export const Colors = {
   // ── Brand Aliases (Legacy Support) ──
-  bgPrimary: Core.primary800,
-  bgSecondary: Core.primary700,
+  bgPrimary: Core.primary700,
+  bgSecondary: Core.primary500,
   primary: Core.primary500,
   primaryLight: Core.primary400,
   accent: Core.accent500,
@@ -99,7 +97,6 @@ export const Colors = {
   info: Semantic.info,
 
   // ── Gray Scale Aliases (Legacy Support) ──
-  // Mapped to sage slate for thematic consistency
   gray50:  Core.slate50,
   gray100: Core.slate100,
   gray200: Core.slate200,

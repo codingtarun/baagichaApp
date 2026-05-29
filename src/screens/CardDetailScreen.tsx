@@ -16,6 +16,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { Colors } from '../theme/colors';
+import { Shadows, Radius } from '../theme/style';
 import { Typography, PrimaryHeading } from '../typography';
 import type { HomeStackParamList } from '../navigation/stacks/HomeStack';
 
@@ -63,7 +64,7 @@ export default function CardDetailScreen(): React.JSX.Element {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backIcon} activeOpacity={0.7}>
-          <Icon name="arrow-left" size={24} color={Colors.gray800} />
+          <Icon name="arrow-left" size={24} color={Colors.gray900} />
         </TouchableOpacity>
         <Typography variant="body" style={styles.headerTitle}>Details / विवरण</Typography>
         <View style={{ width: 40 }} />
@@ -129,16 +130,16 @@ export default function CardDetailScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.gray50 },
+  container: { flex: 1, backgroundColor: Colors.background },
   centered: { alignItems: 'center', justifyContent: 'center', padding: 40 },
-  backBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: Colors.gray100, borderRadius: 8 },
+  backBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: Colors.surface, borderRadius: Radius.full },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
   },
-  backIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.gray100, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontWeight: '700', fontSize: 16, color: Colors.gray800 },
+  backIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontWeight: '700', fontSize: 16, color: Colors.gray900 },
 
   scrollContent: { padding: 16, paddingBottom: 40 },
 
@@ -155,31 +156,29 @@ const styles = StyleSheet.create({
   },
   typeText: { color: Colors.primary, fontWeight: '600', fontSize: 12 },
 
-  title: { fontSize: 24, color: Colors.gray800, marginBottom: 4 },
+  title: { fontSize: 24, color: Colors.gray900, marginBottom: 4 },
   titleHi: { fontSize: 16, color: Colors.gray500, marginBottom: 20 },
 
   descCard: {
-    backgroundColor: Colors.white, borderRadius: 16, padding: 16,
-    shadowColor: Colors.gray400, shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06, shadowRadius: 4, elevation: 2, marginBottom: 16,
+    backgroundColor: Colors.surface, borderRadius: Radius['2xl'], padding: 16,
+    ...Shadows.medium, marginBottom: 16,
   },
-  descText: { fontSize: 15, lineHeight: 22, color: Colors.gray700 },
+  descText: { fontSize: 15, lineHeight: 22, color: Colors.gray900 },
   descHi: { fontSize: 14, lineHeight: 20, color: Colors.gray500, marginTop: 8 },
 
   infoRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: Colors.white, borderRadius: 12, padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: Colors.gray200,
+    backgroundColor: Colors.surface, borderRadius: Radius['2xl'], padding: 14, marginBottom: 10,
+    ...Shadows.medium,
   },
   infoTextWrap: { flex: 1 },
-  infoValue: { fontWeight: '600', color: Colors.gray800, marginTop: 2 },
+  infoValue: { fontWeight: '600', color: Colors.gray900, marginTop: 2 },
 
   ctaBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Colors.primary, borderRadius: 14,
+    backgroundColor: Colors.primary, borderRadius: Radius.full,
     paddingVertical: 16, marginTop: 8,
-    shadowColor: Colors.primary, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25, shadowRadius: 12, elevation: 4,
+    ...Shadows.medium,
   },
   ctaText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
 

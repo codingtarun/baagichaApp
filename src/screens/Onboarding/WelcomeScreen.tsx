@@ -25,8 +25,6 @@ import { Colors } from '../../theme/colors';
 import { Space, Radius, Shadows } from '../../theme/style';
 import { Typography, PrimaryHeading, HindiText } from '../../typography';
 import type { OnboardingStackParamList } from '../../navigation/types';
-import LinearGradient from 'react-native-linear-gradient';
-
 type OnboardingNavProp = NativeStackNavigationProp<OnboardingStackParamList>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -40,15 +38,6 @@ interface Slide {
   descriptionHi: string;
   bgColor: string;
 }
-
-const SLIDE_GRADIENTS: [string, string][] = [
-  [Colors.primary100, Colors.primary50],
-  [Colors.accent100, Colors.accent50],
-  ['#dbeafe', '#eff6ff'],
-  ['#f3e8ff', '#faf5ff'],
-  ['#ccfbf1', '#f0fdfa'],
-  ['#ffedd5', '#fff7ed'],
-];
 
 const SLIDES: Slide[] = [
   {
@@ -122,18 +111,19 @@ export default function WelcomeScreen(): React.JSX.Element {
 
   const isLastSlide = currentIndex === SLIDES.length - 1;
 
-  const renderSlide = ({ item, index }: { item: Slide; index: number }) => {
-    const grad = SLIDE_GRADIENTS[index % SLIDE_GRADIENTS.length];
+  const renderSlide = ({ item }: { item: Slide }) => {
     return (
-      <LinearGradient colors={grad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.slide}>
-        <View style={styles.iconCircle}>
-          <Typography variant="displayHeading" style={styles.icon}>{item.icon}</Typography>
+      <View style={styles.slide}>
+        <View style={styles.slideCard}>
+          <View style={styles.iconCircle}>
+            <Typography variant="displayHeading" style={styles.icon}>{item.icon}</Typography>
+          </View>
+          <PrimaryHeading style={styles.title}>{item.title}</PrimaryHeading>
+          <HindiText style={styles.titleHi}>{item.titleHi}</HindiText>
+          <Typography variant="body" center style={styles.description}>{item.description}</Typography>
+          <HindiText center style={styles.descriptionHi}>{item.descriptionHi}</HindiText>
         </View>
-        <PrimaryHeading style={styles.title}>{item.title}</PrimaryHeading>
-        <HindiText style={styles.titleHi}>{item.titleHi}</HindiText>
-        <Typography variant="body" center style={styles.description}>{item.description}</Typography>
-        <HindiText center style={styles.descriptionHi}>{item.descriptionHi}</HindiText>
-      </LinearGradient>
+      </View>
     );
   };
 
@@ -182,7 +172,7 @@ export default function WelcomeScreen(): React.JSX.Element {
       {/* Bottom Action Bar */}
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.nextButton, isLastSlide && styles.getStartedButton]}
+          style={styles.nextButton}
           onPress={handleNext}
           activeOpacity={0.8}
         >
@@ -198,7 +188,7 @@ export default function WelcomeScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
   },
   skipButton: {
     position: 'absolute',
@@ -216,8 +206,16 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Space[7],
-    paddingBottom: 120,
+    paddingHorizontal: Space[4],
+    paddingBottom: 140,
+  },
+  slideCard: {
+    backgroundColor: Colors.white,
+    borderRadius: Radius['2xl'],
+    padding: Space[7],
+    alignItems: 'center',
+    width: '100%',
+    ...Shadows.medium,
   },
   iconCircle: {
     width: 120,
@@ -282,14 +280,10 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     backgroundColor: Colors.primary,
-    borderRadius: Radius.xl,
+    borderRadius: Radius.full,
     paddingVertical: Space[5],
     alignItems: 'center',
     ...Shadows.strong,
-  },
-  getStartedButton: {
-    backgroundColor: Colors.accent500,
-    shadowColor: Colors.accent500,
   },
   nextButtonText: {
     color: Colors.white,

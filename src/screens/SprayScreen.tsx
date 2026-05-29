@@ -174,7 +174,7 @@ export default function SprayScreen(): React.JSX.Element {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* ── Gradient Header ── */}
       <LinearGradient
-        colors={[Colors.primary600, Colors.primary500, Colors.primary700]}
+        colors={[Colors.primary, Colors.primary]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.heroGradient}
@@ -243,7 +243,7 @@ export default function SprayScreen(): React.JSX.Element {
                   style={[
                     styles.fruitPillLabel,
                     fruit === slug && { color: Colors.white },
-                    !f.available && { color: Colors.gray400 },
+                    !f.available && { color: Colors.gray500 },
                   ]}
                 >
                   {f.label}
@@ -253,7 +253,7 @@ export default function SprayScreen(): React.JSX.Element {
                   style={[
                     styles.fruitPillHi,
                     fruit === slug && { color: 'rgba(255,255,255,0.85)' },
-                    !f.available && { color: Colors.gray400 },
+                    !f.available && { color: Colors.gray500 },
                   ]}
                 >
                   {f.available ? f.labelHi : 'जल्द आएगा'}
@@ -277,13 +277,13 @@ export default function SprayScreen(): React.JSX.Element {
               activeOpacity={0.7}
               style={[styles.regionTab, region === r && styles.regionTabActive]}
             >
-              <Icon name={r === 'hp' ? 'mountain' : 'snowflake'} size={14} color={region === r ? Colors.primary : Colors.gray500} />
+              <Icon name={r === 'hp' ? 'mountain' : 'snowflake'} size={14} color={region === r ? Colors.white : Colors.gray500} />
               <Typography variant="caption" style={region === r ? styles.regionTabTextActive : styles.regionTabText}>
                 {regionLabelsHi[r]}
               </Typography>
             </TouchableOpacity>
           ))}
-          <Typography variant="overline" color={Colors.gray400} style={styles.sourceNote}>
+          <Typography variant="overline" color={Colors.gray500} style={styles.sourceNote}>
             HP Dept. of Horticulture · Nauni UHF 2026
           </Typography>
         </View>
@@ -354,7 +354,7 @@ export default function SprayScreen(): React.JSX.Element {
                     style={[
                       styles.stagePillHi,
                       isActive && { color: 'rgba(255,255,255,0.85)' },
-                      status === 'upcoming' && !isActive && { color: Colors.gray400 },
+                      status === 'upcoming' && !isActive && { color: Colors.gray500 },
                     ]}
                   >
                     {s.nameHi}
@@ -454,18 +454,18 @@ function StageHero({ stage, onShare, onMarkDone, markingDone }: {
               </View>
             </View>
             <Typography variant="displayHeading" style={styles.stageName}>{stage.name}</Typography>
-            <Typography variant="hindiMeta" color={Colors.gray400}>{stage.nameHi}</Typography>
+            <Typography variant="hindiMeta" color={Colors.gray500}>{stage.nameHi}</Typography>
           </View>
         </View>
         <View style={styles.timingBox}>
           <Icon name="calendar-month" size={14} color={Colors.primary} />
           <Typography variant="caption" style={styles.timingHi}>{stage.timingHi}</Typography>
-          <Typography variant="overline" color={Colors.gray400}>{stage.timing}</Typography>
+          <Typography variant="overline" color={Colors.gray500}>{stage.timing}</Typography>
         </View>
       </View>
 
       {stage.desc && (
-        <Typography variant="bodySmall" color={Colors.gray600} style={styles.stageDesc}>
+        <Typography variant="bodySmall" color={Colors.gray500} style={styles.stageDesc}>
           {stage.desc}
         </Typography>
       )}
@@ -501,34 +501,36 @@ function DiseaseSection({ diseases, onWatch }: {
       <View style={styles.sectionHeader}>
         <Icon name="shield-virus" size={16} color={Colors.danger} />
         <Typography variant="label" style={styles.sectionTitle}>इस अवस्था में खतरा</Typography>
-        <Typography variant="caption" color={Colors.gray400}>Threats at this stage</Typography>
+        <Typography variant="caption" color={Colors.gray500}>Threats at this stage</Typography>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.diseaseScroll}>
         {diseases.map((d) => {
           const sev = SEVERITY_COLORS[d.sev] ?? SEVERITY_COLORS.medium;
           return (
-            <View key={d.id} style={[styles.diseaseCard, { borderColor: sev.color + '30' }]}>
-              <View style={[styles.diseaseHero, { backgroundColor: sev.bg }]}>
-                <Icon name={sev.icon} size={24} color={sev.color} />
-                <View style={[styles.sevBadge, { backgroundColor: sev.color + '1a', borderColor: sev.color + '33' }]}>
-                  <Icon name={sev.icon} size={8} color={sev.color} />
-                  <Typography variant="overline" style={{ fontSize: 8, color: sev.color, fontWeight: '700' }}>
-                    {d.sev.charAt(0).toUpperCase() + d.sev.slice(1)}
+            <View key={d.id} style={[styles.diseaseCardShadow, { borderColor: sev.color + '30' }]}>
+              <View style={styles.diseaseCardInner}>
+                <View style={[styles.diseaseHero, { backgroundColor: sev.bg }]}>
+                  <Icon name={sev.icon} size={24} color={sev.color} />
+                  <View style={[styles.sevBadge, { backgroundColor: sev.color + '1a', borderColor: sev.color + '33' }]}>
+                    <Icon name={sev.icon} size={8} color={sev.color} />
+                    <Typography variant="overline" style={{ fontSize: 8, color: sev.color, fontWeight: '700' }}>
+                      {d.sev.charAt(0).toUpperCase() + d.sev.slice(1)}
+                    </Typography>
+                  </View>
+                </View>
+                <View style={styles.diseaseBody}>
+                  <Typography variant="bodySmall" style={styles.diseaseName}>{d.name}</Typography>
+                  <Typography variant="hindiMeta" color={Colors.gray500}>{d.nameHi}</Typography>
+                  <Typography variant="caption" color={Colors.gray500} style={styles.diseaseDesc} numberOfLines={3}>
+                    {d.desc}
                   </Typography>
                 </View>
-              </View>
-              <View style={styles.diseaseBody}>
-                <Typography variant="bodySmall" style={styles.diseaseName}>{d.name}</Typography>
-                <Typography variant="hindiMeta" color={Colors.gray400}>{d.nameHi}</Typography>
-                <Typography variant="caption" color={Colors.gray500} style={styles.diseaseDesc} numberOfLines={3}>
-                  {d.desc}
-                </Typography>
-              </View>
-              <View style={styles.diseaseActions}>
-                <TouchableOpacity onPress={() => onWatch(d.id)} activeOpacity={0.7} style={styles.watchBtn}>
-                  <Icon name="eye-outline" size={12} color={Colors.primary} />
-                  <Typography variant="overline" style={{ fontSize: 9, color: Colors.primary }}>Watch</Typography>
-                </TouchableOpacity>
+                <View style={styles.diseaseActions}>
+                  <TouchableOpacity onPress={() => onWatch(d.id)} activeOpacity={0.7} style={styles.watchBtn}>
+                    <Icon name="eye-outline" size={12} color={Colors.primary} />
+                    <Typography variant="overline" style={{ fontSize: 9, color: Colors.primary }}>Watch</Typography>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           );
@@ -642,7 +644,7 @@ function TipsList({ tips }: { tips: string[] }) {
           <View style={styles.tipNumber}>
             <Typography variant="badgeText" color={Colors.white}>{i + 1}</Typography>
           </View>
-          <Typography variant="bodySmall" color={Colors.gray700} style={{ flex: 1 }}>{tip}</Typography>
+          <Typography variant="bodySmall" color={Colors.gray900} style={{ flex: 1 }}>{tip}</Typography>
         </View>
       ))}
     </View>
@@ -745,7 +747,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: Radius.lg,
-    backgroundColor: Colors.surfaceSubtle,
+    backgroundColor: Colors.surface,
   },
   fruitPillActive: {
     backgroundColor: Colors.primary,
@@ -754,12 +756,12 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   fruitPillLabel: {
-    color: Colors.gray800,
+    color: Colors.gray900,
     fontWeight: '700',
   },
   fruitPillHi: {
     fontSize: 10,
-    color: Colors.gray400,
+    color: Colors.gray500,
   },
   soonBadge: {
     position: 'absolute',
@@ -788,17 +790,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: Radius.full,
-    backgroundColor: Colors.surfaceSubtle,
+    backgroundColor: Colors.surface,
   },
   regionTabActive: {
-    backgroundColor: Colors.primary + '15',
+    backgroundColor: Colors.primary,
   },
   regionTabText: {
-    color: Colors.gray600,
+    color: Colors.gray700,
     fontWeight: '600',
   },
   regionTabTextActive: {
-    color: Colors.primary,
+    color: Colors.white,
     fontWeight: '700',
   },
   sourceNote: {
@@ -816,13 +818,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     marginHorizontal: Space[4],
     marginTop: Space[3],
-    borderRadius: Radius.lg,
+    borderRadius: Radius['2xl'],
     ...Shadows.subtle,
   },
   tankLabel: {
     marginLeft: 6,
     fontWeight: '600',
-    color: Colors.gray700,
+    color: Colors.gray900,
   },
   tankButtons: {
     flexDirection: 'row',
@@ -831,14 +833,14 @@ const styles = StyleSheet.create({
   tankBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.background,
   },
   tankBtnActive: {
     backgroundColor: Colors.primary,
   },
   tankBtnText: {
-    color: Colors.gray600,
+    color: Colors.gray700,
     fontWeight: '600',
     fontSize: 12,
   },
@@ -857,8 +859,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: Radius.lg,
-    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: Radius['2xl'],
+    backgroundColor: Colors.surface,
     minWidth: 80,
   },
   stagePillActive: {
@@ -868,13 +870,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.success + '10',
   },
   stagePillLabel: {
-    color: Colors.gray800,
+    color: Colors.gray900,
     fontWeight: '700',
     fontSize: 11,
   },
   stagePillHi: {
     fontSize: 9,
-    color: Colors.gray400,
+    color: Colors.gray500,
   },
   stageConnector: {
     width: 16,
@@ -913,7 +915,7 @@ const styles = StyleSheet.create({
   // Stage hero
   stageHero: {
     backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
+    borderRadius: Radius['2xl'],
     padding: Space[4],
     gap: Space[3],
     ...Shadows.medium,
@@ -964,7 +966,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: Radius.full,
   },
   markDoneText: {
     color: Colors.white,
@@ -978,9 +980,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary + '10',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.primary + '30',
+    borderRadius: Radius.full,
   },
   shareText: {
     color: Colors.primary,
@@ -998,18 +998,21 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   sectionTitle: {
-    color: Colors.gray800,
+    color: Colors.gray900,
   },
   diseaseScroll: {
     gap: 10,
     paddingRight: 16,
   },
-  diseaseCard: {
+  diseaseCardShadow: {
     width: 220,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    overflow: 'hidden',
+    borderRadius: Radius['2xl'],
     ...Shadows.medium,
+  },
+  diseaseCardInner: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
+    overflow: 'hidden',
   },
   diseaseHero: {
     height: 80,
@@ -1035,7 +1038,7 @@ const styles = StyleSheet.create({
   },
   diseaseName: {
     fontWeight: '700',
-    color: Colors.gray800,
+    color: Colors.gray900,
   },
   diseaseDesc: {
     marginTop: 4,
@@ -1054,7 +1057,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     backgroundColor: Colors.primary + '08',
-    borderRadius: 8,
+    borderRadius: Radius.full,
   },
 
   // Dose note
@@ -1062,10 +1065,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.surface,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: Radius['2xl'],
   },
 
   // Chemical tabs
@@ -1112,14 +1115,14 @@ const styles = StyleSheet.create({
   },
   chemCard: {
     backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
+    borderRadius: Radius['2xl'],
     padding: Space[4],
     gap: Space[2],
     ...Shadows.subtle,
   },
   chemName: {
     fontWeight: '700',
-    color: Colors.gray800,
+    color: Colors.gray900,
   },
   phiBadge: {
     backgroundColor: Colors.warning + '12',
@@ -1151,9 +1154,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     alignItems: 'flex-start',
-    backgroundColor: Colors.surfaceSubtle,
+    backgroundColor: Colors.surface,
     padding: Space[3],
-    borderRadius: Radius.lg,
+    borderRadius: Radius['2xl'],
   },
   tipNumber: {
     width: 24,

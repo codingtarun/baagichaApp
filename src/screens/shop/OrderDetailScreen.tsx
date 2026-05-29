@@ -239,13 +239,13 @@ export default function OrderDetailScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
   },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
   },
   retryButton: {
     marginTop: 12,
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.danger,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 999,
     alignItems: 'center',
     backgroundColor: Colors.danger + '08',
   },

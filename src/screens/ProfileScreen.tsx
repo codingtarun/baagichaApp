@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Colors } from '../theme/colors';
+import { Shadows, Radius } from '../theme/style';
 import { Typography, HindiText } from '../typography';
 import ScreenLayout from '../components/ScreenLayout';
 import { useAuthStore } from '../store/authStore';
@@ -198,11 +199,12 @@ const styles = StyleSheet.create({
   },
   // ── Logged In ──
   profileCard: {
-    backgroundColor: Colors.gray100,
-    borderRadius: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
     padding: 24,
     alignItems: 'center',
     marginBottom: 16,
+    ...Shadows.medium,
   },
   avatar: {
     width: 72,
@@ -228,10 +230,11 @@ const styles = StyleSheet.create({
     color: Colors.gray500,
   },
   menu: {
-    backgroundColor: Colors.gray100,
-    borderRadius: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
     overflow: 'hidden',
     marginBottom: 16,
+    ...Shadows.medium,
   },
   menuItem: {
     flexDirection: 'row',
@@ -247,7 +250,7 @@ const styles = StyleSheet.create({
   },
   menuLabel: {
     flex: 1,
-    color: Colors.gray800,
+    color: Colors.gray900,
   },
   menuArrow: {
     color: Colors.gray400,
@@ -255,7 +258,7 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     backgroundColor: Colors.danger,
-    borderRadius: 12,
+    borderRadius: Radius.full,
     paddingVertical: 16,
     alignItems: 'center',
   },
@@ -267,7 +270,7 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.6 },
   verificationBanner: {
     backgroundColor: '#FFF3CD',
-    borderRadius: 12,
+    borderRadius: Radius['2xl'],
     padding: 14,
     marginBottom: 16,
     flexDirection: 'row',
@@ -281,7 +284,7 @@ const styles = StyleSheet.create({
   },
   verificationButton: {
     backgroundColor: '#FFE69C',
-    borderRadius: 8,
+    borderRadius: Radius.full,
     paddingVertical: 6,
     paddingHorizontal: 12,
   },
@@ -291,11 +294,12 @@ const styles = StyleSheet.create({
   },
   // ── Guest ──
   guestCard: {
-    backgroundColor: Colors.gray100,
-    borderRadius: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
     padding: 28,
     alignItems: 'center',
     marginTop: 24,
+    ...Shadows.medium,
   },
   guestTitle: {
     fontSize: 22,
@@ -312,17 +316,13 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: Colors.primary,
-    borderRadius: 12,
+    borderRadius: Radius.full,
     paddingVertical: 16,
     paddingHorizontal: 32,
     alignItems: 'center',
     width: '100%',
     marginBottom: 12,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 4,
+    ...Shadows.medium,
   },
   primaryButtonText: {
     color: '#fff',
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   secondaryButton: {
     borderWidth: 2,
     borderColor: Colors.primary,
-    borderRadius: 12,
+    borderRadius: Radius.full,
     paddingVertical: 14,
     paddingHorizontal: 32,
     alignItems: 'center',
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   },
   guestHintHi: {
     fontSize: 12,
-    color: Colors.gray400,
+    color: Colors.gray500,
     marginTop: 2,
   },
 });

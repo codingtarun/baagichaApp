@@ -21,7 +21,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { Colors } from '../theme/colors';
-import { globalStyle } from '../theme/style';
+import { globalStyle, Shadows, Radius } from '../theme/style';
 import { Typography, HindiText } from '../typography';
 import ScreenLayout from '../components/ScreenLayout';
 import ProductCard from '../components/shop/ProductCard';
@@ -183,11 +183,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
+    color: Colors.gray900,
   },
   cartButton: {
     padding: 8,
-    backgroundColor: Colors.gray100,
-    borderRadius: 12,
+    backgroundColor: Colors.white,
+    borderRadius: Radius.full,
+    ...Shadows.subtle,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -197,10 +199,9 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 8,
     paddingHorizontal: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    borderRadius: Radius.full,
     height: 48,
+    ...Shadows.subtle,
   },
   searchIcon: {
     marginRight: 8,
@@ -208,7 +209,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: Colors.gray800,
+    color: Colors.gray900,
     fontFamily: 'DMSans-Regular',
     paddingVertical: 8,
   },
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: Radius.full,
   },
   retryText: {
     color: Colors.white,

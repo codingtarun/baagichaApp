@@ -23,6 +23,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Colors } from '../../theme/colors';
+import { Radius, Shadows, Space } from '../../theme/style';
 import { Typography, PrimaryHeading, HindiText } from '../../typography';
 import { useAuthStore } from '../../store/authStore';
 import { showToast } from '../../store/toastStore';
@@ -257,7 +258,7 @@ export default function PhoneAuthScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.gray50 },
+  container: { flex: 1, backgroundColor: Colors.background },
   keyboardView: { flex: 1 },
   scrollContent: { flexGrow: 1, padding: 24, justifyContent: 'center' },
   backButton: { alignSelf: 'flex-start', marginBottom: 8 },
@@ -266,24 +267,30 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, textAlign: 'center' },
   subtitleHi: { fontSize: 16, color: Colors.gray500, marginTop: 4 },
   subtitle: { color: Colors.gray400, marginTop: 8, textAlign: 'center' },
-  form: { gap: 16 },
+  form: {
+    gap: 16,
+    backgroundColor: Colors.white,
+    borderRadius: Radius['2xl'],
+    padding: Space[5],
+    ...Shadows.medium,
+  },
   inputGroup: { gap: 6 },
   label: { color: Colors.gray700 },
   phoneRow: { flexDirection: 'row', gap: 8 },
   countryCode: {
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.gray200,
-    borderRadius: 12,
+    borderRadius: Radius.lg,
     paddingHorizontal: 12,
     justifyContent: 'center',
   },
   phoneInput: {
     flex: 1,
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.gray200,
-    borderRadius: 12,
+    borderRadius: Radius.lg,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
@@ -291,10 +298,10 @@ const styles = StyleSheet.create({
     fontFamily: 'DMSans-Regular',
   },
   input: {
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.gray200,
-    borderRadius: 12,
+    borderRadius: Radius.lg,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
@@ -311,7 +318,7 @@ const styles = StyleSheet.create({
   errorText: { color: Colors.danger, marginTop: 2 },
   button: {
     backgroundColor: Colors.primary,
-    borderRadius: 12,
+    borderRadius: Radius.full,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,

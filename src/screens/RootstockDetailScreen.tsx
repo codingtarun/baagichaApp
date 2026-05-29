@@ -186,24 +186,25 @@ export default function RootstockDetailScreen(): React.JSX.Element {
             </Typography>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedScroll}>
               {rootstock.related.map((rel) => (
-                <TouchableOpacity
-                  key={rel.id}
-                  style={[styles.relatedCard, { borderColor: `${rel.vigour_color}30` }]}
-                  onPress={() => navigation.navigate('RootstockDetail', { slug: rel.slug })}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.relatedHero, { backgroundColor: `${rel.vigour_color}12` }]}>
-                    <Icon name="tree" size={24} color={rel.vigour_color} />
-                  </View>
-                  <View style={styles.relatedBody}>
-                    <Typography variant="cardTitle" lines={1} style={{ fontSize: 12 }}>
-                      {rel.name}
-                    </Typography>
-                    <Typography variant="metaText" color={Colors.gray500}>
-                      {rel.vigour_label} · {rel.spacing}
-                    </Typography>
-                  </View>
-                </TouchableOpacity>
+                <View key={rel.id} style={[styles.relatedCardShadow, { borderColor: `${rel.vigour_color}30` }]}>
+                  <TouchableOpacity
+                    style={styles.relatedCardInner}
+                    onPress={() => navigation.navigate('RootstockDetail', { slug: rel.slug })}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.relatedHero, { backgroundColor: `${rel.vigour_color}12` }]}>
+                      <Icon name="tree" size={24} color={rel.vigour_color} />
+                    </View>
+                    <View style={styles.relatedBody}>
+                      <Typography variant="cardTitle" lines={1} style={{ fontSize: 12 }}>
+                        {rel.name}
+                      </Typography>
+                      <Typography variant="metaText" color={Colors.gray500}>
+                        {rel.vigour_label} · {rel.spacing}
+                      </Typography>
+                    </View>
+                  </TouchableOpacity>
+                </View>
               ))}
             </ScrollView>
           </View>
@@ -390,19 +391,19 @@ function DetailCard({
   warn?: boolean;
   children: React.ReactNode;
 }) {
+  const stripColor = warn ? Colors.warning : accent ? Colors.primary : color;
   return (
-    <View
-      style={[
-        styles.detailCard,
-        accent && { borderLeftWidth: 3, borderLeftColor: Colors.primary },
-        warn && { borderLeftWidth: 3, borderLeftColor: Colors.warning },
-      ]}
-    >
-      <View style={styles.cardHead}>
-        <Icon name={icon} size={16} color={warn ? Colors.warning : color} />
-        <Typography variant="cardTitle" style={styles.cardTitle}>{title}</Typography>
+    <View style={styles.detailCardShadow}>
+      <View style={[styles.detailCardInner, { flexDirection: 'row' }]}>
+        <View style={[styles.cardStrip, { backgroundColor: stripColor }]} />
+        <View style={{ flex: 1 }}>
+          <View style={styles.cardHead}>
+            <Icon name={icon} size={16} color={stripColor} />
+            <Typography variant="cardTitle" style={styles.cardTitle}>{title}</Typography>
+          </View>
+          <View style={styles.cardBody}>{children}</View>
+        </View>
       </View>
-      <View style={styles.cardBody}>{children}</View>
     </View>
   );
 }
@@ -433,11 +434,11 @@ function capitalize(s: string): string {
 // ── Styles ──
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
+  container: { flex: 1, backgroundColor: Colors.background },
   centered: { alignItems: 'center', justifyContent: 'center' },
   loadingText: { marginTop: 16 },
   errorText: { marginTop: 12, textAlign: 'center' },
-  retryBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: Colors.gray100, borderRadius: 8 },
+  retryBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: Colors.surfaceSubtle, borderRadius: 999 },
 
   // Hero
   hero: { position: 'relative', width: SCREEN_W, height: 200, overflow: 'hidden' },
@@ -459,18 +460,20 @@ const styles = StyleSheet.create({
 
   // Stats
   statsScroll: { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
-  statItem: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 34, paddingHorizontal: 12, backgroundColor: Colors.gray50, borderRadius: 17, borderWidth: 1, borderColor: Colors.gray200 },
+  statItem: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 34, paddingHorizontal: 12, backgroundColor: Colors.white, borderRadius: 17, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 3, elevation: 1 },
   statValue: { fontWeight: '700' },
 
   // Tabs
-  tabsScroll: { paddingHorizontal: 12, gap: 4, borderBottomWidth: 1, borderBottomColor: Colors.gray200, backgroundColor: Colors.white },
+  tabsScroll: { paddingHorizontal: 12, gap: 4, borderBottomWidth: 1, borderBottomColor: Colors.gray200, backgroundColor: Colors.background },
   tab: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 2, borderBottomColor: 'transparent' },
 
   // Section
   section: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
 
   // Detail Card
-  detailCard: { backgroundColor: Colors.gray50, borderRadius: 14, marginBottom: 12, borderWidth: 1, borderColor: Colors.gray200, overflow: 'hidden' },
+  detailCardShadow: { borderRadius: 20, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  detailCardInner: { backgroundColor: Colors.white, borderRadius: 20, overflow: 'hidden' },
+  cardStrip: { width: 3, alignSelf: 'stretch' },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 12 },
   cardTitle: { flex: 1 },
   cardBody: { paddingHorizontal: 14, paddingBottom: 14 },
@@ -478,7 +481,7 @@ const styles = StyleSheet.create({
   cardTextHi: { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: Colors.gray200, lineHeight: 22 },
 
   // Gallery
-  galleryThumb: { width: 80, height: 80, borderRadius: 10, marginRight: 8, borderWidth: 2, borderColor: Colors.gray100 },
+  galleryThumb: { width: 80, height: 80, borderRadius: 12, marginRight: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 3, elevation: 1 },
 
   // Spec Grid
   specGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
@@ -496,7 +499,8 @@ const styles = StyleSheet.create({
   // Related
   relatedTitle: { marginBottom: 12 },
   relatedScroll: { gap: 12, paddingBottom: 8 },
-  relatedCard: { width: 140, backgroundColor: Colors.gray50, borderRadius: 14, padding: 8, borderWidth: 1, overflow: 'hidden' },
+  relatedCardShadow: { width: 140, borderRadius: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  relatedCardInner: { backgroundColor: Colors.white, borderRadius: 18, padding: 8, overflow: 'hidden' },
   relatedHero: { width: '100%', height: 70, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
   relatedBody: { gap: 4 },
 

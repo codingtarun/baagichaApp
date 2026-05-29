@@ -322,40 +322,42 @@ export default function OrchardVarietyFormScreen(): React.JSX.Element {
                       const sel = selections.find((s) => s.variety_id === v.id);
                       const isSelected = !!sel;
                       return (
-                        <View key={v.id} style={[styles.varietyCard, isSelected && styles.varietyCardSelected]}>
-                          <TouchableOpacity
-                            style={styles.varietyRow}
-                            onPress={() => toggleVariety(v.id)}
-                            activeOpacity={0.7}
-                          >
-                            <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
-                              {isSelected && <Icon name="check" size={14} color={Colors.white} />}
-                            </View>
-                            <Typography variant="body" style={styles.checkboxLabel}>{v.name_en}</Typography>
-                          </TouchableOpacity>
-
-                          {isSelected && (
-                            <View style={styles.rootstockWrap}>
-                              <Typography variant="caption" style={styles.rootstockLabel}>Rootstocks:</Typography>
-                              <View style={styles.chipRowWrap}>
-                                {rootstocks.map((rs) => {
-                                  const rsSelected = sel!.rootstock_ids.includes(rs.id);
-                                  return (
-                                    <TouchableOpacity
-                                      key={rs.id}
-                                      style={[styles.chip, rsSelected && styles.chipActive]}
-                                      onPress={() => toggleRootstock(v.id, rs.id)}
-                                      activeOpacity={0.8}
-                                    >
-                                      <Typography variant="caption" style={rsSelected ? styles.chipTextActive : styles.chipText}>
-                                        {rs.name}
-                                      </Typography>
-                                    </TouchableOpacity>
-                                  );
-                                })}
+                        <View key={v.id} style={styles.varietyCardShadow}>
+                          <View style={[styles.varietyCardInner, isSelected && styles.varietyCardSelected]}>
+                            <TouchableOpacity
+                              style={styles.varietyRow}
+                              onPress={() => toggleVariety(v.id)}
+                              activeOpacity={0.7}
+                            >
+                              <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
+                                {isSelected && <Icon name="check" size={14} color={Colors.white} />}
                               </View>
-                            </View>
-                          )}
+                              <Typography variant="body" style={styles.checkboxLabel}>{v.name_en}</Typography>
+                            </TouchableOpacity>
+
+                            {isSelected && (
+                              <View style={styles.rootstockWrap}>
+                                <Typography variant="caption" style={styles.rootstockLabel}>Rootstocks:</Typography>
+                                <View style={styles.chipRowWrap}>
+                                  {rootstocks.map((rs) => {
+                                    const rsSelected = sel!.rootstock_ids.includes(rs.id);
+                                    return (
+                                      <TouchableOpacity
+                                        key={rs.id}
+                                        style={[styles.chip, rsSelected && styles.chipActive]}
+                                        onPress={() => toggleRootstock(v.id, rs.id)}
+                                        activeOpacity={0.8}
+                                      >
+                                        <Typography variant="caption" style={rsSelected ? styles.chipTextActive : styles.chipText}>
+                                          {rs.name}
+                                        </Typography>
+                                      </TouchableOpacity>
+                                    );
+                                  })}
+                                </View>
+                              </View>
+                            )}
+                          </View>
                         </View>
                       );
                     })}
@@ -455,7 +457,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.gray200,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
@@ -468,21 +470,30 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.gray700, marginBottom: 10 },
   divider: { height: 1, backgroundColor: Colors.gray200, marginVertical: 16 },
   readOnlyChip: {
-    backgroundColor: Colors.gray100,
-    borderRadius: 8,
+    backgroundColor: Colors.white,
+    borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
     alignSelf: 'flex-start',
   },
   readOnlyChipText: { color: Colors.gray800, fontSize: 14, fontWeight: '600' },
   checkboxList: { gap: 8 },
-  varietyCard: {
+  varietyCardShadow: {
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  varietyCardInner: {
     backgroundColor: Colors.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   varietyCardSelected: {
@@ -525,12 +536,15 @@ const styles = StyleSheet.create({
   },
   chipRowWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
-    backgroundColor: Colors.gray100,
-    borderRadius: 8,
+    backgroundColor: Colors.white,
+    borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
   },
   chipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   chipText: { color: Colors.gray700, fontSize: 12 },
@@ -539,11 +553,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 80,
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
   },
   saveButton: {
     backgroundColor: Colors.primary,
-    borderRadius: 14,
+    borderRadius: 999,
     paddingVertical: 18,
     alignItems: 'center',
     shadowColor: Colors.primary,

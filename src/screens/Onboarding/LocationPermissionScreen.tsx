@@ -15,6 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
 import { Colors } from '../../theme/colors';
+import { Radius, Shadows } from '../../theme/style';
 import { Typography, PrimaryHeading, HindiText } from '../../typography';
 import { useOnboardingStore } from '../../store/onboardingStore';
 import type { OnboardingStackParamList } from '../../navigation/types';
@@ -130,7 +131,7 @@ function BenefitItem({ icon, text, textHi }: { icon: string; text: string; textH
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
   },
   content: {
     flex: 1,
@@ -167,10 +168,11 @@ const styles = StyleSheet.create({
   benefitItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: Colors.gray100,
-    borderRadius: 12,
+    backgroundColor: Colors.white,
+    borderRadius: Radius['2xl'],
     padding: 14,
     gap: 12,
+    ...Shadows.subtle,
   },
   benefitIcon: {
     fontSize: 22,
@@ -189,12 +191,12 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 120,
     gap: 12,
   },
   allowButton: {
     backgroundColor: Colors.primary,
-    borderRadius: 14,
+    borderRadius: Radius.full,
     paddingVertical: 18,
     alignItems: 'center',
     shadowColor: Colors.primary,
@@ -216,7 +218,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   skipText: {
-    color: Colors.gray400,
+    color: Colors.gray500,
     fontWeight: '500',
   },
 });

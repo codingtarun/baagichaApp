@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingVertical: 8,
-    borderRadius: 16,
+    borderRadius: 18,
   },
   image: {
     width: 64,

@@ -420,13 +420,13 @@ export default function ProductDetailScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
   },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
   },
   retryButton: {
     marginTop: 12,
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
   },
   galleryImage: {
     height: SCREEN_WIDTH * 0.9,
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.surfaceSubtle,
   },
   infoCard: {
     backgroundColor: Colors.white,
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.gray200,
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
     alignItems: 'center',
   },
   variantChipActive: {
@@ -558,7 +558,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
     padding: 16,
     borderRadius: 16,
     marginTop: 4,
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   reviewForm: {
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
     padding: 16,
     borderRadius: 16,
     gap: 12,
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 999,
     marginRight: 8,
   },
   reviewSubmitDisabled: {
@@ -668,9 +668,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   reviewCard: {
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.white,
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
     gap: 4,
   },
   reviewUser: {
@@ -737,7 +742,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     paddingHorizontal: 32,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 999,
     minWidth: 160,
     alignItems: 'center',
   },

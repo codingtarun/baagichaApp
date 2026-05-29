@@ -303,7 +303,7 @@ export default function VarietyScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
   },
 
   // Page header
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -345,10 +345,8 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: `${Colors.primary}15`,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: `${Colors.primary}30`,
+    backgroundColor: Colors.primary,
+    borderRadius: 999,
   },
   headerBtnText: {
     fontSize: 12,
@@ -373,8 +371,7 @@ const styles = StyleSheet.create({
   filterScroller: {
     backgroundColor: Colors.white,
     paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray200,
+    borderBottomWidth: 0,
   },
   altitudeScroller: {
     paddingVertical: 6,
@@ -392,9 +389,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     backgroundColor: Colors.gray50,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    borderRadius: 14,
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
   altitudePillActive: {
     backgroundColor: Colors.primary,
@@ -455,8 +456,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingHorizontal: 20,
     paddingVertical: 8,
-    backgroundColor: Colors.gray100,
-    borderRadius: 8,
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: 999,
   },
   loadMore: {
     paddingVertical: 16,

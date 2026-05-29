@@ -18,6 +18,8 @@ import {
   Image,
   RefreshControl,
   Animated,
+  Modal,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -31,6 +33,7 @@ import { Typography } from '../typography';
 import { showToast } from '../store/toastStore';
 import type { HomeNavigationProp } from '../navigation/types';
 import type { PriorityCardData } from '../navigation/stacks/HomeStack';
+import ShareSheet from '../components/ShareSheet';
 
 // ═══════════════════════════════════════════════════════════════
 // MOCK DATA
@@ -44,6 +47,13 @@ const STORIES = [
   { id: '4', name: 'Priya D.', avatar: 'https://i.pravatar.cc/150?u=4', hasStory: true },
   { id: '5', name: 'Mohan V.', avatar: 'https://i.pravatar.cc/150?u=5', hasStory: true },
   { id: '6', name: 'Geeta R.', avatar: 'https://i.pravatar.cc/150?u=8', hasStory: true },
+];
+
+const POST_TEMPLATES = [
+  { id: 'spray', icon: 'spray', label: 'Spraying', text: 'I am spraying today on my orchard. Preventive care during this season is crucial! 🍎🚿' },
+  { id: 'weather', icon: 'weather-rainy', label: 'Weather', text: 'Weather alert for my area: Stay prepared and stay safe! 🌧️' },
+  { id: 'mandi', icon: 'chart-line', label: 'Mandi Price', text: 'Mandi price update: What prices are you getting in your area? 💰' },
+  { id: 'work', icon: 'hammer-wrench', label: 'Orchard Work', text: 'Working hard in the orchard today! 🌳💪' },
 ];
 
 const PRIORITY_CARDS: PriorityCardData[] = [
@@ -132,10 +142,10 @@ const GROUPS_TO_JOIN = [
 const PRIORITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
 const PRIORITY_PAIR = {
-  critical: { bg: '#fef2f2', border: '#fecaca', icon: Colors.danger, text: Colors.danger },
-  high:     { bg: '#fff7ed', border: '#fed7aa', icon: '#ea580c', text: '#c2410c' },
-  medium:   { bg: '#fefce8', border: '#fde047', icon: '#ca8a04', text: '#a16207' },
-  low:      { bg: '#eff6ff', border: '#bfdbfe', icon: Colors.info, text: Colors.info },
+  critical: { accent: Colors.danger, icon: Colors.danger, text: Colors.danger },
+  high:     { accent: '#ea580c', icon: '#ea580c', text: '#c2410c' },
+  medium:   { accent: '#ca8a04', icon: '#ca8a04', text: '#a16207' },
+  low:      { accent: Colors.info, icon: Colors.info, text: Colors.info },
 };
 
 const TYPE_ICON: Record<string, string> = {
@@ -159,6 +169,8 @@ export default function HomeScreen(): React.JSX.Element {
   const [posts, setPosts] = useState(FEED_POSTS);
   const [postText, setPostText] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [shareCard, setShareCard] = useState<PriorityCardData | null>(null);
 
   const sortedCards = sortByPriority(PRIORITY_CARDS);
 
@@ -201,11 +213,41 @@ export default function HomeScreen(): React.JSX.Element {
     navigation.navigate('CardDetail', { card });
   };
 
+  const applyTemplate = (template: typeof POST_TEMPLATES[0]) => {
+    setPostText(template.text);
+    showToast('Template added — edit & post!', 'success');
+  };
+
+  const openShareModal = (card: PriorityCardData) => {
+    setShareCard(card);
+    setShareModalVisible(true);
+  };
+
+  const shareAlertToFeed = () => {
+    if (!shareCard) return;
+    const text = `📢 ${shareCard.title}\n\n${shareCard.description}\n\nStay informed with Baagicha!`;
+    setPostText(text);
+    setShareModalVisible(false);
+    setShareCard(null);
+    showToast('Alert added to post box', 'success');
+  };
+
+  const shareAlertViaWhatsApp = () => {
+    if (!shareCard) return;
+    const text = `📢 *${shareCard.title}*\n\n${shareCard.description}\n\n_Shared via Baagicha_`;
+    const url = `whatsapp://send?text=${encodeURIComponent(text)}`;
+    Linking.openURL(url).catch(() => {
+      Linking.openURL(`https://wa.me/?text=${encodeURIComponent(text)}`);
+    });
+    setShareModalVisible(false);
+    setShareCard(null);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* ── Hero Gradient Header ── */}
       <LinearGradient
-        colors={[Colors.primary600, Colors.primary500, Colors.primary700]}
+        colors={[Colors.primary, Colors.primary600]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.heroGradient}
@@ -230,22 +272,6 @@ export default function HomeScreen(): React.JSX.Element {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[Colors.primary]} />}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* ── Priority Cards ── */}
-        <View style={styles.sectionHeaderRow}>
-          <View style={styles.sectionTitleWrap}>
-            <Icon name="alert-circle" size={18} color={Colors.danger} />
-            <Typography variant="body" style={styles.sectionTitle}>Alerts & Work</Typography>
-          </View>
-          <TouchableOpacity activeOpacity={0.7}>
-            <Typography variant="caption" style={styles.seeAll}>View All</Typography>
-          </TouchableOpacity>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardsContainer}>
-          {sortedCards.map((card) => (
-            <PriorityCard key={card.id} card={card} onPress={navigateToCardDetail} />
-          ))}
-        </ScrollView>
-
         {/* ── Community Post Input ── */}
         <View style={styles.inputCard}>
           <View style={styles.inputTop}>
@@ -267,6 +293,16 @@ export default function HomeScreen(): React.JSX.Element {
               </TouchableOpacity>
             </View>
           )}
+          {/* ── Quick Templates ── */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.templateChipsContainer}>
+            {POST_TEMPLATES.map((template) => (
+              <TouchableOpacity key={template.id} style={styles.templateChip} onPress={() => applyTemplate(template)} activeOpacity={0.7}>
+                <Icon name={template.icon} size={14} color={Colors.primary} />
+                <Typography variant="caption" style={styles.templateChipText}>{template.label}</Typography>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
           <View style={styles.inputActions}>
             <InputAction icon="image-outline" label="Gallery" color={Colors.success} onPress={pickFromGallery} />
             <InputAction icon="camera-outline" label="Camera" color={Colors.info} onPress={pickFromCamera} />
@@ -281,6 +317,22 @@ export default function HomeScreen(): React.JSX.Element {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* ── Priority Cards ── */}
+        <View style={styles.sectionHeaderRow}>
+          <View style={styles.sectionTitleWrap}>
+            <Icon name="alert-circle" size={18} color={Colors.danger} />
+            <Typography variant="body" style={styles.sectionTitle}>Alerts & Work</Typography>
+          </View>
+          <TouchableOpacity activeOpacity={0.7}>
+            <Typography variant="caption" style={styles.seeAll}>View All</Typography>
+          </TouchableOpacity>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardsContainer}>
+          {sortedCards.map((card) => (
+            <PriorityCard key={card.id} card={card} onPress={navigateToCardDetail} onShare={openShareModal} />
+          ))}
+        </ScrollView>
 
         {/* ── Activity Feed ── */}
         <View style={styles.sectionHeaderRow}>
@@ -347,6 +399,46 @@ export default function HomeScreen(): React.JSX.Element {
           ))}
         </View>
       </ScrollView>
+
+      {/* ── Alert Share Modal ── */}
+      <Modal
+        animationType="slide"
+        transparent
+        visible={shareModalVisible}
+        onRequestClose={() => setShareModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <Typography variant="body" style={styles.modalTitle}>Share Alert</Typography>
+            <Typography variant="caption" style={styles.modalSubtitle} lines={2}>{shareCard?.title}</Typography>
+
+            <TouchableOpacity style={styles.modalBtn} onPress={shareAlertToFeed} activeOpacity={0.7}>
+              <View style={[styles.modalIconWrap, { backgroundColor: Colors.primary + '15' }]}>
+                <Icon name="newspaper-variant" size={22} color={Colors.primary} />
+              </View>
+              <View style={styles.modalBtnTextWrap}>
+                <Typography variant="body" style={styles.modalBtnTitle}>Share to Feed</Typography>
+                <Typography variant="captionMuted" style={styles.modalBtnDesc}>Post this alert to your activity feed</Typography>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.modalBtn} onPress={shareAlertViaWhatsApp} activeOpacity={0.7}>
+              <View style={[styles.modalIconWrap, { backgroundColor: Colors.success + '15' }]}>
+                <Icon name="whatsapp" size={22} color={Colors.success} />
+              </View>
+              <View style={styles.modalBtnTextWrap}>
+                <Typography variant="body" style={styles.modalBtnTitle}>Share via WhatsApp</Typography>
+                <Typography variant="captionMuted" style={styles.modalBtnDesc}>Send to farmers on WhatsApp</Typography>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.modalCancel} onPress={() => setShareModalVisible(false)} activeOpacity={0.7}>
+              <Typography variant="body" style={styles.modalCancelText}>Cancel</Typography>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -357,25 +449,29 @@ export default function HomeScreen(): React.JSX.Element {
 
 function StoryBar({ stories }: { stories: typeof STORIES }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storiesContainer}>
-      {stories.map((story) => (
-        <TouchableOpacity key={story.id} style={styles.storyItem} activeOpacity={0.7}>
-          <View style={[styles.storyRing, story.hasStory && styles.storyRingActive]}>
-            <Image source={{ uri: story.avatar }} style={styles.storyAvatar} />
-          </View>
-          {story.isMine && (
-            <View style={styles.addStoryBtn}>
-              <Icon name="plus" size={12} color={Colors.white} />
+    <View style={styles.storiesCardShadow}>
+      <View style={styles.storiesCardInner}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storiesContainer}>
+        {stories.map((story) => (
+          <TouchableOpacity key={story.id} style={styles.storyItem} activeOpacity={0.7}>
+            <View style={[styles.storyRing, story.hasStory && styles.storyRingActive]}>
+              <Image source={{ uri: story.avatar }} style={styles.storyAvatar} />
             </View>
-          )}
-          <Typography variant="caption" style={styles.storyName} lines={1}>{story.name}</Typography>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+            {story.isMine && (
+              <View style={styles.addStoryBtn}>
+                <Icon name="plus" size={12} color={Colors.white} />
+              </View>
+            )}
+            <Typography variant="caption" style={styles.storyName} lines={1}>{story.name}</Typography>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+      </View>
+    </View>
   );
 }
 
-function PriorityCard({ card, onPress }: { card: PriorityCardData; onPress: (c: PriorityCardData) => void }) {
+function PriorityCard({ card, onPress, onShare }: { card: PriorityCardData; onPress: (c: PriorityCardData) => void; onShare?: (c: PriorityCardData) => void }) {
   const style = PRIORITY_PAIR[card.priority as keyof typeof PRIORITY_PAIR] ?? PRIORITY_PAIR.medium;
   const icon = TYPE_ICON[card.type] ?? 'information';
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -399,19 +495,37 @@ function PriorityCard({ card, onPress }: { card: PriorityCardData; onPress: (c: 
       activeOpacity={1}
       style={{ marginRight: Space[3] }}
     >
-      <Animated.View style={[styles.priorityCard, { backgroundColor: style.bg, borderColor: style.border, transform: [{ scale: scaleAnim }] }]}>
-        <View style={styles.priorityHeader}>
-          <View style={[styles.priorityIconWrap, { backgroundColor: style.icon + '15' }]}>
-            <Icon name={icon} size={16} color={style.icon} />
+      <View style={styles.priorityCardShadow}>
+        <Animated.View style={[styles.priorityCardInner, { transform: [{ scale: scaleAnim }] }]}>
+          {/* Colored accent strip — replaces borderLeftWidth to avoid corner artifacts */}
+          <View style={[styles.priorityStrip, { backgroundColor: style.accent }]} />
+          <View style={styles.priorityContent}>
+            <View style={styles.priorityHeader}>
+              <View style={[styles.priorityIconWrap, { backgroundColor: style.accent + '15' }]}>
+                <Icon name={icon} size={16} color={style.icon} />
+              </View>
+              {onShare ? (
+                <TouchableOpacity
+                  onPress={(e) => { e.stopPropagation(); onShare(card); }}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <View style={[styles.shareIconWrap, { backgroundColor: style.accent + '12' }]}>
+                    <Icon name="share-variant" size={14} color={style.accent} />
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                <Icon name="chevron-right" size={18} color={style.accent} />
+              )}
+            </View>
+            <Typography variant="body" style={[styles.priorityTitle, { color: style.text }]} lines={2}>{card.title}</Typography>
+            <Typography variant="caption" style={styles.priorityDesc} lines={2}>{card.description}</Typography>
+            {card.timestamp && (
+              <Typography variant="captionMuted" style={styles.priorityTime}>{card.timestamp}</Typography>
+            )}
           </View>
-          <Icon name="chevron-right" size={18} color={style.text} />
-        </View>
-        <Typography variant="body" style={[styles.priorityTitle, { color: style.text }]} lines={2}>{card.title}</Typography>
-        <Typography variant="caption" style={styles.priorityDesc} lines={2}>{card.description}</Typography>
-        {card.timestamp && (
-          <Typography variant="captionMuted" style={styles.priorityTime}>{card.timestamp}</Typography>
-        )}
-      </Animated.View>
+        </Animated.View>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -426,38 +540,62 @@ function InputAction({ icon, label, color, onPress }: { icon: string; label: str
 }
 
 function FeedPost({ post, onLike }: { post: typeof FEED_POSTS[0]; onLike: () => void }) {
+  const navigation = useNavigation<HomeNavigationProp>();
+  const [shareVisible, setShareVisible] = useState(false);
+
+  const navigateToDetail = () => {
+    navigation.navigate('FeedDetail', { postId: post.id });
+  };
+
+  const navigateToUser = () => {
+    navigation.navigate('UserProfile', { userId: post.user.name });
+  };
+
   return (
-    <View style={styles.feedCard}>
-      <View style={styles.feedHeader}>
-        <Image source={{ uri: post.user.avatar }} style={styles.feedAvatar} />
-        <View style={styles.feedHeaderText}>
-          <Typography variant="body" style={styles.feedAuthor}>{post.user.name}</Typography>
-          <Typography variant="captionMuted">{post.user.location} · {post.timeAgo}</Typography>
+    <TouchableOpacity onPress={navigateToDetail} activeOpacity={0.97}>
+      <View style={styles.feedCard}>
+        <View style={styles.feedHeader}>
+          <TouchableOpacity onPress={navigateToUser} activeOpacity={0.7}>
+            <Image source={{ uri: post.user.avatar }} style={styles.feedAvatar} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={navigateToUser} activeOpacity={0.7} style={{ flex: 1 }}>
+            <View style={styles.feedHeaderText}>
+              <Typography variant="body" style={styles.feedAuthor}>{post.user.name}</Typography>
+              <Typography variant="captionMuted">{post.user.location} · {post.timeAgo}</Typography>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.feedMore} activeOpacity={0.7}>
+            <Icon name="dots-horizontal" size={18} color={Colors.gray500} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.feedMore} activeOpacity={0.7}>
-          <Icon name="dots-horizontal" size={18} color={Colors.gray400} />
-        </TouchableOpacity>
+        <Typography variant="body" style={styles.feedText}>{post.text}</Typography>
+        {post.image && <Image source={{ uri: post.image }} style={styles.feedImage} resizeMode="cover" />}
+        <View style={styles.feedStats}>
+          <Typography variant="captionMuted">{post.likes} likes · {post.comments} comments</Typography>
+        </View>
+        <View style={styles.feedActions}>
+          <TouchableOpacity style={styles.feedActionBtn} onPress={onLike} activeOpacity={0.7}>
+            <Icon name={post.liked ? 'thumb-up' : 'thumb-up-outline'} size={20} color={post.liked ? Colors.primary : Colors.gray500} />
+            <Typography variant="caption" style={[styles.feedActionText, post.liked && { color: Colors.primary }]}>Like</Typography>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.feedActionBtn} onPress={navigateToDetail} activeOpacity={0.7}>
+            <Icon name="comment-outline" size={20} color={Colors.gray500} />
+            <Typography variant="caption" style={styles.feedActionText}>Comment</Typography>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.feedActionBtn} onPress={() => setShareVisible(true)} activeOpacity={0.7}>
+            <Icon name="share-outline" size={20} color={Colors.gray500} />
+            <Typography variant="caption" style={styles.feedActionText}>Share</Typography>
+          </TouchableOpacity>
+        </View>
       </View>
-      <Typography variant="body" style={styles.feedText}>{post.text}</Typography>
-      {post.image && <Image source={{ uri: post.image }} style={styles.feedImage} resizeMode="cover" />}
-      <View style={styles.feedStats}>
-        <Typography variant="captionMuted">{post.likes} likes · {post.comments} comments</Typography>
-      </View>
-      <View style={styles.feedActions}>
-        <TouchableOpacity style={styles.feedActionBtn} onPress={onLike} activeOpacity={0.7}>
-          <Icon name={post.liked ? 'thumb-up' : 'thumb-up-outline'} size={20} color={post.liked ? Colors.primary : Colors.gray500} />
-          <Typography variant="caption" style={[styles.feedActionText, post.liked && { color: Colors.primary }]}>Like</Typography>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.feedActionBtn} activeOpacity={0.7}>
-          <Icon name="comment-outline" size={20} color={Colors.gray500} />
-          <Typography variant="caption" style={styles.feedActionText}>Comment</Typography>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.feedActionBtn} activeOpacity={0.7}>
-          <Icon name="share-outline" size={20} color={Colors.gray500} />
-          <Typography variant="caption" style={styles.feedActionText}>Share</Typography>
-        </TouchableOpacity>
-      </View>
-    </View>
+      <ShareSheet
+        visible={shareVisible}
+        onClose={() => setShareVisible(false)}
+        title={post.user.name + "'s Post"}
+        message={post.text}
+        url={`https://baagvaani.com/post/${post.id}`}
+      />
+    </TouchableOpacity>
   );
 }
 
@@ -503,21 +641,31 @@ const styles = StyleSheet.create({
   notifBadge: {
     position: 'absolute', top: 6, right: 6,
     width: 10, height: 10, borderRadius: 5,
-    backgroundColor: Colors.accent500, borderWidth: 1.5, borderColor: Colors.primary600,
+    backgroundColor: Colors.accent500, borderWidth: 1.5, borderColor: Colors.primary,
   },
 
   // ── Stories ──
-  storiesContainer: { paddingHorizontal: Space[4], paddingVertical: Space[3], gap: Space[1] },
+  storiesCardShadow: {
+    borderRadius: Radius['2xl'],
+    marginHorizontal: Space[4],
+    ...Shadows.medium,
+  },
+  storiesCardInner: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
+    overflow: 'hidden',
+  },
+  storiesContainer: { paddingHorizontal: Space[3], paddingVertical: Space[3], gap: Space[1] },
   storyItem: { alignItems: 'center', marginRight: Space[3], width: 66 },
-  storyRing: { width: 60, height: 60, borderRadius: 30, padding: 2.5, backgroundColor: 'rgba(255,255,255,0.25)' },
-  storyRingActive: { backgroundColor: Colors.accent500 },
-  storyAvatar: { width: 55, height: 55, borderRadius: 27.5, borderWidth: 2.5, borderColor: Colors.primary600 },
+  storyRing: { width: 60, height: 60, borderRadius: 30, padding: 2.5, backgroundColor: Colors.gray200 },
+  storyRingActive: { backgroundColor: Colors.primary },
+  storyAvatar: { width: 55, height: 55, borderRadius: 27.5, borderWidth: 2.5, borderColor: Colors.white },
   addStoryBtn: {
     position: 'absolute', bottom: 18, right: 2,
     width: 20, height: 20, borderRadius: 10, backgroundColor: Colors.accent500,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Colors.primary600,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Colors.white,
   },
-  storyName: { marginTop: 4, fontSize: 10, color: 'rgba(255,255,255,0.9)', textAlign: 'center', fontWeight: '500' },
+  storyName: { marginTop: 4, fontSize: 10, color: Colors.gray900, textAlign: 'center', fontWeight: '500' },
 
   // ── Section Headers ──
   sectionHeaderRow: {
@@ -530,49 +678,107 @@ const styles = StyleSheet.create({
 
   // ── Priority Cards ──
   cardsContainer: { paddingHorizontal: Space[4] },
-  priorityCard: {
-    width: 260, borderRadius: Radius.xl, padding: Space[4], borderWidth: 1,
+  priorityCardShadow: {
+    width: 260, borderRadius: Radius['2xl'], ...Shadows.medium,
+  },
+  priorityCardInner: {
+    backgroundColor: Colors.surface, borderRadius: Radius['2xl'],
+    flexDirection: 'row', overflow: 'hidden',
+  },
+  priorityStrip: {
+    width: 4,
+    alignSelf: 'stretch',
+  },
+  priorityContent: {
+    flex: 1,
+    padding: Space[4],
   },
   priorityHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Space[3] },
   priorityIconWrap: { width: 36, height: 36, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
   priorityTitle: { fontWeight: '800', fontSize: 15, lineHeight: 20, marginBottom: Space[1] },
-  priorityDesc: { fontSize: 12, color: Colors.gray600, lineHeight: 17 },
+  priorityDesc: { fontSize: 12, color: Colors.gray500, lineHeight: 17 },
   priorityTime: { fontSize: 10, marginTop: Space[3], color: Colors.gray500 },
 
   // ── Post Input ──
   inputCard: {
     backgroundColor: Colors.surface, marginHorizontal: Space[4], marginTop: Space[4],
-    borderRadius: Radius.xl, padding: Space[4], ...Shadows.medium,
+    borderRadius: Radius['2xl'], padding: Space[4], ...Shadows.medium,
   },
   inputTop: { flexDirection: 'row', alignItems: 'flex-start', gap: Space[3] },
   inputAvatar: { width: 40, height: 40, borderRadius: Radius.full },
   inputField: {
     flex: 1, minHeight: 40, maxHeight: 100,
-    fontSize: 15, color: Colors.gray800, textAlignVertical: 'top', paddingTop: 8,
+    fontSize: 15, color: Colors.gray900, textAlignVertical: 'top', paddingTop: 8,
   },
   previewWrap: { marginTop: Space[3], position: 'relative', alignSelf: 'flex-start' },
   previewImage: { width: 120, height: 120, borderRadius: Radius.lg },
   removePreview: { position: 'absolute', top: -8, right: -8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: Radius.full },
-  inputActions: { flexDirection: 'row', alignItems: 'center', marginTop: Space[3], paddingTop: Space[3], borderTopWidth: 1, borderTopColor: Colors.gray100 },
+  inputActions: { flexDirection: 'row', alignItems: 'center', marginTop: Space[3], paddingTop: Space[3], borderTopWidth: 1, borderTopColor: Colors.gray200 },
   inputActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Space[2], paddingVertical: 4 },
   inputActionText: { fontSize: 12, color: Colors.gray500, fontWeight: '500' },
-  postBtn: { marginLeft: 'auto', backgroundColor: Colors.primary, paddingHorizontal: Space[5], paddingVertical: 8, borderRadius: Radius.lg },
+  postBtn: { marginLeft: 'auto', backgroundColor: Colors.primary, paddingHorizontal: Space[5], paddingVertical: 8, borderRadius: Radius.full },
   postBtnDisabled: { opacity: 0.4 },
   postBtnText: { color: Colors.white, fontWeight: '800', fontSize: 13 },
+
+  // ── Template Chips ──
+  templateChipsContainer: { marginTop: Space[3], gap: Space[2] },
+  templateChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: Colors.primary + '10',
+    paddingHorizontal: Space[3], paddingVertical: 6,
+    borderRadius: Radius.full, marginRight: Space[2],
+    borderWidth: 1, borderColor: Colors.primary + '20',
+  },
+  templateChipText: { fontSize: 12, color: Colors.primary, fontWeight: '700' },
+
+  // ── Card Share ──
+  shareIconWrap: {
+    width: 28, height: 28, borderRadius: Radius.full,
+    alignItems: 'center', justifyContent: 'center',
+  },
+
+  // ── Share Modal ──
+  modalOverlay: {
+    flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  modalSheet: {
+    backgroundColor: Colors.surface, borderTopLeftRadius: Radius['2xl'], borderTopRightRadius: Radius['2xl'],
+    paddingHorizontal: Space[4], paddingBottom: Space[6], paddingTop: Space[3],
+  },
+  modalHandle: {
+    width: 40, height: 4, borderRadius: Radius.full, backgroundColor: Colors.gray300,
+    alignSelf: 'center', marginBottom: Space[3],
+  },
+  modalTitle: { fontWeight: '800', fontSize: 18, color: Colors.gray900, textAlign: 'center', marginBottom: 4 },
+  modalSubtitle: { fontSize: 13, color: Colors.gray500, textAlign: 'center', marginBottom: Space[4] },
+  modalBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: Space[3],
+    padding: Space[3], borderRadius: Radius.xl, backgroundColor: Colors.background,
+    marginBottom: Space[3],
+  },
+  modalIconWrap: { width: 44, height: 44, borderRadius: Radius.full, alignItems: 'center', justifyContent: 'center' },
+  modalBtnTextWrap: { flex: 1 },
+  modalBtnTitle: { fontWeight: '700', fontSize: 15, color: Colors.gray900 },
+  modalBtnDesc: { fontSize: 12, color: Colors.gray500, marginTop: 2 },
+  modalCancel: {
+    alignItems: 'center', paddingVertical: Space[3],
+    borderTopWidth: 1, borderTopColor: Colors.gray100, marginTop: Space[2],
+  },
+  modalCancelText: { fontWeight: '700', fontSize: 15, color: Colors.gray500 },
 
   // ── Feed ──
   feedCard: {
     backgroundColor: Colors.surface, marginHorizontal: Space[4], marginTop: Space[3],
-    borderRadius: Radius.xl, padding: Space[4], ...Shadows.medium,
+    borderRadius: Radius['2xl'], padding: Space[4], ...Shadows.medium,
   },
   feedHeader: { flexDirection: 'row', alignItems: 'center', gap: Space[3] },
   feedAvatar: { width: 42, height: 42, borderRadius: Radius.full },
   feedHeaderText: { flex: 1 },
   feedAuthor: { fontWeight: '700', fontSize: 14, color: Colors.gray900 },
   feedMore: { padding: 4 },
-  feedText: { fontSize: 14, color: Colors.gray700, marginTop: Space[3], lineHeight: 20 },
+  feedText: { fontSize: 14, color: Colors.gray500, marginTop: Space[3], lineHeight: 20 },
   feedImage: { width: '100%', height: 200, borderRadius: Radius.lg, marginTop: Space[3] },
-  feedStats: { marginTop: Space[3], paddingBottom: Space[3], borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+  feedStats: { marginTop: Space[3], paddingBottom: Space[3], borderBottomWidth: 1, borderBottomColor: Colors.gray200 },
   feedActions: { flexDirection: 'row', marginTop: Space[2] },
   feedActionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 6 },
   feedActionText: { fontSize: 12, color: Colors.gray500, fontWeight: '500' },
@@ -580,7 +786,7 @@ const styles = StyleSheet.create({
   // ── Suggested Friends ──
   friendsContainer: { paddingHorizontal: Space[4] },
   friendCard: {
-    width: 100, backgroundColor: Colors.surface, borderRadius: Radius.xl,
+    width: 100, backgroundColor: Colors.surface, borderRadius: Radius['2xl'],
     padding: Space[3], alignItems: 'center', marginRight: Space[3], ...Shadows.medium,
   },
   friendAvatar: { width: 52, height: 52, borderRadius: Radius.full },
@@ -594,17 +800,17 @@ const styles = StyleSheet.create({
   // ── Lists ──
   listCard: {
     backgroundColor: Colors.surface, marginHorizontal: Space[4],
-    borderRadius: Radius.xl, paddingHorizontal: Space[4], paddingVertical: Space[2],
+    borderRadius: Radius['2xl'], paddingHorizontal: Space[4], paddingVertical: Space[2],
     ...Shadows.medium,
   },
   listRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Space[3] },
-  listRowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.gray100 },
+  listRowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.gray200 },
   listAvatar: { width: 46, height: 46, borderRadius: Radius.full },
   groupImage: { width: 46, height: 46, borderRadius: Radius.md },
   listText: { flex: 1, marginLeft: Space[3] },
   listName: { fontWeight: '700', fontSize: 14, color: Colors.gray900 },
-  followBtn: { backgroundColor: Colors.primary + '10', paddingHorizontal: Space[4], paddingVertical: 6, borderRadius: Radius.lg },
+  followBtn: { backgroundColor: Colors.primary + '10', paddingHorizontal: Space[4], paddingVertical: 6, borderRadius: Radius.full },
   followBtnText: { color: Colors.primary, fontWeight: '700', fontSize: 12 },
-  joinBtn: { backgroundColor: Colors.primary, paddingHorizontal: Space[4], paddingVertical: 6, borderRadius: Radius.lg },
+  joinBtn: { backgroundColor: Colors.primary, paddingHorizontal: Space[4], paddingVertical: 6, borderRadius: Radius.full },
   joinBtnText: { color: Colors.white, fontWeight: '700', fontSize: 12 },
 });

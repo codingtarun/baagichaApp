@@ -26,7 +26,7 @@ import { Radius, Shadows, Space } from '../theme/style';
 
 export type CardVariant = 'elevated' | 'flat' | 'subtle' | 'priority';
 export type CardPadding = 'sm' | 'md' | 'lg';
-export type CardRadius = 'sm' | 'md' | 'lg' | 'xl';
+export type CardRadius = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 interface ModernCardProps {
   children: React.ReactNode;
@@ -60,6 +60,7 @@ const RADIUS_MAP: Record<CardRadius, number> = {
   md: Radius.md,
   lg: Radius.lg,
   xl: Radius.xl,
+  '2xl': Radius['2xl'],
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -70,7 +71,7 @@ export default function ModernCard({
   children,
   variant = 'elevated',
   padding = 'md',
-  radius = 'lg',
+  radius = '2xl',
   backgroundColor,
   borderColor,
   style,

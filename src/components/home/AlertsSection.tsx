@@ -74,15 +74,17 @@ export default function AlertsSection({ preventiveAlerts, outbreakAlerts, onView
         const iconName = ICON_MAP[alert.icon] ?? 'alert';
         return (
           <PressableScale key={i} scale={0.98}>
-            <View style={styles.alertCard}>
-              <View style={[styles.sevBar, { backgroundColor: color }]} />
-              <View style={styles.alertIconWrap}>
-                <Icon name={iconName} size={20} color={color} />
-              </View>
-              <View style={styles.alertBody}>
-                <Typography variant="alertTitle">{alert.title}</Typography>
-                <Typography variant="hindiBody">{alert.titleHi}</Typography>
-                <Typography variant="alertDesc" style={{ marginTop: 4 }}>{alert.desc}</Typography>
+            <View style={styles.alertCardShadow}>
+              <View style={styles.alertCardInner}>
+                <View style={[styles.sevBar, { backgroundColor: color }]} />
+                <View style={styles.alertIconWrap}>
+                  <Icon name={iconName} size={20} color={color} />
+                </View>
+                <View style={styles.alertBody}>
+                  <Typography variant="alertTitle">{alert.title}</Typography>
+                  <Typography variant="hindiBody">{alert.titleHi}</Typography>
+                  <Typography variant="alertDesc" style={{ marginTop: 4 }}>{alert.desc}</Typography>
+                </View>
               </View>
             </View>
           </PressableScale>
@@ -100,25 +102,27 @@ export default function AlertsSection({ preventiveAlerts, outbreakAlerts, onView
         const color = SEV_COLORS[ob.sev];
         return (
           <PressableScale key={i} scale={0.98}>
-            <View style={styles.outbreakCard}>
-              <View style={styles.obHead}>
-                <View style={styles.obDiseaseWrap}>
-                  <View style={[styles.obDot, { backgroundColor: color }]} />
-                  <Typography variant="outbreakDisease">{ob.disease}</Typography>
-                  <Typography variant="hindiBody">· {ob.diseaseHi}</Typography>
+            <View style={styles.outbreakCardShadow}>
+              <View style={styles.outbreakCardInner}>
+                <View style={styles.obHead}>
+                  <View style={styles.obDiseaseWrap}>
+                    <View style={[styles.obDot, { backgroundColor: color }]} />
+                    <Typography variant="outbreakDisease">{ob.disease}</Typography>
+                    <Typography variant="hindiBody">· {ob.diseaseHi}</Typography>
+                  </View>
+                  <View style={styles.obReports}>
+                    <Icon name="account-group" size={10} color={Colors.gray400} />
+                    <Typography variant="caption" style={{ color: Colors.gray400, marginLeft: 4 }}>{ob.reports}</Typography>
+                  </View>
                 </View>
-                <View style={styles.obReports}>
-                  <Icon name="account-group" size={10} color={Colors.gray400} />
-                  <Typography variant="caption" style={{ color: Colors.gray400, marginLeft: 4 }}>{ob.reports}</Typography>
+                <View style={styles.obMeta}>
+                  <Typography variant="caption"><Icon name="map-marker" size={10} color={Colors.gray400} /> {ob.location}</Typography>
+                  <Typography variant="caption"><Icon name="clock-outline" size={10} color={Colors.gray400} /> {ob.when}</Typography>
                 </View>
-              </View>
-              <View style={styles.obMeta}>
-                <Typography variant="caption"><Icon name="map-marker" size={10} color={Colors.gray400} /> {ob.location}</Typography>
-                <Typography variant="caption"><Icon name="clock-outline" size={10} color={Colors.gray400} /> {ob.when}</Typography>
-              </View>
-              <View style={styles.obTip}>
-                <Icon name="lightbulb-on" size={12} color={Colors.primary} />
-                <Typography variant="outbreakTip" style={{ flex: 1 }}>{ob.tip}</Typography>
+                <View style={styles.obTip}>
+                  <Icon name="lightbulb-on" size={12} color={Colors.primary} />
+                  <Typography variant="outbreakTip" style={{ flex: 1 }}>{ob.tip}</Typography>
+                </View>
               </View>
             </View>
           </PressableScale>
@@ -135,19 +139,20 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 10,
   },
-  alertCard: {
+  alertCardShadow: {
+    borderRadius: 20,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  alertCardInner: {
     flexDirection: 'row',
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
+    borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
   },
   sevBar: {
     width: 4,
@@ -164,18 +169,19 @@ const styles = StyleSheet.create({
     paddingRight: 12,
     gap: 2,
   },
-  outbreakCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 14,
+  outbreakCardShadow: {
+    borderRadius: 20,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  outbreakCardInner: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    padding: 14,
   },
   obHead: {
     flexDirection: 'row',

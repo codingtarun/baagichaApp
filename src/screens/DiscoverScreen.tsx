@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../theme/colors';
+import { Shadows, Radius } from '../theme/style';
 import { Typography } from '../typography';
 import ScreenLayout from '../components/ScreenLayout';
 import type { DiscoverNavigationProp } from '../navigation/types';
@@ -242,7 +243,7 @@ export default function DiscoverScreen(): React.JSX.Element {
                   {item.description}
                 </Typography>
               </View>
-              <Icon name="chevron-right" size={20} color={Colors.gray400} style={styles.arrow} />
+              <Icon name="chevron-right" size={20} color={Colors.gray500} style={styles.arrow} />
             </TouchableOpacity>
           ))}
         </View>
@@ -302,16 +303,10 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
     padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.04)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadows.medium,
   },
   iconWrap: {
     width: 48,

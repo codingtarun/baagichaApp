@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     paddingHorizontal: 32,
     paddingVertical: 12,
-    borderRadius: 14,
+    borderRadius: 999,
   },
   authButtonText: {
     color: Colors.white,
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 12,
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.surfaceSubtle,
   },
   itemInfo: {
     marginLeft: 12,

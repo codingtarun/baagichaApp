@@ -73,26 +73,29 @@ export default function ForecastStrip({ forecast, location, onViewAll }: Forecas
         {forecast.map((f, i) => {
           const suit = SUIT_CONFIG[f.suit];
           return (
-            <View key={i} style={[styles.card, { borderTopColor: suit.color }]}>
-              <View style={styles.dayWrap}>
-                <Typography variant="forecastDayHi">{f.day}</Typography>
-                <Typography variant="forecastDayEn">{f.dayEn}</Typography>
+            <View key={i} style={styles.cardShadow}>
+              <View style={styles.cardInner}>
+                <View style={[styles.cardTopStrip, { backgroundColor: suit.color }]} />
+                <View style={styles.dayWrap}>
+                  <Typography variant="forecastDayHi">{f.day}</Typography>
+                  <Typography variant="forecastDayEn">{f.dayEn}</Typography>
+                </View>
+                <Typography variant="forecastDate" style={styles.date}>{f.date}</Typography>
+                <Icon name={f.icon as any} size={28} color={f.iconColor} style={styles.weatherIcon} />
+                <View style={styles.temps}>
+                  <Typography variant="forecastHigh">{f.high}°</Typography>
+                  <Typography variant="forecastLow">/ {f.low}°</Typography>
+                </View>
+                <View style={styles.meta}>
+                  <Typography variant="forecastMeta"><Icon name="weather-windy" size={10} color={Colors.gray400} /> {f.wind}km/h</Typography>
+                  <Typography variant="forecastMeta"><Icon name="water" size={10} color={Colors.gray400} /> {f.rain}%</Typography>
+                </View>
+                <View style={[styles.suitBadge, { backgroundColor: suit.bg }]}>
+                  <Icon name={suit.icon} size={10} color={suit.color} />
+                  <Typography variant="overline" style={{ fontSize: 9, color: suit.color, fontWeight: '700' }}>{f.suitLabel}</Typography>
+                </View>
+                <Typography variant="hindiMicro" style={styles.suitHi}>{f.suitHi}</Typography>
               </View>
-              <Typography variant="forecastDate" style={styles.date}>{f.date}</Typography>
-              <Icon name={f.icon as any} size={28} color={f.iconColor} style={styles.weatherIcon} />
-              <View style={styles.temps}>
-                <Typography variant="forecastHigh">{f.high}°</Typography>
-                <Typography variant="forecastLow">/ {f.low}°</Typography>
-              </View>
-              <View style={styles.meta}>
-                <Typography variant="forecastMeta"><Icon name="weather-windy" size={10} color={Colors.gray400} /> {f.wind}km/h</Typography>
-                <Typography variant="forecastMeta"><Icon name="water" size={10} color={Colors.gray400} /> {f.rain}%</Typography>
-              </View>
-              <View style={[styles.suitBadge, { backgroundColor: suit.bg }]}>
-                <Icon name={suit.icon} size={10} color={suit.color} />
-                <Typography variant="overline" style={{ fontSize: 9, color: suit.color, fontWeight: '700' }}>{f.suitLabel}</Typography>
-              </View>
-              <Typography variant="hindiMicro" style={styles.suitHi}>{f.suitHi}</Typography>
             </View>
           );
         })}
@@ -107,20 +110,29 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingBottom: 4,
   },
-  card: {
+  cardShadow: {
     width: 130,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardInner: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 12,
     alignItems: 'center',
-    borderTopWidth: 3,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
+    paddingTop: 9,
+    overflow: 'hidden',
+  },
+  cardTopStrip: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
   },
   dayWrap: {
     alignItems: 'center',
@@ -158,8 +170,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 24,
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
+    borderRadius: 20,
   },
 });

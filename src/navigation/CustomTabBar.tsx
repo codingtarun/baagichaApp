@@ -1,23 +1,19 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * BAAGICHA — CUSTOM BOTTOM TAB BAR (Modernized)
+ * BAAGICHA — CUSTOM BOTTOM TAB BAR (LeafSnap Style)
  * ═══════════════════════════════════════════════════════════════
  *
- * Floating pill-style tab bar with animated active indicator.
- *   • White elevated container that floats above content
- *   • Active tab: primary green pill with white icon + text
- *   • Inactive: gray icon + text
- *   • Smooth scale + opacity transitions on tab switch
+ * Compact white tab bar with center Shop FAB.
+ * The FAB sits EMBEDDED in the tab bar — half inside, half above.
+ * Layout: [Home] [Spray]  [🟢]  [Baagic] [Orchard]
  */
 
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   TouchableOpacity,
   StyleSheet,
   Platform,
-  Animated,
-  Dimensions,
 } from 'react-native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -25,21 +21,20 @@ import { Colors } from '../theme/colors';
 import { Radius, Shadows } from '../theme/style';
 import { Typography } from '../typography';
 
-const SCREEN_W = Dimensions.get('window').width;
-
 interface TabConfig {
   name: string;
   label: string;
-  labelHi: string;
   icon: string;
 }
 
-const TABS: TabConfig[] = [
-  { name: 'Home', label: 'Home', labelHi: 'होम', icon: 'home-variant' },
-  { name: 'Spray', label: 'Spray', labelHi: 'स्प्रे', icon: 'spray-bottle' },
-  { name: 'Shop', label: 'Shop', labelHi: 'दुकान', icon: 'storefront' },
-  { name: 'Discover', label: 'Baagicha', labelHi: 'बागीचा', icon: 'compass' },
-  { name: 'MyOrchard', label: 'Orchard', labelHi: 'बाग', icon: 'sprout' },
+const LEFT_TABS: TabConfig[] = [
+  { name: 'Home', label: 'Home', icon: 'home-variant' },
+  { name: 'Spray', label: 'Spray', icon: 'spray-bottle' },
+];
+
+const RIGHT_TABS: TabConfig[] = [
+  { name: 'Discover', label: 'Baagicha', icon: 'compass' },
+  { name: 'MyOrchard', label: 'Orchard', icon: 'sprout' },
 ];
 
 const HIDDEN_TABBAR_SCREENS = [
@@ -63,93 +58,112 @@ export default function CustomTabBar({
 }: BottomTabBarProps): React.JSX.Element | null {
   const focusedRoute = getFocusedRouteName(state);
 
-  const tabCount = TABS.length;
-  const tabWidth = (SCREEN_W - 32 - (tabCount - 1) * 4) / tabCount;
-
-  // Animated value for the active indicator position
-  const indicatorX = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.spring(indicatorX, {
-      toValue: state.index * (tabWidth + 4),
-      friction: 9,
-      tension: 100,
-      useNativeDriver: true,
-    }).start();
-  }, [state.index, tabWidth, indicatorX]);
-
   if (focusedRoute && HIDDEN_TABBAR_SCREENS.includes(focusedRoute)) {
     return null;
   }
 
-  return (
-    <View style={styles.wrapper}>
-      <View style={styles.container}>
-        {/* Animated active background pill */}
-        <Animated.View
-          style={[
-            styles.activePill,
-            {
-              width: tabWidth,
-              transform: [{ translateX: indicatorX }],
-            },
-          ]}
+  // Tab indices in BottomTabNavigator state:
+  // 0: Home, 1: Spray, 2: Shop, 3: Discover, 4: MyOrchard
+  const shopIndex = 2;
+  const isShopFocused = state.index === shopIndex;
+
+  const renderTab = (tab: TabConfig, stateIdx: number) => {
+    const isFocused = state.index === stateIdx;
+    const route = state.routes[stateIdx];
+
+    const onPress = () => {
+      const event = navigation.emit({
+        type: 'tabPress',
+        target: route.key,
+        canPreventDefault: true,
+      });
+      if (!isFocused && !event.defaultPrevented) {
+        navigation.navigate(route.name);
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        key={tab.name}
+        accessibilityRole="button"
+        accessibilityState={isFocused ? { selected: true } : {}}
+        onPress={onPress}
+        style={styles.tabItem}
+        activeOpacity={0.7}
+      >
+        <Icon
+          name={tab.icon}
+          size={20}
+          color={isFocused ? Colors.primary : Colors.gray500}
         />
+        <Typography
+          variant="caption"
+          style={[
+            styles.label,
+            { color: isFocused ? Colors.primary : Colors.gray500 },
+          ]}
+          numberOfLines={1}
+        >
+          {tab.label}
+        </Typography>
+      </TouchableOpacity>
+    );
+  };
 
-        {/* Tab buttons */}
-        <View style={styles.tabRow}>
-          {TABS.map((tab, index) => {
-            const isFocused = state.index === index;
-            const route = state.routes[index];
+  return (
+    <View style={styles.wrapper} pointerEvents="box-none">
+      {/* Tab bar container — FAB is positioned absolutely inside this */}
+      <View style={styles.bar} pointerEvents="auto">
+        {/* Left side tabs */}
+        <View style={styles.side}>
+          {LEFT_TABS.map((tab, i) => renderTab(tab, i))}
+        </View>
 
-            const onPress = () => {
+        {/* Fixed gap in the middle for the FAB */}
+        <View style={styles.gap} />
+
+        {/* Right side tabs */}
+        <View style={styles.side}>
+          {RIGHT_TABS.map((tab, i) => renderTab(tab, i + 3))}
+        </View>
+
+        {/* Center Shop FAB — positioned to sit half inside, half above the bar */}
+        <View style={styles.fabWrap} pointerEvents="box-none">
+          <TouchableOpacity
+            onPress={() => {
+              const shopRoute = state.routes[shopIndex];
               const event = navigation.emit({
                 type: 'tabPress',
-                target: route.key,
+                target: shopRoute.key,
                 canPreventDefault: true,
               });
-              if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(route.name);
+              if (!isShopFocused && !event.defaultPrevented) {
+                navigation.navigate(shopRoute.name);
               }
-            };
-
-            return (
-              <TouchableOpacity
-                key={tab.name}
-                accessibilityRole="button"
-                accessibilityState={isFocused ? { selected: true } : {}}
-                onPress={onPress}
-                style={[styles.tabItem, { width: tabWidth }]}
-                activeOpacity={0.85}
-              >
-                <TabItemIcon name={tab.icon} size={22} isFocused={isFocused} />
-                <TabItemLabel text={tab.label} isFocused={isFocused} style={styles.labelEn} />
-                <TabItemLabel text={tab.labelHi} isFocused={isFocused} style={styles.labelHi} />
-              </TouchableOpacity>
-            );
-          })}
+            }}
+            style={[styles.fab, isShopFocused && styles.fabActive]}
+            activeOpacity={0.85}
+          >
+            <Icon name="storefront" size={22} color={Colors.white} />
+          </TouchableOpacity>
+          <Typography
+            variant="caption"
+            style={[
+              styles.fabLabel,
+              { color: isShopFocused ? Colors.primary : Colors.gray500 },
+            ]}
+          >
+            Shop
+          </Typography>
         </View>
       </View>
-      <View style={styles.safeAreaBottom} />
     </View>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// TAB ITEM SUB-COMPONENT (static — avoids Animated.Value freeze)
-// ═══════════════════════════════════════════════════════════════
-
-function TabItemIcon({ name, size, isFocused }: { name: string; size: number; isFocused: boolean }) {
-  return <Icon name={name} size={size} color={isFocused ? Colors.white : 'rgba(255,255,255,0.55)'} />;
-}
-
-function TabItemLabel({ text, isFocused, style }: { text: string; isFocused: boolean; style: any }) {
-  return <Typography variant="caption" style={[style, { opacity: isFocused ? 1 : 0.6 }]}>{text}</Typography>;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// STYLES
-// ═══════════════════════════════════════════════════════════════
+const BAR_H = 52;
+const FAB_H = 48;
+const FAB_RISE = 16; // how much the FAB sticks above the tab bar
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -157,57 +171,62 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    alignItems: 'center',
+    paddingBottom: Platform.select({ ios: 12, android: 6 }),
     zIndex: 1000,
   },
-  container: {
+  bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.primary700,
-    marginHorizontal: 16,
-    marginBottom: Platform.select({ ios: 20, android: 12 }),
+    height: BAR_H,
+    marginHorizontal: 12,
+    backgroundColor: Colors.white,
     borderRadius: Radius.xl,
-    padding: 4,
+    paddingHorizontal: 4,
+    position: 'relative',
     ...Shadows.strong,
   },
-  activePill: {
-    position: 'absolute',
-    top: 4,
-    bottom: 4,
-    left: 4,
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.lg,
-    ...Shadows.subtle,
-  },
-  tabRow: {
+  side: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    flex: 1,
   },
   tabItem: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 2,
-    borderRadius: Radius.lg,
-    minHeight: 50,
-    zIndex: 1,
+    paddingVertical: 2,
   },
-  labelEn: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: Colors.white,
-    marginTop: 2,
-    letterSpacing: 0.2,
-  },
-  labelHi: {
-    fontSize: 8,
-    fontWeight: '500',
-    color: Colors.white,
+  label: {
+    fontSize: 9,
+    fontWeight: '600',
     marginTop: 1,
-    opacity: 0.85,
   },
-  safeAreaBottom: {
-    height: Platform.select({ ios: 0, android: 4 }),
+  gap: {
+    width: 52,
+  },
+  fabWrap: {
+    position: 'absolute',
+    top: -FAB_RISE,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  fab: {
+    width: FAB_H,
+    height: FAB_H,
+    borderRadius: FAB_H / 2,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.strong,
+  },
+  fabActive: {
+    backgroundColor: Colors.primary700,
+  },
+  fabLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 2,
   },
 });

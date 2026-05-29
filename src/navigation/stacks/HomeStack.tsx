@@ -18,6 +18,8 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '../../screens/HomeScreen';
 import CardDetailScreen from '../../screens/CardDetailScreen';
+import FeedDetailScreen from '../../screens/FeedDetailScreen';
+import UserProfileScreen from '../../screens/UserProfileScreen';
 
 export type PriorityCardData = {
   id: string;
@@ -35,6 +37,8 @@ export type PriorityCardData = {
 export type HomeStackParamList = {
   Home: undefined;
   CardDetail: { card: PriorityCardData };
+  FeedDetail: { postId: string };
+  UserProfile: { userId: string };
 };
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -44,6 +48,8 @@ export default function HomeStack(): React.JSX.Element {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="CardDetail" component={CardDetailScreen} />
+      <Stack.Screen name="FeedDetail" component={FeedDetailScreen} />
+      <Stack.Screen name="UserProfile" component={UserProfileScreen} />
     </Stack.Navigator>
   );
 }

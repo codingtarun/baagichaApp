@@ -248,7 +248,7 @@ export default function CheckoutScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   addressBox: {
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
     padding: 12,
     borderRadius: 12,
     gap: 4,
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     padding: 12,
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
     borderRadius: 12,
   },
   paymentInfo: {
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     paddingHorizontal: 28,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 999,
   },
   placeButtonDisabled: {
     opacity: 0.6,

@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: Colors.primary,
-    borderRadius: 14,
+    borderRadius: 999,
     paddingVertical: 16,
     paddingHorizontal: 32,
     alignItems: 'center',
@@ -284,13 +284,13 @@ const styles = StyleSheet.create({
   },
   orchardCard: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
-    shadowColor: Colors.gray400,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
     shadowRadius: 12,
-    elevation: 5,
+    elevation: 4,
   },
   cardHeader: {
     marginBottom: 12,
@@ -326,8 +326,8 @@ const styles = StyleSheet.create({
   cardStats: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: Colors.gray50,
-    borderRadius: 12,
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: 16,
     padding: 12,
     marginBottom: 12,
   },

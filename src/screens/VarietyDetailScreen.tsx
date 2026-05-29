@@ -34,6 +34,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../theme/colors';
+import { Shadows, Radius } from '../theme/style';
 import { Typography } from '../typography';
 import { useVarietyDetail } from '../hooks/useVarietyDetail';
 import type { VarietyDetailRouteProp, DiscoverNavigationProp } from '../navigation/types';
@@ -293,11 +294,11 @@ function OverviewSection({ variety }: { variety: any }) {
     <>
       {variety.description_en && (
         <DetailCard icon="text" title="About This Variety" color={variety.season_color}>
-          <Typography variant="body" color={Colors.gray700} style={styles.cardText}>
+          <Typography variant="body" color={Colors.gray900} style={styles.cardText}>
             {variety.description_en}
           </Typography>
           {variety.description_hi && (
-            <Typography variant="hindiBody" color={Colors.gray400} style={styles.cardTextHi}>
+            <Typography variant="hindiBody" color={Colors.gray500} style={styles.cardTextHi}>
               {variety.description_hi}
             </Typography>
           )}
@@ -316,7 +317,7 @@ function OverviewSection({ variety }: { variety: any }) {
 
       {variety.growing_tips && (
         <DetailCard icon="lightbulb-on" title="Growing Tips" color={Colors.primary} accent>
-          <Typography variant="body" color={Colors.gray700} style={styles.cardText}>
+          <Typography variant="body" color={Colors.gray900} style={styles.cardText}>
             {variety.growing_tips}
           </Typography>
         </DetailCard>
@@ -444,7 +445,7 @@ function DiseaseSection({ variety }: { variety: any }) {
           {variety.susceptibility.map((item: any, i: number) => (
             <View key={i} style={styles.warnItem}>
               <Icon name="alert-circle" size={14} color={Colors.warning} />
-              <Typography variant="bodySmall" color={Colors.gray700} style={{ marginLeft: 8, flex: 1 }}>
+              <Typography variant="bodySmall" color={Colors.gray900} style={{ marginLeft: 8, flex: 1 }}>
                 {typeof item === 'string' ? item : item.name ?? JSON.stringify(item)}
               </Typography>
             </View>
@@ -495,7 +496,7 @@ function StatItem({ icon, value, unit }: { icon: string; value: string; unit?: s
   return (
     <View style={styles.statItem}>
       <Icon name={icon} size={12} color={Colors.primary} />
-      <Typography variant="bodySmall" color={Colors.gray800} style={styles.statValue}>
+      <Typography variant="bodySmall" color={Colors.gray900} style={styles.statValue}>
         {value}
       </Typography>
       {unit && (
@@ -522,21 +523,21 @@ function DetailCard({
   warn?: boolean;
   children: React.ReactNode;
 }) {
+  const stripColor = warn ? Colors.warning : accent ? Colors.primary : color;
   return (
-    <View
-      style={[
-        styles.detailCard,
-        accent && { borderLeftWidth: 3, borderLeftColor: Colors.primary },
-        warn && { borderLeftWidth: 3, borderLeftColor: Colors.warning },
-      ]}
-    >
-      <View style={styles.cardHead}>
-        <Icon name={icon} size={16} color={warn ? Colors.warning : color} />
-        <Typography variant="cardTitle" style={styles.cardTitle}>
-          {title}
-        </Typography>
+    <View style={styles.detailCardShadow}>
+      <View style={[styles.detailCardInner, { flexDirection: 'row' }]}>
+        <View style={[styles.cardStrip, { backgroundColor: stripColor }]} />
+        <View style={{ flex: 1 }}>
+          <View style={styles.cardHead}>
+            <Icon name={icon} size={16} color={stripColor} />
+            <Typography variant="cardTitle" style={styles.cardTitle}>
+              {title}
+            </Typography>
+          </View>
+          <View style={styles.cardBody}>{children}</View>
+        </View>
       </View>
-      <View style={styles.cardBody}>{children}</View>
     </View>
   );
 }
@@ -549,7 +550,7 @@ function SpecGrid({ items }: { items: any[] }) {
           <Typography variant="metaText" color={Colors.gray400} style={styles.specLabel}>
             {item.label}
           </Typography>
-          <Typography variant="bodySmall" color={Colors.gray800} style={styles.specValue}>
+          <Typography variant="bodySmall" color={Colors.gray900} style={styles.specValue}>
             {item.value}
           </Typography>
         </View>
@@ -590,7 +591,7 @@ function capitalizeWords(s: string): string {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
   },
   centered: {
     alignItems: 'center',
@@ -607,8 +608,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingHorizontal: 20,
     paddingVertical: 8,
-    backgroundColor: Colors.gray100,
-    borderRadius: 8,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.full,
   },
 
   // Hero
@@ -678,6 +679,7 @@ const styles = StyleSheet.create({
   sciName: {
     marginTop: 2,
     fontStyle: 'italic',
+    color: Colors.gray500,
   },
   originRow: {
     flexDirection: 'row',
@@ -700,10 +702,9 @@ const styles = StyleSheet.create({
     gap: 5,
     height: 34,
     paddingHorizontal: 12,
-    backgroundColor: Colors.gray50,
-    borderRadius: 17,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.full,
+    ...Shadows.subtle,
   },
   statValue: {
     fontWeight: '700',
@@ -715,7 +716,7 @@ const styles = StyleSheet.create({
     gap: 4,
     borderBottomWidth: 1,
     borderBottomColor: Colors.gray200,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
   },
   tab: {
     paddingHorizontal: 14,
@@ -732,14 +733,17 @@ const styles = StyleSheet.create({
   },
 
   // Detail Card
-  detailCard: {
-    backgroundColor: Colors.gray50,
-    borderRadius: 14,
+  detailCardShadow: {
+    borderRadius: Radius['2xl'],
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    ...Shadows.medium,
+  },
+  detailCardInner: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
     overflow: 'hidden',
   },
+  cardStrip: { width: 3, alignSelf: 'stretch' },
   cardHead: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -756,6 +760,7 @@ const styles = StyleSheet.create({
   },
   cardText: {
     lineHeight: 22,
+    color: Colors.gray900,
   },
   cardTextHi: {
     marginTop: 8,
@@ -763,16 +768,17 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.gray200,
     lineHeight: 22,
+    color: Colors.gray500,
   },
 
   // Gallery
   galleryThumb: {
     width: 80,
     height: 80,
-    borderRadius: 10,
+    borderRadius: Radius.lg,
     marginRight: 8,
     borderWidth: 2,
-    borderColor: Colors.gray100,
+    borderColor: Colors.gray200,
   },
 
   // Spec Grid
@@ -794,6 +800,7 @@ const styles = StyleSheet.create({
   },
   specValue: {
     fontWeight: '600',
+    color: Colors.gray900,
   },
 
   // Meter
@@ -830,11 +837,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
-    backgroundColor: Colors.white,
-    borderRadius: 10,
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: Radius.lg,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
   },
 
   // Chips
@@ -848,10 +853,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: Radius.full,
   },
 
   // Related

@@ -228,29 +228,31 @@ export default function BlockFormScreen(): React.JSX.Element {
                   const selected = selectedBlockVarieties.find((bv) => bv.variety_id === v.id);
                   const isSelected = !!selected;
                   return (
-                    <View key={v.id} style={[styles.varietyCard, isSelected && styles.varietyCardSelected]}>
-                      <TouchableOpacity
-                        style={styles.varietyRow}
-                        onPress={() => toggleVariety(v.id)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
-                          {isSelected && <Icon name="check" size={14} color={Colors.white} />}
-                        </View>
-                        <Typography variant="body" style={styles.checkboxLabel}>{v.name_en}</Typography>
-                      </TouchableOpacity>
+                    <View key={v.id} style={styles.varietyCardShadow}>
+                      <View style={[styles.varietyCardInner, isSelected && styles.varietyCardSelected]}>
+                        <TouchableOpacity
+                          style={styles.varietyRow}
+                          onPress={() => toggleVariety(v.id)}
+                          activeOpacity={0.7}
+                        >
+                          <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
+                            {isSelected && <Icon name="check" size={14} color={Colors.white} />}
+                          </View>
+                          <Typography variant="body" style={styles.checkboxLabel}>{v.name_en}</Typography>
+                        </TouchableOpacity>
 
-                      {isSelected && (
-                        <View style={styles.rootstockDropdownWrap}>
-                          <FormDropdown
-                            label="Rootstock / रूटस्टॉक *"
-                            value={selected.rootstock_id ? String(selected.rootstock_id) : ''}
-                            options={rootstockOptions}
-                            onChange={(val) => setVarietyRootstock(v.id, val ? parseInt(val, 10) : undefined)}
-                            placeholder="Select rootstock"
-                          />
-                        </View>
-                      )}
+                        {isSelected && (
+                          <View style={styles.rootstockDropdownWrap}>
+                            <FormDropdown
+                              label="Rootstock / रूटस्टॉक *"
+                              value={selected.rootstock_id ? String(selected.rootstock_id) : ''}
+                              options={rootstockOptions}
+                              onChange={(val) => setVarietyRootstock(v.id, val ? parseInt(val, 10) : undefined)}
+                              placeholder="Select rootstock"
+                            />
+                          </View>
+                        )}
+                      </View>
                     </View>
                   );
                 })}
@@ -380,7 +382,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.gray200,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
@@ -392,11 +394,17 @@ const styles = StyleSheet.create({
   rowInputs: { flexDirection: 'row', gap: 12 },
   flex1: { flex: 1 },
   checkboxList: { gap: 8 },
-  varietyCard: {
+  varietyCardShadow: {
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  varietyCardInner: {
     backgroundColor: Colors.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   varietyCardSelected: {
@@ -435,12 +443,15 @@ const styles = StyleSheet.create({
   emptyText: { marginTop: 4 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingVertical: 2 },
   chip: {
-    backgroundColor: Colors.gray100,
-    borderRadius: 8,
+    backgroundColor: Colors.white,
+    borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
     marginRight: 6,
   },
   chipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
@@ -451,12 +462,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: Colors.white,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
   },
   toggleLabel: { color: Colors.gray800, fontSize: 14 },
   toggleBox: {
@@ -472,11 +486,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 80,
-    backgroundColor: Colors.gray50,
+    backgroundColor: Colors.background,
   },
   saveButton: {
     backgroundColor: Colors.primary,
-    borderRadius: 14,
+    borderRadius: 999,
     paddingVertical: 18,
     alignItems: 'center',
     shadowColor: Colors.primary,

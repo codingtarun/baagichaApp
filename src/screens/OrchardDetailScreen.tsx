@@ -21,6 +21,7 @@ import type { RouteProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { Colors } from '../theme/colors';
+import { Shadows, Radius } from '../theme/style';
 import { Typography, PrimaryHeading } from '../typography';
 import ScreenLayout from '../components/ScreenLayout';
 import { useOrchardDetail } from '../hooks/useOrchardDetail';
@@ -373,7 +374,7 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     backgroundColor: Colors.primary,
-    borderRadius: 12,
+    borderRadius: Radius.full,
     paddingVertical: 12,
     paddingHorizontal: 24,
   },
@@ -383,15 +384,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   headerCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
     padding: 16,
     marginBottom: 16,
-    shadowColor: Colors.gray400,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    ...Shadows.medium,
   },
   headerRow: {
     flexDirection: 'row',
@@ -413,7 +410,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.surfaceSubtle,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -424,8 +421,8 @@ const styles = StyleSheet.create({
   },
   statBadge: {
     flex: 1,
-    backgroundColor: Colors.gray50,
-    borderRadius: 10,
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: Radius.md,
     paddingVertical: 10,
     alignItems: 'center',
     gap: 2,
@@ -433,7 +430,7 @@ const styles = StyleSheet.create({
   statBadgeValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: Colors.gray800,
+    color: Colors.gray900,
   },
   statBadgeLabel: {
     fontSize: 11,
@@ -454,14 +451,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: Colors.gray800,
+    color: Colors.gray900,
   },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     backgroundColor: Colors.primary + '10',
-    borderRadius: 8,
+    borderRadius: Radius.full,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
@@ -475,42 +472,35 @@ const styles = StyleSheet.create({
   },
   actionChip: {
     flex: 1,
-    backgroundColor: Colors.white,
-    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
     paddingVertical: 14,
     paddingHorizontal: 8,
     alignItems: 'center',
     gap: 4,
-    shadowColor: Colors.gray400,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
+    ...Shadows.medium,
   },
   actionChipLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: Colors.gray700,
+    color: Colors.gray900,
   },
   actionChipLabelHi: {
     fontSize: 10,
   },
   emptyBox: {
-    backgroundColor: Colors.gray100,
-    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
     padding: 16,
     alignItems: 'center',
+    ...Shadows.medium,
   },
   itemCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
     padding: 14,
     marginBottom: 8,
-    shadowColor: Colors.gray400,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    ...Shadows.medium,
   },
   itemRow: {
     flexDirection: 'row',
@@ -523,7 +513,7 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 15,
     fontWeight: '600',
-    color: Colors.gray800,
+    color: Colors.gray900,
     marginBottom: 2,
   },
   itemNameLink: {

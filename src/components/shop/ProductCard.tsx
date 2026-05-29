@@ -33,7 +33,8 @@ export default function ProductCard({ product, onPress, width = 160 }: ProductCa
 
   return (
     <PressableScale scale={0.97} onPress={() => onPress(product.slug)}>
-      <View style={[styles.card, { width }]}>
+      <View style={[styles.cardShadow, { width }]}>
+        <View style={styles.cardInner}>
         {/* Image */}
         <View style={styles.imageContainer}>
           <SmartImage
@@ -81,29 +82,31 @@ export default function ProductCard({ product, onPress, width = 160 }: ProductCa
             </View>
           ) : null}
         </View>
+        </View>
       </View>
     </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
-    elevation: 2,
+  cardShadow: {
+    borderRadius: 20,
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+  },
+  cardInner: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    overflow: 'hidden',
   },
   imageContainer: {
     position: 'relative',
     width: '100%',
     aspectRatio: 1,
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.surfaceSubtle,
   },
   image: {
     width: '100%',

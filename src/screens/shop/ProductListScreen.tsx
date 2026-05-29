@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   },
   sortButton: {
     padding: 8,
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.surfaceSubtle,
     borderRadius: 12,
   },
   sortDropdown: {

@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.gray200,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
     flexDirection: 'row',
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.danger,
   },
   triggerDisabled: {
-    backgroundColor: Colors.gray100,
+    backgroundColor: Colors.surfaceSubtle,
     opacity: 0.7,
   },
   triggerText: {
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
+    borderRadius: 20,
     paddingVertical: 12,
     shadowColor: Colors.gray900,
     shadowOffset: { width: 0, height: 4 },

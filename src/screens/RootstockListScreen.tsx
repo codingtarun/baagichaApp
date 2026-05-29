@@ -159,55 +159,57 @@ function RootstockCard({
   const vc = item.vigour_color;
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.7}
-      style={[styles.card, { borderColor: `${vc}30` }]}
-    >
-      {/* Hero area */}
-      <View style={[styles.cardHero, { backgroundColor: `${vc}12` }]}>
-        {item.hero_image ? (
-          <Image source={{ uri: item.hero_image }} style={styles.cardHeroImg} />
-        ) : (
-          <Icon name="tree" size={28} color={vc} />
-        )}
-        {/* Vigour badge */}
-        <View style={[styles.vigourBadge, { backgroundColor: `${vc}18`, borderColor: `${vc}40` }]}>
-          <View style={[styles.vigourDot, { backgroundColor: vc }]} />
-          <Typography variant="overline" style={[styles.vigourBadgeText, { color: vc }]}>
-            {item.vigour_label}
-          </Typography>
+    <View style={[styles.cardShadow, { borderColor: `${vc}30` }]}>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.7}
+        style={styles.cardInner}
+      >
+        {/* Hero area */}
+        <View style={[styles.cardHero, { backgroundColor: `${vc}12` }]}>
+          {item.hero_image ? (
+            <Image source={{ uri: item.hero_image }} style={styles.cardHeroImg} />
+          ) : (
+            <Icon name="tree" size={28} color={vc} />
+          )}
+          {/* Vigour badge */}
+          <View style={[styles.vigourBadge, { backgroundColor: `${vc}18`, borderColor: `${vc}40` }]}>
+            <View style={[styles.vigourDot, { backgroundColor: vc }]} />
+            <Typography variant="overline" style={[styles.vigourBadgeText, { color: vc }]}>
+              {item.vigour_label}
+            </Typography>
+          </View>
+          {item.hp_recommended && (
+            <View style={[styles.hpBadge, { backgroundColor: Colors.primary }]}>
+              <Typography variant="overline" color={Colors.white} style={{ fontSize: 7 }}>
+                HP
+              </Typography>
+            </View>
+          )}
         </View>
-        {item.hp_recommended && (
-          <View style={[styles.hpBadge, { backgroundColor: Colors.primary }]}>
-            <Typography variant="overline" color={Colors.white} style={{ fontSize: 7 }}>
-              HP
-            </Typography>
-          </View>
-        )}
-      </View>
 
-      {/* Body */}
-      <View style={styles.cardBody}>
-        <Typography variant="cardTitle" lines={1} style={styles.name}>
-          {item.name}
-        </Typography>
-        {item.name_hi ? (
-          <Typography variant="hindiMeta" color={Colors.gray400} lines={1}>
-            {item.name_hi}
+        {/* Body */}
+        <View style={styles.cardBody}>
+          <Typography variant="cardTitle" lines={1} style={styles.name}>
+            {item.name}
           </Typography>
-        ) : null}
-        {/* Rating */}
-        {item.avg_rating !== null && (
-          <View style={styles.ratingRow}>
-            <Icon name="star" size={10} color="#f59e0b" />
-            <Typography variant="metaText" color={Colors.gray500}>
-              {item.avg_rating.toFixed(1)} ({item.rating_count})
+          {item.name_hi ? (
+            <Typography variant="hindiMeta" color={Colors.gray400} lines={1}>
+              {item.name_hi}
             </Typography>
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
+          ) : null}
+          {/* Rating */}
+          {item.avg_rating !== null && (
+            <View style={styles.ratingRow}>
+              <Icon name="star" size={10} color="#f59e0b" />
+              <Typography variant="metaText" color={Colors.gray500}>
+                {item.avg_rating.toFixed(1)} ({item.rating_count})
+              </Typography>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -216,7 +218,7 @@ function RootstockCard({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
   },
 
   // Page header
@@ -254,10 +256,9 @@ const styles = StyleSheet.create({
 
   // Filter pills
   filterScroller: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
     paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray200,
+    borderBottomWidth: 0,
   },
   filterPillsRow: {
     paddingHorizontal: 12,
@@ -276,12 +277,20 @@ const styles = StyleSheet.create({
   },
 
   // Card
-  card: {
+  cardShadow: {
     flex: 1,
-    backgroundColor: Colors.gray50,
-    borderRadius: 16,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardInner: {
+    flex: 1,
+    backgroundColor: Colors.white,
+    borderRadius: 20,
     padding: 10,
-    borderWidth: 1,
     overflow: 'hidden',
   },
   cardHero: {
@@ -356,8 +365,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingHorizontal: 20,
     paddingVertical: 8,
-    backgroundColor: Colors.gray100,
-    borderRadius: 8,
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: 999,
   },
   loadMore: {
     paddingVertical: 16,

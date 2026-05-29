@@ -167,45 +167,47 @@ function DiseaseCard({
   };
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.7}
-      style={[styles.card, { borderColor: `${sev.color}30` }]}
-    >
-      {/* Hero area with icon */}
-      <View style={[styles.cardHero, { backgroundColor: `${sev.color}12` }]}>
-        <Icon name={sevIconMap[item.severity] ?? 'information'} size={28} color={sev.color} />
-        <View style={[styles.sevBadge, { backgroundColor: `${sev.color}18`, borderColor: `${sev.color}40` }]}>
-          <Icon name={sevIconMap[item.severity] ?? 'information'} size={8} color={sev.color} />
-          <Typography variant="overline" style={[styles.sevBadgeText, { color: sev.color }]}>
-            {sev.label}
+    <View style={[styles.cardShadow, { borderColor: `${sev.color}30` }]}>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.7}
+        style={styles.cardInner}
+      >
+        {/* Hero area with icon */}
+        <View style={[styles.cardHero, { backgroundColor: `${sev.color}12` }]}>
+          <Icon name={sevIconMap[item.severity] ?? 'information'} size={28} color={sev.color} />
+          <View style={[styles.sevBadge, { backgroundColor: `${sev.color}18`, borderColor: `${sev.color}40` }]}>
+            <Icon name={sevIconMap[item.severity] ?? 'information'} size={8} color={sev.color} />
+            <Typography variant="overline" style={[styles.sevBadgeText, { color: sev.color }]}>
+              {sev.label}
+            </Typography>
+          </View>
+        </View>
+
+        {/* Body */}
+        <View style={styles.cardBody}>
+          <Typography variant="cardTitle" lines={1} style={styles.name}>
+            {item.name_en}
+          </Typography>
+          {item.name_hi ? (
+            <Typography variant="hindiMeta" color={Colors.gray400} lines={1}>
+              {item.name_hi}
+            </Typography>
+          ) : null}
+          <Typography variant="bodySmall" color={Colors.gray500} lines={2} style={styles.desc}>
+            {typeof item.description === 'string' ? item.description : JSON.stringify(item.description)}
           </Typography>
         </View>
-      </View>
 
-      {/* Body */}
-      <View style={styles.cardBody}>
-        <Typography variant="cardTitle" lines={1} style={styles.name}>
-          {item.name_en}
-        </Typography>
-        {item.name_hi ? (
-          <Typography variant="hindiMeta" color={Colors.gray400} lines={1}>
-            {item.name_hi}
+        {/* Category chip */}
+        <View style={[styles.catChip, { backgroundColor: `${Colors.primary}10` }]}>
+          <Icon name="tag" size={8} color={Colors.primary} />
+          <Typography variant="overline" style={styles.catChipText}>
+            {cat.label}
           </Typography>
-        ) : null}
-        <Typography variant="bodySmall" color={Colors.gray500} lines={2} style={styles.desc}>
-          {typeof item.description === 'string' ? item.description : JSON.stringify(item.description)}
-        </Typography>
-      </View>
-
-      {/* Category chip */}
-      <View style={[styles.catChip, { backgroundColor: `${Colors.primary}10` }]}>
-        <Icon name="tag" size={8} color={Colors.primary} />
-        <Typography variant="overline" style={styles.catChipText}>
-          {cat.label}
-        </Typography>
-      </View>
-    </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -214,7 +216,7 @@ function DiseaseCard({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
   },
 
   // Page header
@@ -254,8 +256,7 @@ const styles = StyleSheet.create({
   filterScroller: {
     backgroundColor: Colors.white,
     paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray200,
+    borderBottomWidth: 0,
   },
   filterPillsRow: {
     paddingHorizontal: 12,
@@ -274,12 +275,20 @@ const styles = StyleSheet.create({
   },
 
   // Card
-  card: {
+  cardShadow: {
     flex: 1,
-    backgroundColor: Colors.gray50,
-    borderRadius: 16,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardInner: {
+    flex: 1,
+    backgroundColor: Colors.white,
+    borderRadius: 20,
     padding: 10,
-    borderWidth: 1,
     overflow: 'hidden',
   },
   cardHero: {
@@ -348,8 +357,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingHorizontal: 20,
     paddingVertical: 8,
-    backgroundColor: Colors.gray100,
-    borderRadius: 8,
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: 999,
   },
   loadMore: {
     paddingVertical: 16,

@@ -61,15 +61,15 @@ export default function VarietyCard({
   style,
 }: VarietyCardProps): React.JSX.Element {
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.7}
-      style={[
-        styles.card,
-        compareMode && isSelected && styles.cardSelected,
-        style,
-      ]}
-    >
+    <View style={[styles.cardShadow, style]}>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.7}
+        style={[
+          styles.cardInner,
+          compareMode && isSelected && styles.cardSelected,
+        ]}
+      >
       {/* Orchard button (optional) */}
       {onToggleOrchard && (
         <TouchableOpacity
@@ -127,19 +127,27 @@ export default function VarietyCard({
         </Typography>
       </View>
     </TouchableOpacity>
+    </View>
   );
 }
 
 // ── Styles ──
 
 const styles = StyleSheet.create({
-  card: {
+  cardShadow: {
     flex: 1,
-    backgroundColor: Colors.gray50,
-    borderRadius: 16,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardInner: {
+    flex: 1,
+    backgroundColor: Colors.white,
+    borderRadius: 20,
     padding: 10,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -158,8 +166,6 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.gray200,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
@@ -198,7 +204,7 @@ const styles = StyleSheet.create({
   thumb: {
     width: '100%',
     height: 90,
-    borderRadius: 10,
+    borderRadius: 14,
     marginBottom: 6,
   },
   thumbPlaceholder: {

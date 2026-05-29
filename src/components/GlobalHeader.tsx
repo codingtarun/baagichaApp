@@ -210,7 +210,7 @@ export default function GlobalHeader({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.bgPrimary,
+    backgroundColor: Colors.primary,
     paddingHorizontal: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
