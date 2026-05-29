@@ -8,7 +8,7 @@
  * with animated press, cleaner feed, modern list styling.
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -34,6 +34,8 @@ import { showToast } from '../store/toastStore';
 import type { HomeNavigationProp } from '../navigation/types';
 import type { PriorityCardData } from '../navigation/stacks/HomeStack';
 import ShareSheet from '../components/ShareSheet';
+import { getSuggestedUsers, type SuggestedUser } from '../services/userApi';
+import { getFeed, createPost, togglePostLike, sharePost, type FeedPost } from '../services/postApi';
 
 // ═══════════════════════════════════════════════════════════════
 // MOCK DATA
@@ -91,29 +93,6 @@ const PRIORITY_CARDS: PriorityCardData[] = [
   },
 ];
 
-const FEED_POSTS = [
-  {
-    id: 'p1', user: { name: 'Ramesh Negi', avatar: 'https://i.pravatar.cc/150?u=1', location: 'Kinnaur, HP' },
-    timeAgo: '2h ago', text: 'Just sprayed Copper Oxychloride on all 250 trees before the rain. Preventive sprays during dormancy break are critical! 🍎',
-    image: null as string | null, likes: 34, comments: 8, shares: 3, liked: false,
-  },
-  {
-    id: 'p2', user: { name: 'Sunita Chauhan', avatar: 'https://i.pravatar.cc/150?u=2', location: 'Shimla, HP' },
-    timeAgo: '4h ago', text: 'Getting ₹92/kg for Grade A Scarlet Spur at Shimla Mandi today. What prices are you seeing in your area?',
-    image: 'https://picsum.photos/seed/apple1/400/250', likes: 28, comments: 15, shares: 6, liked: true,
-  },
-  {
-    id: 'p3', user: { name: 'Ajay Thakur', avatar: 'https://i.pravatar.cc/150?u=3', location: 'Kullu, HP' },
-    timeAgo: '6h ago', text: 'Scab outbreak in Kullu valley. Anyone seeing early signs? I noticed olive-green spots on lower leaves.',
-    image: null as string | null, likes: 52, comments: 23, shares: 12, liked: false,
-  },
-  {
-    id: 'p4', user: { name: 'Priya Devi', avatar: 'https://i.pravatar.cc/150?u=4', location: 'Mandi, HP' },
-    timeAgo: '8h ago', text: 'New to integrated pest management this season. Switched from conventional to organic sprays on 2 blocks. Fingers crossed! 🌿',
-    image: 'https://picsum.photos/seed/orchard2/400/250', likes: 41, comments: 19, shares: 4, liked: false,
-  },
-];
-
 const SUGGESTED_FRIENDS = [
   { id: 'sf1', name: 'Vikram S.', avatar: 'https://i.pravatar.cc/150?u=9', location: 'Kullu, HP', mutual: 4 },
   { id: 'sf2', name: 'Anita K.', avatar: 'https://i.pravatar.cc/150?u=10', location: 'Shimla, HP', mutual: 2 },
@@ -139,6 +118,11 @@ const GROUPS_TO_JOIN = [
 // HELPERS
 // ═══════════════════════════════════════════════════════════════
 
+function formatCount(n: number): string {
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
+
 const PRIORITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
 const PRIORITY_PAIR = {
@@ -159,6 +143,21 @@ function sortByPriority(cards: PriorityCardData[]): PriorityCardData[] {
   return [...cards].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
 }
 
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffDay > 0) return `${diffDay}d ago`;
+  if (diffHour > 0) return `${diffHour}h ago`;
+  if (diffMin > 0) return `${diffMin}m ago`;
+  return 'Just now';
+}
+
 // ═══════════════════════════════════════════════════════════════
 // MAIN SCREEN
 // ═══════════════════════════════════════════════════════════════
@@ -166,46 +165,127 @@ function sortByPriority(cards: PriorityCardData[]): PriorityCardData[] {
 export default function HomeScreen(): React.JSX.Element {
   const navigation = useNavigation<HomeNavigationProp>();
   const [refreshing, setRefreshing] = useState(false);
-  const [posts, setPosts] = useState(FEED_POSTS);
+  const [posts, setPosts] = useState<FeedPost[]>([]);
   const [postText, setPostText] = useState('');
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<{ uri: string; type: string; name: string }[]>([]);
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [shareCard, setShareCard] = useState<PriorityCardData | null>(null);
+  const [expertUsers, setExpertUsers] = useState<SuggestedUser[]>([]);
+  const [friendUsers, setFriendUsers] = useState<SuggestedUser[]>([]);
+  const [loadingExperts, setLoadingExperts] = useState(true);
+  const [loadingFriends, setLoadingFriends] = useState(true);
+  const [loadingFeed, setLoadingFeed] = useState(true);
+  const [posting, setPosting] = useState(false);
 
   const sortedCards = sortByPriority(PRIORITY_CARDS);
 
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => { setRefreshing(false); showToast('Refreshed', 'success'); }, 1200);
+  // Fetch feed + experts + suggested friends on mount
+  useEffect(() => {
+    let cancelled = false;
+
+    getFeed(10, 1)
+      .then((feed) => { if (!cancelled) setPosts(feed); })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('[Home] Feed fetch failed:', err.response?.data ?? err.message);
+          setPosts([]);
+        }
+      })
+      .finally(() => { if (!cancelled) setLoadingFeed(false); });
+
+    getSuggestedUsers('experts', 8)
+      .then((users) => { if (!cancelled) setExpertUsers(users); })
+      .catch((err) => { 
+        if (!cancelled) {
+          console.error('[Home] Experts fetch failed:', err.response?.data ?? err.message);
+          setExpertUsers([]);
+        }
+      })
+      .finally(() => { if (!cancelled) setLoadingExperts(false); });
+
+    getSuggestedUsers('friends', 6)
+      .then((users) => { if (!cancelled) setFriendUsers(users); })
+      .catch((err) => { 
+        if (!cancelled) {
+          console.error('[Home] Friends fetch failed:', err.response?.data ?? err.message);
+          setFriendUsers([]);
+        }
+      })
+      .finally(() => { if (!cancelled) setLoadingFriends(false); });
+
+    return () => { cancelled = true; };
   }, []);
 
-  const toggleLike = (postId: string) => {
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    getFeed(10, 1)
+      .then((feed) => { setPosts(feed); showToast('Refreshed', 'success'); })
+      .catch((err) => { console.error('[Home] Refresh failed:', err); showToast('Refresh failed', 'error'); })
+      .finally(() => setRefreshing(false));
+  }, []);
+
+  const toggleLike = async (postId: number) => {
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+    // Optimistic update
     setPosts(prev => prev.map(p =>
-      p.id === postId ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p
+      p.id === postId ? { ...p, is_liked: !p.is_liked, likes_count: p.is_liked ? p.likes_count - 1 : p.likes_count + 1 } : p
     ));
+    try {
+      const result = await togglePostLike(postId);
+      setPosts(prev => prev.map(p =>
+        p.id === postId ? { ...p, is_liked: result.is_liked, likes_count: result.likes_count } : p
+      ));
+    } catch {
+      // Revert
+      setPosts(prev => prev.map(p =>
+        p.id === postId ? { ...p, is_liked: post.is_liked, likes_count: post.likes_count } : p
+      ));
+      showToast('Failed to like post', 'error');
+    }
   };
 
-  const handlePost = () => {
-    if (!postText.trim() && !selectedImage) return;
-    const newPost = {
-      id: `p${Date.now()}`,
-      user: { name: 'You', avatar: 'https://i.pravatar.cc/150?u=me', location: 'Shimla, HP' },
-      timeAgo: 'Just now', text: postText.trim(), image: selectedImage,
-      likes: 0, comments: 0, shares: 0, liked: false,
-    };
-    setPosts([newPost, ...posts]);
-    setPostText(''); setSelectedImage(null);
-    showToast('Post shared!', 'success');
+  const handlePost = async () => {
+    if (!postText.trim() && selectedImages.length === 0) return;
+    setPosting(true);
+    try {
+      const newPost = await createPost({
+        body: postText.trim(),
+        type: 'status',
+        visibility: 'public',
+        images: selectedImages.length > 0 ? selectedImages : undefined,
+      });
+      setPosts(prev => [newPost, ...prev]);
+      setPostText('');
+      setSelectedImages([]);
+      showToast('Post shared!', 'success');
+    } catch (err: any) {
+      console.error('[Home] Post failed:', err.response?.data ?? err.message);
+      showToast('Failed to share post', 'error');
+    } finally {
+      setPosting(false);
+    }
   };
 
   const pickFromGallery = () => {
-    launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 }, (response) => {
-      if (response.assets?.[0]?.uri) setSelectedImage(response.assets[0].uri);
+    const remaining = 3 - selectedImages.length;
+    if (remaining <= 0) { showToast('Max 3 images allowed', 'warning'); return; }
+    launchImageLibrary({ mediaType: 'photo', selectionLimit: remaining }, (response) => {
+      if (response.assets) {
+        const newImages = response.assets
+          .filter(a => a.uri && a.type)
+          .map(a => ({ uri: a.uri!, type: a.type!, name: a.fileName ?? `image_${Date.now()}.jpg` }));
+        setSelectedImages(prev => [...prev, ...newImages].slice(0, 3));
+      }
     });
   };
   const pickFromCamera = () => {
+    if (selectedImages.length >= 3) { showToast('Max 3 images allowed', 'warning'); return; }
     launchCamera({ mediaType: 'photo' }, (response) => {
-      if (response.assets?.[0]?.uri) setSelectedImage(response.assets[0].uri);
+      if (response.assets?.[0]?.uri) {
+        const a = response.assets[0];
+        setSelectedImages(prev => [...prev, { uri: a.uri!, type: a.type ?? 'image/jpeg', name: a.fileName ?? `camera_${Date.now()}.jpg` }]);
+      }
     });
   };
 
@@ -285,13 +365,17 @@ export default function HomeScreen(): React.JSX.Element {
               multiline
             />
           </View>
-          {selectedImage && (
-            <View style={styles.previewWrap}>
-              <Image source={{ uri: selectedImage }} style={styles.previewImage} />
-              <TouchableOpacity style={styles.removePreview} onPress={() => setSelectedImage(null)}>
-                <Icon name="close-circle" size={24} color={Colors.white} />
-              </TouchableOpacity>
-            </View>
+          {selectedImages.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.previewsContainer}>
+              {selectedImages.map((img, idx) => (
+                <View key={`${img.uri}_${idx}`} style={styles.previewWrap}>
+                  <Image source={{ uri: img.uri }} style={styles.previewImage} />
+                  <TouchableOpacity style={styles.removePreview} onPress={() => setSelectedImages(prev => prev.filter((_, i) => i !== idx))}>
+                    <Icon name="close-circle" size={24} color={Colors.white} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
           )}
           {/* ── Quick Templates ── */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.templateChipsContainer}>
@@ -306,16 +390,16 @@ export default function HomeScreen(): React.JSX.Element {
           <View style={styles.inputActions}>
             <InputAction icon="image-outline" label="Gallery" color={Colors.success} onPress={pickFromGallery} />
             <InputAction icon="camera-outline" label="Camera" color={Colors.info} onPress={pickFromCamera} />
-            <InputAction icon="help-circle-outline" label="Question" color={Colors.warning} />
-            <TouchableOpacity
-              style={[styles.postBtn, !postText.trim() && !selectedImage && styles.postBtnDisabled]}
-              onPress={handlePost}
-              activeOpacity={0.8}
-              disabled={!postText.trim() && !selectedImage}
-            >
-              <Typography variant="caption" style={styles.postBtnText}>Post</Typography>
-            </TouchableOpacity>
+            <InputAction icon="help-circle-outline" label="Ask Community" color={Colors.warning} />
           </View>
+          <TouchableOpacity
+            style={[styles.postBtn, (!postText.trim() && selectedImages.length === 0) || posting && styles.postBtnDisabled]}
+            onPress={handlePost}
+            activeOpacity={0.8}
+            disabled={(!postText.trim() && selectedImages.length === 0) || posting}
+          >
+            <Typography variant="caption" style={styles.postBtnText}>{posting ? 'Posting...' : 'Post'}</Typography>
+          </TouchableOpacity>
         </View>
 
         {/* ── Priority Cards ── */}
@@ -341,9 +425,19 @@ export default function HomeScreen(): React.JSX.Element {
             <Typography variant="body" style={styles.sectionTitle}>Activity Feed</Typography>
           </View>
         </View>
-        {posts.map((post) => (
-          <FeedPost key={post.id} post={post} onLike={() => toggleLike(post.id)} />
-        ))}
+        {loadingFeed ? (
+          <Typography variant="captionMuted" style={{ paddingVertical: 24, textAlign: 'center' }}>
+            Loading feed...
+          </Typography>
+        ) : posts.length === 0 ? (
+          <Typography variant="captionMuted" style={{ paddingVertical: 24, textAlign: 'center' }}>
+            No posts yet. Share your first update!
+          </Typography>
+        ) : (
+          posts.map((post) => (
+            <FeedPost key={post.id} post={post} onLike={() => toggleLike(post.id)} />
+          ))
+        )}
 
         {/* ── Suggested Friends ── */}
         <View style={styles.sectionHeaderRow}>
@@ -353,16 +447,33 @@ export default function HomeScreen(): React.JSX.Element {
           </View>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.friendsContainer}>
-          {SUGGESTED_FRIENDS.map((friend) => (
-            <View key={friend.id} style={styles.friendCard}>
-              <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
-              <Typography variant="caption" style={styles.friendName} lines={1}>{friend.name}</Typography>
-              <Typography variant="captionMuted" style={{ fontSize: 10 }}>{friend.mutual} mutual</Typography>
-              <TouchableOpacity style={styles.friendBtn} activeOpacity={0.8}>
-                <Typography variant="caption" style={styles.friendBtnText}>Add</Typography>
+          {loadingFriends ? (
+            <Typography variant="captionMuted" style={{ paddingVertical: 20, width: 200, textAlign: 'center' }}>
+              Loading...
+            </Typography>
+          ) : friendUsers.length === 0 ? (
+            <Typography variant="captionMuted" style={{ paddingVertical: 20, width: 200, textAlign: 'center' }}>
+              No suggestions
+            </Typography>
+          ) : (
+            friendUsers.map((friend) => (
+              <TouchableOpacity
+                key={friend.id}
+                style={styles.friendCard}
+                activeOpacity={0.8}
+                onPress={() => navigation.navigate('UserProfile', { userId: String(friend.id) })}
+              >
+                <Image source={{ uri: friend.avatar ?? `https://i.pravatar.cc/150?u=${friend.id}` }} style={styles.friendAvatar} />
+                <Typography variant="caption" style={styles.friendName} lines={1}>{friend.name}</Typography>
+                <Typography variant="captionMuted" style={{ fontSize: 10 }}>
+                  {friend.location?.district ?? 'Farmer'}
+                </Typography>
+                <TouchableOpacity style={styles.friendBtn} activeOpacity={0.8}>
+                  <Typography variant="caption" style={styles.friendBtnText}>Add</Typography>
+                </TouchableOpacity>
               </TouchableOpacity>
-            </View>
-          ))}
+            ))
+          )}
         </ScrollView>
 
         {/* ── People to Follow ── */}
@@ -373,13 +484,34 @@ export default function HomeScreen(): React.JSX.Element {
           </View>
         </View>
         <View style={styles.listCard}>
-          {PEOPLE_TO_FOLLOW.map((person, idx) => (
-            <ListRow key={person.id} avatar={person.avatar} name={person.name} subtitle={`${person.role} · ${person.followers}`} isLast={idx === PEOPLE_TO_FOLLOW.length - 1}>
-              <TouchableOpacity style={styles.followBtn} activeOpacity={0.8}>
-                <Typography variant="caption" style={styles.followBtnText}>Follow</Typography>
+          {loadingExperts ? (
+            <Typography variant="captionMuted" style={{ paddingVertical: 20, textAlign: 'center' }}>
+              Loading...
+            </Typography>
+          ) : expertUsers.length === 0 ? (
+            <Typography variant="captionMuted" style={{ paddingVertical: 20, textAlign: 'center' }}>
+              No suggestions right now
+            </Typography>
+          ) : (
+            expertUsers.map((person, idx) => (
+              <TouchableOpacity
+                key={person.id}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('UserProfile', { userId: String(person.id) })}
+              >
+                <ListRow
+                  avatar={person.avatar ?? 'https://i.pravatar.cc/150?u=' + person.id}
+                  name={person.name}
+                  subtitle={`${person.title ?? 'Expert'} · ${formatCount(person.followers_count)} followers`}
+                  isLast={idx === expertUsers.length - 1}
+                >
+                  <TouchableOpacity style={styles.followBtn} activeOpacity={0.8}>
+                    <Typography variant="caption" style={styles.followBtnText}>Follow</Typography>
+                  </TouchableOpacity>
+                </ListRow>
               </TouchableOpacity>
-            </ListRow>
-          ))}
+            ))
+          )}
         </View>
 
         {/* ── Groups to Join ── */}
@@ -539,50 +671,69 @@ function InputAction({ icon, label, color, onPress }: { icon: string; label: str
   );
 }
 
-function FeedPost({ post, onLike }: { post: typeof FEED_POSTS[0]; onLike: () => void }) {
+function FeedPost({ post, onLike }: { post: FeedPost; onLike: () => void }) {
   const navigation = useNavigation<HomeNavigationProp>();
   const [shareVisible, setShareVisible] = useState(false);
+  const [sharesCount, setSharesCount] = useState(post.shares_count);
 
   const navigateToDetail = () => {
-    navigation.navigate('FeedDetail', { postId: post.id });
+    navigation.navigate('PostDetail', { postId: String(post.id) });
   };
 
   const navigateToUser = () => {
-    navigation.navigate('UserProfile', { userId: post.user.name });
+    navigation.navigate('UserProfile', { userId: String(post.user.id) });
   };
+
+  const handleShare = async () => {
+    setShareVisible(true);
+    try {
+      const result = await sharePost(post.id);
+      setSharesCount(result.shares_count);
+    } catch {
+      // Silently fail — user still gets the share sheet
+    }
+  };
+
+  const timeAgo = formatTimeAgo(post.created_at);
 
   return (
     <TouchableOpacity onPress={navigateToDetail} activeOpacity={0.97}>
       <View style={styles.feedCard}>
         <View style={styles.feedHeader}>
           <TouchableOpacity onPress={navigateToUser} activeOpacity={0.7}>
-            <Image source={{ uri: post.user.avatar }} style={styles.feedAvatar} />
+            <Image source={{ uri: post.user.avatar ?? `https://i.pravatar.cc/150?u=${post.user.id}` }} style={styles.feedAvatar} />
           </TouchableOpacity>
           <TouchableOpacity onPress={navigateToUser} activeOpacity={0.7} style={{ flex: 1 }}>
             <View style={styles.feedHeaderText}>
               <Typography variant="body" style={styles.feedAuthor}>{post.user.name}</Typography>
-              <Typography variant="captionMuted">{post.user.location} · {post.timeAgo}</Typography>
+              <Typography variant="captionMuted">{timeAgo}</Typography>
             </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.feedMore} activeOpacity={0.7}>
             <Icon name="dots-horizontal" size={18} color={Colors.gray500} />
           </TouchableOpacity>
         </View>
-        <Typography variant="body" style={styles.feedText}>{post.text}</Typography>
-        {post.image && <Image source={{ uri: post.image }} style={styles.feedImage} resizeMode="cover" />}
+        <Typography variant="body" style={styles.feedText}>{post.body}</Typography>
+        {post.images.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Space[2], marginTop: Space[3] }}>
+            {post.images.map(img => (
+              <Image key={img.id} source={{ uri: img.medium }} style={styles.feedImage} resizeMode="cover" />
+            ))}
+          </ScrollView>
+        )}
         <View style={styles.feedStats}>
-          <Typography variant="captionMuted">{post.likes} likes · {post.comments} comments</Typography>
+          <Typography variant="captionMuted">{post.likes_count} likes · {post.comments_count} comments · {sharesCount} shares</Typography>
         </View>
         <View style={styles.feedActions}>
           <TouchableOpacity style={styles.feedActionBtn} onPress={onLike} activeOpacity={0.7}>
-            <Icon name={post.liked ? 'thumb-up' : 'thumb-up-outline'} size={20} color={post.liked ? Colors.primary : Colors.gray500} />
-            <Typography variant="caption" style={[styles.feedActionText, post.liked && { color: Colors.primary }]}>Like</Typography>
+            <Icon name={post.is_liked ? 'thumb-up' : 'thumb-up-outline'} size={20} color={post.is_liked ? Colors.primary : Colors.gray500} />
+            <Typography variant="caption" style={[styles.feedActionText, post.is_liked && { color: Colors.primary }]}>Like</Typography>
           </TouchableOpacity>
           <TouchableOpacity style={styles.feedActionBtn} onPress={navigateToDetail} activeOpacity={0.7}>
             <Icon name="comment-outline" size={20} color={Colors.gray500} />
             <Typography variant="caption" style={styles.feedActionText}>Comment</Typography>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.feedActionBtn} onPress={() => setShareVisible(true)} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.feedActionBtn} onPress={handleShare} activeOpacity={0.7}>
             <Icon name="share-outline" size={20} color={Colors.gray500} />
             <Typography variant="caption" style={styles.feedActionText}>Share</Typography>
           </TouchableOpacity>
@@ -592,7 +743,7 @@ function FeedPost({ post, onLike }: { post: typeof FEED_POSTS[0]; onLike: () => 
         visible={shareVisible}
         onClose={() => setShareVisible(false)}
         title={post.user.name + "'s Post"}
-        message={post.text}
+        message={post.body}
         url={`https://baagvaani.com/post/${post.id}`}
       />
     </TouchableOpacity>
@@ -710,13 +861,14 @@ const styles = StyleSheet.create({
     flex: 1, minHeight: 40, maxHeight: 100,
     fontSize: 15, color: Colors.gray900, textAlignVertical: 'top', paddingTop: 8,
   },
-  previewWrap: { marginTop: Space[3], position: 'relative', alignSelf: 'flex-start' },
+  previewsContainer: { marginTop: Space[3], gap: Space[2] },
+  previewWrap: { position: 'relative', alignSelf: 'flex-start', marginRight: Space[2] },
   previewImage: { width: 120, height: 120, borderRadius: Radius.lg },
   removePreview: { position: 'absolute', top: -8, right: -8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: Radius.full },
   inputActions: { flexDirection: 'row', alignItems: 'center', marginTop: Space[3], paddingTop: Space[3], borderTopWidth: 1, borderTopColor: Colors.gray200 },
   inputActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Space[2], paddingVertical: 4 },
   inputActionText: { fontSize: 12, color: Colors.gray500, fontWeight: '500' },
-  postBtn: { marginLeft: 'auto', backgroundColor: Colors.primary, paddingHorizontal: Space[5], paddingVertical: 8, borderRadius: Radius.full },
+  postBtn: { backgroundColor: Colors.primary, paddingVertical: 10, borderRadius: Radius.full, alignItems: 'center', marginTop: Space[3] },
   postBtnDisabled: { opacity: 0.4 },
   postBtnText: { color: Colors.white, fontWeight: '800', fontSize: 13 },
 
@@ -777,7 +929,7 @@ const styles = StyleSheet.create({
   feedAuthor: { fontWeight: '700', fontSize: 14, color: Colors.gray900 },
   feedMore: { padding: 4 },
   feedText: { fontSize: 14, color: Colors.gray500, marginTop: Space[3], lineHeight: 20 },
-  feedImage: { width: '100%', height: 200, borderRadius: Radius.lg, marginTop: Space[3] },
+  feedImage: { width: 260, height: 180, borderRadius: Radius.lg },
   feedStats: { marginTop: Space[3], paddingBottom: Space[3], borderBottomWidth: 1, borderBottomColor: Colors.gray200 },
   feedActions: { flexDirection: 'row', marginTop: Space[2] },
   feedActionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 6 },

@@ -19,6 +19,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '../../screens/HomeScreen';
 import CardDetailScreen from '../../screens/CardDetailScreen';
 import FeedDetailScreen from '../../screens/FeedDetailScreen';
+import PostDetailScreen from '../../screens/PostDetailScreen';
 import UserProfileScreen from '../../screens/UserProfileScreen';
 
 export type PriorityCardData = {
@@ -38,6 +39,7 @@ export type HomeStackParamList = {
   Home: undefined;
   CardDetail: { card: PriorityCardData };
   FeedDetail: { postId: string };
+  PostDetail: { postId: string };
   UserProfile: { userId: string };
 };
 
@@ -49,6 +51,7 @@ export default function HomeStack(): React.JSX.Element {
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="CardDetail" component={CardDetailScreen} />
       <Stack.Screen name="FeedDetail" component={FeedDetailScreen} />
+      <Stack.Screen name="PostDetail" component={PostDetailScreen} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} />
     </Stack.Navigator>
   );

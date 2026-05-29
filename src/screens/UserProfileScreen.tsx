@@ -1,23 +1,23 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * BAAGICHA — USER PROFILE SCREEN
+ * BAAGICHA — USER PROFILE SCREEN (Live Data)
  * ═══════════════════════════════════════════════════════════════
  *
  * Public user profile showing:
  *   • Profile header (avatar, name, location, stats)
  *   • Action buttons (Connect, Follow, Ask Question)
  *   • Orchard details
- *   • User's posts / status updates
- *   • Community answers given
+ *   • Expert consultancy charges (if user is_expert)
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -29,159 +29,67 @@ import type { HomeNavigationProp } from '../navigation/types';
 import type { RouteProp } from '@react-navigation/native';
 import type { HomeStackParamList } from '../navigation/stacks/HomeStack';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { getUserProfile, type UserProfile } from '../services/userApi';
 
-// ═══════════════════════════════════════════════════════════════
-// MOCK DATA
-// ═══════════════════════════════════════════════════════════════
-
-const DEMO_USER = {
-  id: 'u1',
-  name: 'Ramesh Negi',
-  nameHi: 'रमेश नेगी',
-  avatar: 'https://i.pravatar.cc/150?u=1',
-  location: 'Kinnaur, HP',
-  altitude: '2,800m',
-  bio: 'Apple farmer since 1995. Growing Royal Delicious & Golden Delicious on 4 blocks. Always learning, always sharing. 🍎',
-  followers: 342,
-  following: 128,
-  posts: 24,
-  isConnected: false,
-  isFollowing: false,
-};
-
-const DEMO_ORCHARDS = [
-  {
-    id: 'o1',
-    name: 'Block A — Royal Delicious',
-    area: '2.5 bigha',
-    trees: 120,
-    variety: 'Royal Delicious',
-    rootstock: 'M9',
-    year: 2010,
-    stage: 'Fruit Development',
-  },
-  {
-    id: 'o2',
-    name: 'Block B — Golden Delicious',
-    area: '1.8 bigha',
-    trees: 85,
-    variety: 'Golden Delicious',
-    rootstock: 'MM106',
-    year: 2012,
-    stage: 'Fruit Development',
-  },
-  {
-    id: 'o3',
-    name: 'Block C — Scarlet Spur',
-    area: '1.2 bigha',
-    trees: 60,
-    variety: 'Scarlet Spur',
-    rootstock: 'M9',
-    year: 2015,
-    stage: 'Fruit Development',
-  },
-];
-
-const DEMO_POSTS = [
-  {
-    id: 'p1',
-    text: 'Just sprayed Copper Oxychloride on all 250 trees before the rain. Preventive sprays during dormancy break are critical! 🍎',
-    image: 'https://picsum.photos/seed/orchard2/400/250',
-    timeAgo: '2h ago',
-    likes: 34,
-    comments: 8,
-  },
-  {
-    id: 'p2',
-    text: 'Getting ₹92/kg for Grade A Scarlet Spur at Shimla Mandi today. What prices are you seeing in your area?',
-    image: null,
-    timeAgo: '3d ago',
-    likes: 28,
-    comments: 15,
-  },
-  {
-    id: 'p3',
-    text: 'Scab outbreak in Kullu valley. Anyone seeing early signs? I noticed olive-green spots on lower leaves.',
-    image: null,
-    timeAgo: '1w ago',
-    likes: 52,
-    comments: 23,
-  },
-  {
-    id: 'p4',
-    text: 'Switched to organic sprays on 2 blocks this season. Fingers crossed! 🌿 Using neem oil + garlic extract.',
-    image: 'https://picsum.photos/seed/spray1/400/250',
-    timeAgo: '2w ago',
-    likes: 41,
-    comments: 19,
-  },
-];
-
-const DEMO_ANSWERS = [
-  {
-    id: 'a1',
-    question: 'When is the best time to apply Urea in apple orchards?',
-    answer: 'Best time is early morning before 8 AM during active growth stage. Dissolve 1kg Urea in 20L water per tree.',
-    votes: 18,
-    timeAgo: '3d ago',
-  },
-  {
-    id: 'a2',
-    question: 'How to prevent hail damage in apple orchards?',
-    answer: 'Install anti-hail nets before May. For existing damage, spray Bavistin 50WP (200g/200L) immediately after hail.',
-    votes: 24,
-    timeAgo: '1w ago',
-  },
-  {
-    id: 'a3',
-    question: 'What rootstock is best for high altitude (2800m+)?',
-    answer: 'M9 or MM106 are ideal for high altitude. M9 gives dwarf trees suitable for windy conditions.',
-    votes: 12,
-    timeAgo: '2w ago',
-  },
-];
-
-type TabKey = 'orchards' | 'posts' | 'answers';
+type TabKey = 'orchards' | 'expert';
 
 export default function UserProfileScreen(): React.JSX.Element {
   const navigation = useNavigation<HomeNavigationProp>();
   const route = useRoute<RouteProp<HomeStackParamList, 'UserProfile'>>();
   const { userId } = route.params;
 
-  const [user, setUser] = useState(DEMO_USER);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>('orchards');
 
+  // Fetch profile on mount / userId change
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    getUserProfile(Number(userId))
+      .then((data) => { if (!cancelled) setProfile(data); })
+      .catch(() => { if (!cancelled) showToast('Failed to load profile', 'error'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [userId]);
+
   const handleConnect = useCallback(() => {
-    setUser((prev) => ({
-      ...prev,
-      isConnected: !prev.isConnected,
-      followers: prev.isConnected ? prev.followers - 1 : prev.followers + 1,
-    }));
-    showToast(user.isConnected ? 'Connection removed' : 'Connection request sent', 'success');
-  }, [user.isConnected]);
+    showToast('Connect feature coming soon', 'info');
+  }, []);
 
   const handleFollow = useCallback(() => {
-    setUser((prev) => ({
-      ...prev,
-      isFollowing: !prev.isFollowing,
-      followers: prev.isFollowing ? prev.followers - 1 : prev.followers + 1,
-    }));
-    showToast(user.isFollowing ? 'Unfollowed' : 'Following', 'success');
-  }, [user.isFollowing]);
+    showToast('Follow feature coming soon', 'info');
+  }, []);
 
   const handleAskQuestion = useCallback(() => {
     showToast('Ask question feature coming soon', 'info');
   }, []);
 
-  const navigateToFeedDetail = (postId: string) => {
-    navigation.navigate('FeedDetail', { postId });
-  };
-
   const TABS: { key: TabKey; label: string; labelHi: string }[] = [
     { key: 'orchards', label: 'Orchards', labelHi: 'बगीचे' },
-    { key: 'posts', label: 'Posts', labelHi: 'पोस्ट' },
-    { key: 'answers', label: 'Answers', labelHi: 'जवाब' },
   ];
+
+  if (profile?.is_expert) {
+    TABS.push({ key: 'expert', label: 'Expert', labelHi: 'विशेषज्ञ' });
+  }
+
+  if (loading || !profile) {
+    return (
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Typography variant="captionMuted" style={{ marginTop: 12 }}>Loading profile...</Typography>
+      </SafeAreaView>
+    );
+  }
+
+  const bio = profile.preferred_language === 'hi'
+    ? (profile.profile?.bio_hi ?? profile.profile?.bio_en)
+    : (profile.profile?.bio_en ?? profile.profile?.bio_hi);
+
+  const locationParts = [
+    profile.orchards[0]?.district,
+    profile.orchards[0]?.state,
+  ].filter(Boolean);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -199,59 +107,78 @@ export default function UserProfileScreen(): React.JSX.Element {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <View style={styles.profileCard}>
-          <Image source={{ uri: user.avatar }} style={styles.avatar} />
-          <Typography variant="displaySubheading" style={styles.name}>{user.name}</Typography>
-          <Typography variant="hindiDisplayHero" style={styles.nameHi}>{user.nameHi}</Typography>
+          <Image
+            source={{ uri: profile.avatar ?? `https://i.pravatar.cc/150?u=${profile.id}` }}
+            style={styles.avatar}
+          />
+          <Typography variant="displaySubheading" style={styles.name}>{profile.name}</Typography>
+          {profile.is_expert && (
+            <View style={styles.expertBadge}>
+              <Icon name="check-decagram" size={14} color={Colors.white} />
+              <Typography variant="caption" style={styles.expertBadgeText}>Expert</Typography>
+            </View>
+          )}
           <View style={styles.locationRow}>
             <Icon name="map-marker" size={14} color={Colors.primary} />
-            <Typography variant="caption" style={styles.location}>{user.location} · {user.altitude}</Typography>
+            <Typography variant="caption" style={styles.location}>
+              {locationParts.join(', ')}
+              {profile.orchards[0]?.altitude_meters ? ` · ${profile.orchards[0].altitude_meters}m` : ''}
+            </Typography>
           </View>
-          <Typography variant="body" style={styles.bio}>{user.bio}</Typography>
+          {bio ? <Typography variant="body" style={styles.bio}>{bio}</Typography> : null}
 
           {/* Stats */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Typography variant="body" style={styles.statValue}>{user.followers}</Typography>
+              <Typography variant="body" style={styles.statValue}>{profile.followers_count}</Typography>
               <Typography variant="captionMuted" style={styles.statLabel}>Followers</Typography>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Typography variant="body" style={styles.statValue}>{user.following}</Typography>
+              <Typography variant="body" style={styles.statValue}>{profile.following_count}</Typography>
               <Typography variant="captionMuted" style={styles.statLabel}>Following</Typography>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Typography variant="body" style={styles.statValue}>{user.posts}</Typography>
-              <Typography variant="captionMuted" style={styles.statLabel}>Posts</Typography>
+              <Typography variant="body" style={styles.statValue}>{profile.orchards.length}</Typography>
+              <Typography variant="captionMuted" style={styles.statLabel}>Orchards</Typography>
             </View>
           </View>
 
           {/* Action Buttons */}
           <View style={styles.actionRow}>
+            {!profile.is_expert && (
+              <TouchableOpacity
+                style={[styles.actionBtn, profile.connection_status === 'accepted' && styles.actionBtnActive]}
+                onPress={handleConnect}
+                activeOpacity={0.7}
+              >
+                <Icon
+                  name={profile.connection_status === 'accepted' ? 'account-check' : 'account-plus'}
+                  size={16}
+                  color={profile.connection_status === 'accepted' ? Colors.white : Colors.primary}
+                />
+                <Typography variant="caption" style={[styles.actionBtnText, profile.connection_status === 'accepted' && styles.actionBtnTextActive]}>
+                  {profile.connection_status === 'accepted' ? 'Connected' : 'Connect'}
+                </Typography>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
-              style={[styles.actionBtn, user.isConnected && styles.actionBtnActive]}
-              onPress={handleConnect}
-              activeOpacity={0.7}
-            >
-              <Icon name={user.isConnected ? 'account-check' : 'account-plus'} size={16} color={user.isConnected ? Colors.white : Colors.primary} />
-              <Typography variant="caption" style={[styles.actionBtnText, user.isConnected && styles.actionBtnTextActive]}>
-                {user.isConnected ? 'Connected' : 'Connect'}
-              </Typography>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionBtn, user.isFollowing && styles.actionBtnActive]}
+              style={[styles.actionBtn, profile.is_following && styles.actionBtnActive]}
               onPress={handleFollow}
               activeOpacity={0.7}
             >
-              <Icon name={user.isFollowing ? 'check' : 'plus'} size={16} color={user.isFollowing ? Colors.white : Colors.primary} />
-              <Typography variant="caption" style={[styles.actionBtnText, user.isFollowing && styles.actionBtnTextActive]}>
-                {user.isFollowing ? 'Following' : 'Follow'}
+              <Icon name={profile.is_following ? 'check' : 'plus'} size={16} color={profile.is_following ? Colors.white : Colors.primary} />
+              <Typography variant="caption" style={[styles.actionBtnText, profile.is_following && styles.actionBtnTextActive]}>
+                {profile.is_following ? 'Following' : 'Follow'}
               </Typography>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionBtn} onPress={handleAskQuestion} activeOpacity={0.7}>
-              <Icon name="chat-question" size={16} color={Colors.primary} />
-              <Typography variant="caption" style={styles.actionBtnText}>Ask</Typography>
-            </TouchableOpacity>
+            {profile.is_expert && (
+              <TouchableOpacity style={styles.actionBtn} onPress={handleAskQuestion} activeOpacity={0.7}>
+                <Icon name="chat-question" size={16} color={Colors.primary} />
+                <Typography variant="caption" style={styles.actionBtnText}>Ask</Typography>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -278,73 +205,119 @@ export default function UserProfileScreen(): React.JSX.Element {
         <View style={styles.tabContent}>
           {activeTab === 'orchards' && (
             <View style={styles.tabSection}>
-              {DEMO_ORCHARDS.map((orchard) => (
-                <View key={orchard.id} style={styles.orchardCard}>
-                  <View style={styles.orchardHeader}>
-                    <View style={styles.orchardIconWrap}>
-                      <Icon name="tree" size={20} color={Colors.primary} />
+              {profile.orchards.length === 0 ? (
+                <Typography variant="captionMuted" style={{ textAlign: 'center', paddingVertical: 24 }}>
+                  No orchards added yet
+                </Typography>
+              ) : (
+                profile.orchards.map((orchard) => (
+                  <View key={orchard.id} style={styles.orchardCard}>
+                    <View style={styles.orchardHeader}>
+                      <View style={styles.orchardIconWrap}>
+                        <Icon name="tree" size={20} color={Colors.primary} />
+                      </View>
+                      <View style={styles.orchardHeaderText}>
+                        <Typography variant="bodySmall" style={styles.orchardName}>{orchard.name}</Typography>
+                        <Typography variant="captionMuted">{orchard.village}, {orchard.district}</Typography>
+                      </View>
                     </View>
-                    <View style={styles.orchardHeaderText}>
-                      <Typography variant="bodySmall" style={styles.orchardName}>{orchard.name}</Typography>
-                      <Typography variant="captionMuted">{orchard.stage}</Typography>
+                    <View style={styles.orchardMeta}>
+                      <View style={styles.orchardMetaItem}>
+                        <Icon name="ruler-square" size={12} color={Colors.gray400} />
+                        <Typography variant="caption">{orchard.area_display}</Typography>
+                      </View>
+                      <View style={styles.orchardMetaItem}>
+                        <Icon name="tree" size={12} color={Colors.gray400} />
+                        <Typography variant="caption">{orchard.total_trees} trees</Typography>
+                      </View>
+                      <View style={styles.orchardMetaItem}>
+                        <Icon name="apple" size={12} color={Colors.gray400} />
+                        <Typography variant="caption">{orchard.varieties.map(v => v.variety_name).filter(Boolean).join(', ') || '—'}</Typography>
+                      </View>
+                      <View style={styles.orchardMetaItem}>
+                        <Icon name="source-branch" size={12} color={Colors.gray400} />
+                        <Typography variant="caption">{orchard.farming_type}</Typography>
+                      </View>
                     </View>
                   </View>
-                  <View style={styles.orchardMeta}>
-                    <View style={styles.orchardMetaItem}>
-                      <Icon name="ruler-square" size={12} color={Colors.gray400} />
-                      <Typography variant="caption">{orchard.area}</Typography>
-                    </View>
-                    <View style={styles.orchardMetaItem}>
-                      <Icon name="tree" size={12} color={Colors.gray400} />
-                      <Typography variant="caption">{orchard.trees} trees</Typography>
-                    </View>
-                    <View style={styles.orchardMetaItem}>
-                      <Icon name="apple" size={12} color={Colors.gray400} />
-                      <Typography variant="caption">{orchard.variety}</Typography>
-                    </View>
-                    <View style={styles.orchardMetaItem}>
-                      <Icon name="source-branch" size={12} color={Colors.gray400} />
-                      <Typography variant="caption">{orchard.rootstock}</Typography>
-                    </View>
-                  </View>
-                </View>
-              ))}
+                ))
+              )}
             </View>
           )}
 
-          {activeTab === 'posts' && (
+          {activeTab === 'expert' && profile.expert_profile && (
             <View style={styles.tabSection}>
-              {DEMO_POSTS.map((post) => (
-                <TouchableOpacity key={post.id} style={styles.postCard} onPress={() => navigateToFeedDetail(post.id)} activeOpacity={0.7}>
-                  <Typography variant="body" style={styles.postText} numberOfLines={3}>{post.text}</Typography>
-                  {post.image && <Image source={{ uri: post.image }} style={styles.postImage} resizeMode="cover" />}
-                  <View style={styles.postMeta}>
-                    <Typography variant="captionMuted">{post.timeAgo}</Typography>
-                    <Typography variant="captionMuted">{post.likes} likes · {post.comments} comments</Typography>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          {activeTab === 'answers' && (
-            <View style={styles.tabSection}>
-              {DEMO_ANSWERS.map((ans) => (
-                <View key={ans.id} style={styles.answerCard}>
-                  <View style={styles.answerQuestionRow}>
-                    <Icon name="help-circle" size={14} color={Colors.info} />
-                    <Typography variant="bodySmall" style={styles.answerQuestion}>{ans.question}</Typography>
-                  </View>
-                  <Typography variant="body" style={styles.answerText}>{ans.answer}</Typography>
-                  <View style={styles.answerMeta}>
-                    <View style={styles.answerVote}>
-                      <Icon name="thumb-up" size={12} color={Colors.primary} />
-                      <Typography variant="caption" style={styles.answerVoteText}>{ans.votes} votes</Typography>
+              {/* Expert Info Card */}
+              <View style={styles.orchardCard}>
+                <Typography variant="bodySmall" style={styles.orchardName}>
+                  {profile.expert_profile.title ?? 'Apple Farming Expert'}
+                </Typography>
+                <Typography variant="body" style={{ marginTop: 8, lineHeight: 20, color: Colors.gray600 }}>
+                  {profile.expert_profile.bio ?? 'No bio available'}
+                </Typography>
+                <View style={{ marginTop: 12, gap: 6 }}>
+                  {profile.expert_profile.experience_years && (
+                    <View style={styles.orchardMetaItem}>
+                      <Icon name="calendar-check" size={12} color={Colors.gray400} />
+                      <Typography variant="caption">{profile.expert_profile.experience_years} years experience</Typography>
                     </View>
-                    <Typography variant="captionMuted">{ans.timeAgo}</Typography>
-                  </View>
+                  )}
+                  {profile.expert_profile.orchard_location && (
+                    <View style={styles.orchardMetaItem}>
+                      <Icon name="map-marker" size={12} color={Colors.gray400} />
+                      <Typography variant="caption">{profile.expert_profile.orchard_location}</Typography>
+                    </View>
+                  )}
+                  {profile.expert_profile.languages_spoken && profile.expert_profile.languages_spoken.length > 0 && (
+                    <View style={styles.orchardMetaItem}>
+                      <Icon name="translate" size={12} color={Colors.gray400} />
+                      <Typography variant="caption">{profile.expert_profile.languages_spoken.join(', ')}</Typography>
+                    </View>
+                  )}
+                  {profile.expert_profile.specializations && profile.expert_profile.specializations.length > 0 && (
+                    <View style={styles.orchardMetaItem}>
+                      <Icon name="star" size={12} color={Colors.gray400} />
+                      <Typography variant="caption">{profile.expert_profile.specializations.join(', ')}</Typography>
+                    </View>
+                  )}
                 </View>
-              ))}
+              </View>
+
+              {/* Consultancy Charges */}
+              {profile.expert_profile.charges.length > 0 && (
+                <>
+                  <Typography variant="body" style={{ fontWeight: '800', marginTop: 16, marginBottom: 8 }}>
+                    Consultancy Charges
+                  </Typography>
+                  {profile.expert_profile.charges.map((charge, idx) => (
+                    <View key={idx} style={styles.orchardCard}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="bodySmall" style={styles.orchardName}>
+                          {charge.format.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </Typography>
+                        <Typography variant="body" style={{ fontWeight: '800', color: Colors.primary }}>
+                          ₹{charge.price}
+                        </Typography>
+                      </View>
+                      {charge.duration_minutes && (
+                        <Typography variant="captionMuted" style={{ marginTop: 2 }}>
+                          {charge.duration_minutes} minutes
+                        </Typography>
+                      )}
+                      {charge.description && (
+                        <Typography variant="caption" style={{ marginTop: 6, color: Colors.gray600 }}>
+                          {charge.description}
+                        </Typography>
+                      )}
+                      {!charge.is_active && (
+                        <View style={{ marginTop: 6, backgroundColor: Colors.gray200, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, alignSelf: 'flex-start' }}>
+                          <Typography variant="captionMuted" style={{ fontSize: 10 }}>Currently unavailable</Typography>
+                        </View>
+                      )}
+                    </View>
+                  ))}
+                </>
+              )}
             </View>
           )}
         </View>
@@ -398,10 +371,20 @@ const styles = StyleSheet.create({
     marginTop: Space[3],
     color: Colors.gray900,
   },
-  nameHi: {
-    fontSize: 14,
-    color: Colors.gray400,
-    marginTop: 2,
+  expertBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Space[3],
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+    marginTop: Space[2],
+  },
+  expertBadgeText: {
+    color: Colors.white,
+    fontWeight: '700',
+    fontSize: 11,
   },
   locationRow: {
     flexDirection: 'row',
@@ -552,71 +535,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Space[3],
     paddingVertical: 6,
     borderRadius: Radius.md,
-  },
-  postCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius['2xl'],
-    padding: Space[4],
-    ...Shadows.medium,
-  },
-  postText: {
-    fontSize: 14,
-    color: Colors.gray700,
-    lineHeight: 20,
-  },
-  postImage: {
-    width: '100%',
-    height: 180,
-    borderRadius: Radius.lg,
-    marginTop: Space[3],
-  },
-  postMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: Space[3],
-    paddingTop: Space[3],
-    borderTopWidth: 1,
-    borderTopColor: Colors.gray100,
-  },
-  answerCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius['2xl'],
-    padding: Space[4],
-    ...Shadows.medium,
-  },
-  answerQuestionRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Space[2],
-    marginBottom: Space[2],
-  },
-  answerQuestion: {
-    fontWeight: '700',
-    color: Colors.gray800,
-    flex: 1,
-    lineHeight: 20,
-  },
-  answerText: {
-    fontSize: 14,
-    color: Colors.gray700,
-    lineHeight: 20,
-  },
-  answerMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: Space[3],
-    paddingTop: Space[3],
-    borderTopWidth: 1,
-    borderTopColor: Colors.gray100,
-  },
-  answerVote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  answerVoteText: {
-    color: Colors.primary,
-    fontWeight: '700',
   },
 });
