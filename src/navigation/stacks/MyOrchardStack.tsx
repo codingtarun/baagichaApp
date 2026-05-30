@@ -11,6 +11,12 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import ProfileScreen from '../../screens/ProfileScreen';
+import MyProfileScreen from '../../screens/MyProfileScreen';
+import EditProfileScreen from '../../screens/EditProfileScreen';
+import MyGroupsScreen from '../../screens/MyGroupsScreen';
+import GroupDetailScreen from '../../screens/GroupDetailScreen';
+import GroupCreateScreen from '../../screens/GroupCreateScreen';
+import GroupListScreen from '../../screens/GroupListScreen';
 import OrchardListScreen from '../../screens/OrchardListScreen';
 import OrchardDetailScreen from '../../screens/OrchardDetailScreen';
 import OrchardFormScreen from '../../screens/OrchardFormScreen';
@@ -19,6 +25,12 @@ import OrchardVarietyFormScreen from '../../screens/OrchardVarietyFormScreen';
 
 export type MyOrchardStackParamList = {
   MyOrchard: undefined;
+  MyProfile: undefined;
+  EditProfile: undefined;
+  MyGroups: undefined;
+  GroupDetail: { slug: string };
+  GroupCreate: undefined;
+  GroupList: undefined;
   OrchardList: undefined;
   OrchardDetail: { orchardId: number };
   OrchardForm: { orchardId?: number } | undefined;
@@ -32,6 +44,12 @@ export default function MyOrchardStack(): React.JSX.Element {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MyOrchard" component={ProfileScreen} />
+      <Stack.Screen name="MyProfile" component={MyProfileScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="MyGroups" component={MyGroupsScreen} />
+      <Stack.Screen name="GroupDetail" component={GroupDetailScreen} />
+      <Stack.Screen name="GroupCreate" component={GroupCreateScreen} />
+      <Stack.Screen name="GroupList" component={GroupListScreen} />
       <Stack.Screen name="OrchardList" component={OrchardListScreen} />
       <Stack.Screen name="OrchardDetail" component={OrchardDetailScreen} />
       <Stack.Screen name="OrchardForm" component={OrchardFormScreen} />

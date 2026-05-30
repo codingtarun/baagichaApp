@@ -65,6 +65,8 @@ export type DiscoverStackParamList = {
   BlogDetail: { slug: string };
   RootstockList: undefined;
   RootstockDetail: { slug: string };
+  GroupList: undefined;
+  GroupDetail: { slug: string };
 };
 
 // ═══════════════════════════════════════════════════════════════

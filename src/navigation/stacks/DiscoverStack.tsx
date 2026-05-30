@@ -37,6 +37,8 @@ import RootstockListScreen from '../../screens/RootstockListScreen';
 import RootstockDetailScreen from '../../screens/RootstockDetailScreen';
 import BlogListScreen from '../../screens/BlogListScreen';
 import BlogDetailScreen from '../../screens/BlogDetailScreen';
+import GroupListScreen from '../../screens/GroupListScreen';
+import GroupDetailScreen from '../../screens/GroupDetailScreen';
 
 export type DiscoverStackParamList = {
   Discover: undefined;
@@ -50,6 +52,8 @@ export type DiscoverStackParamList = {
   BlogDetail: { slug: string };
   RootstockList: undefined;
   RootstockDetail: { slug: string };
+  GroupList: undefined;
+  GroupDetail: { slug: string };
 };
 
 const Stack = createNativeStackNavigator<DiscoverStackParamList>();
@@ -68,6 +72,8 @@ export default function DiscoverStack(): React.JSX.Element {
       <Stack.Screen name="BlogDetail" component={BlogDetailScreen} />
       <Stack.Screen name="RootstockList" component={RootstockListScreen} />
       <Stack.Screen name="RootstockDetail" component={RootstockDetailScreen} />
+      <Stack.Screen name="GroupList" component={GroupListScreen} />
+      <Stack.Screen name="GroupDetail" component={GroupDetailScreen} />
     </Stack.Navigator>
   );
 }

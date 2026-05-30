@@ -21,6 +21,10 @@ import CardDetailScreen from '../../screens/CardDetailScreen';
 import FeedDetailScreen from '../../screens/FeedDetailScreen';
 import PostDetailScreen from '../../screens/PostDetailScreen';
 import UserProfileScreen from '../../screens/UserProfileScreen';
+import GroupDetailScreen from '../../screens/GroupDetailScreen';
+import GroupCreateScreen from '../../screens/GroupCreateScreen';
+import GroupEditScreen from '../../screens/GroupEditScreen';
+import GroupJoinRequestsScreen from '../../screens/GroupJoinRequestsScreen';
 
 export type PriorityCardData = {
   id: string;
@@ -41,6 +45,10 @@ export type HomeStackParamList = {
   FeedDetail: { postId: string };
   PostDetail: { postId: string };
   UserProfile: { userId: string };
+  GroupDetail: { slug: string };
+  GroupCreate: undefined;
+  GroupEdit: { slug: string };
+  GroupJoinRequests: { slug: string };
 };
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -53,6 +61,10 @@ export default function HomeStack(): React.JSX.Element {
       <Stack.Screen name="FeedDetail" component={FeedDetailScreen} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+      <Stack.Screen name="GroupDetail" component={GroupDetailScreen} />
+      <Stack.Screen name="GroupCreate" component={GroupCreateScreen} />
+      <Stack.Screen name="GroupEdit" component={GroupEditScreen} />
+      <Stack.Screen name="GroupJoinRequests" component={GroupJoinRequestsScreen} />
     </Stack.Navigator>
   );
 }

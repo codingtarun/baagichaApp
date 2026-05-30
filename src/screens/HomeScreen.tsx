@@ -36,6 +36,7 @@ import type { PriorityCardData } from '../navigation/stacks/HomeStack';
 import ShareSheet from '../components/ShareSheet';
 import { getSuggestedUsers, type SuggestedUser } from '../services/userApi';
 import { getFeed, createPost, togglePostLike, sharePost, type FeedPost } from '../services/postApi';
+import { getGroups, joinGroup, type GroupCard } from '../services/groupApi';
 
 // ═══════════════════════════════════════════════════════════════
 // MOCK DATA
@@ -107,12 +108,7 @@ const PEOPLE_TO_FOLLOW = [
   { id: 'pf4', name: 'Amit Verma', role: 'Organic Farmer', avatar: 'https://i.pravatar.cc/150?u=14', followers: '5.1K' },
 ];
 
-const GROUPS_TO_JOIN = [
-  { id: 'g1', name: 'Shimla Apple Growers', members: 1240, image: 'https://picsum.photos/seed/shimla/80/80', category: 'Region' },
-  { id: 'g2', name: 'Organic HP Farmers', members: 856, image: 'https://picsum.photos/seed/organic/80/80', category: 'Practice' },
-  { id: 'g3', name: 'Apple Scab Fighters', members: 2340, image: 'https://picsum.photos/seed/scab/80/80', category: 'Disease' },
-  { id: 'g4', name: 'Mandi Price Updates', members: 3420, image: 'https://picsum.photos/seed/mandi/80/80', category: 'Market' },
-];
+const TAB_BAR_HEIGHT = 70; // Custom bottom tab bar height
 
 // ═══════════════════════════════════════════════════════════════
 // HELPERS
@@ -175,6 +171,8 @@ export default function HomeScreen(): React.JSX.Element {
   const [loadingExperts, setLoadingExperts] = useState(true);
   const [loadingFriends, setLoadingFriends] = useState(true);
   const [loadingFeed, setLoadingFeed] = useState(true);
+  const [loadingGroups, setLoadingGroups] = useState(true);
+  const [suggestedGroups, setSuggestedGroups] = useState<GroupCard[]>([]);
   const [posting, setPosting] = useState(false);
 
   const sortedCards = sortByPriority(PRIORITY_CARDS);
@@ -212,6 +210,23 @@ export default function HomeScreen(): React.JSX.Element {
         }
       })
       .finally(() => { if (!cancelled) setLoadingFriends(false); });
+
+    // Fetch suggested groups (public, not joined)
+    getGroups({ visibility: 'public', sort: 'popular', per_page: 10 })
+      .then((groups) => {
+        if (!cancelled) {
+          // Filter out groups user is already in, pick up to 5
+          const filtered = groups.filter(g => !g.is_member).slice(0, 5);
+          setSuggestedGroups(filtered);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('[Home] Groups fetch failed:', err.response?.data ?? err.message);
+          setSuggestedGroups([]);
+        }
+      })
+      .finally(() => { if (!cancelled) setLoadingGroups(false); });
 
     return () => { cancelled = true; };
   }, []);
@@ -520,15 +535,40 @@ export default function HomeScreen(): React.JSX.Element {
             <Icon name="account-group" size={18} color={Colors.primary} />
             <Typography variant="body" style={styles.sectionTitle}>Groups to Join</Typography>
           </View>
+          <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate('GroupList')}>
+            <Typography variant="caption" style={styles.seeAll}>See All</Typography>
+          </TouchableOpacity>
         </View>
-        <View style={[styles.listCard, { marginBottom: Space[6] }]}>
-          {GROUPS_TO_JOIN.map((group, idx) => (
-            <ListRow key={group.id} avatar={group.image} name={group.name} subtitle={`${group.category} · ${group.members.toLocaleString()} members`} isLast={idx === GROUPS_TO_JOIN.length - 1} isSquareAvatar>
-              <TouchableOpacity style={styles.joinBtn} activeOpacity={0.8}>
-                <Typography variant="caption" style={styles.joinBtnText}>Join</Typography>
+        <View style={[styles.listCard, { marginBottom: Space[6] + TAB_BAR_HEIGHT }]}>
+          {loadingGroups ? (
+            <Typography variant="captionMuted" style={{ paddingVertical: 20, textAlign: 'center' }}>
+              Loading groups...
+            </Typography>
+          ) : suggestedGroups.length === 0 ? (
+            <Typography variant="captionMuted" style={{ paddingVertical: 20, textAlign: 'center' }}>
+              No groups to join right now
+            </Typography>
+          ) : (
+            suggestedGroups.map((group, idx) => (
+              <TouchableOpacity
+                key={group.id}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('GroupDetail', { slug: group.slug })}
+              >
+                <ListRow
+                  avatar={group.avatar ?? group.cover ?? `https://i.pravatar.cc/150?u=group${group.id}`}
+                  name={group.name}
+                  subtitle={`${group.visibility === 'public' ? 'Public' : 'Private'} · ${group.members_count.toLocaleString()} members`}
+                  isLast={idx === suggestedGroups.length - 1}
+                  isSquareAvatar
+                >
+                  <JoinGroupButton group={group} onJoined={(slug) => {
+                    setSuggestedGroups(prev => prev.filter(g => g.slug !== slug));
+                  }} />
+                </ListRow>
               </TouchableOpacity>
-            </ListRow>
-          ))}
+            ))
+          )}
         </View>
       </ScrollView>
 
@@ -762,6 +802,57 @@ function ListRow({ avatar, name, subtitle, isLast, isSquareAvatar, children }: {
       </View>
       {children}
     </View>
+  );
+}
+
+function JoinGroupButton({ group, onJoined }: { group: GroupCard; onJoined: (slug: string) => void }) {
+  const [joining, setJoining] = useState(false);
+  const [joined, setJoined] = useState(group.is_member);
+  const [pending, setPending] = useState(group.is_pending_request);
+
+  const handleJoin = async () => {
+    if (joining || joined || pending) return;
+    setJoining(true);
+    try {
+      const result = await joinGroup(group.slug);
+      if (result.success) {
+        if (group.visibility === 'private' && result.message?.includes('request')) {
+          setPending(true);
+          showToast('Join request sent', 'success');
+        } else {
+          setJoined(true);
+          showToast('Joined group!', 'success');
+          onJoined(group.slug);
+        }
+      }
+    } catch (err: any) {
+      console.error('[Home] Join failed:', err.response?.data ?? err.message);
+      showToast('Failed to join', 'error');
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  if (joined) {
+    return (
+      <View style={[styles.joinBtn, { backgroundColor: Colors.gray200 }]}>
+        <Typography variant="caption" style={[styles.joinBtnText, { color: Colors.gray500 }]}>Joined</Typography>
+      </View>
+    );
+  }
+
+  if (pending) {
+    return (
+      <View style={[styles.joinBtn, { backgroundColor: Colors.warning + '20' }]}>
+        <Typography variant="caption" style={[styles.joinBtnText, { color: Colors.warning }]}>Pending</Typography>
+      </View>
+    );
+  }
+
+  return (
+    <TouchableOpacity style={styles.joinBtn} activeOpacity={0.8} onPress={handleJoin} disabled={joining}>
+      <Typography variant="caption" style={styles.joinBtnText}>{joining ? '...' : 'Join'}</Typography>
+    </TouchableOpacity>
   );
 }
 

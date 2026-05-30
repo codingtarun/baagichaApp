@@ -44,6 +44,7 @@ export default function PostDetailScreen(): React.JSX.Element {
   const route = useRoute<RouteProp<HomeStackParamList, 'PostDetail'>>();
   const { postId } = route.params;
   const insets = useSafeAreaInsets();
+  const TAB_BAR_HEIGHT = 70; // Custom tab bar height (bar + padding + FAB overlap)
 
   const [post, setPost] = useState<FeedPost | null>(null);
   const [comments, setComments] = useState<FeedComment[]>([]);
@@ -237,7 +238,7 @@ export default function PostDetailScreen(): React.JSX.Element {
           </ScrollView>
 
           {/* Comment Input */}
-          <View style={[styles.inputBar, { paddingBottom: insets.bottom + Space[3] }]}>
+          <View style={[styles.inputBar, { paddingBottom: insets.bottom + Space[3] + TAB_BAR_HEIGHT }]}>
             {replyingTo && (
               <View style={styles.replyBanner}>
                 <Typography variant="caption" style={{ flex: 1 }}>

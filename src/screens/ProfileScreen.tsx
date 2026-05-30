@@ -9,6 +9,7 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Colors } from '../theme/colors';
@@ -37,6 +38,8 @@ export default function ProfileScreen(): React.JSX.Element {
   const goToLogin = () => rootNavigation.navigate('Auth', { screen: 'Login' });
   const goToRegister = () => rootNavigation.navigate('Auth', { screen: 'EmailRegister' });
   const goToOrchards = () => navigation.navigate('OrchardList');
+  const goToMyProfile = () => navigation.navigate('MyProfile');
+  const goToMyGroups = () => navigation.navigate('MyGroups');
 
   const handleResendVerification = async () => {
     setIsResendingEmail(true);
@@ -63,7 +66,7 @@ export default function ProfileScreen(): React.JSX.Element {
       {isAuthenticated && user ? (
         /* ── LOGGED IN VIEW ── */
         <View style={styles.container}>
-          <View style={styles.profileCard}>
+          <TouchableOpacity style={styles.profileCard} onPress={goToMyProfile} activeOpacity={0.8}>
             <View style={styles.avatar}>
               <Typography variant="displayHeading" style={styles.avatarText}>
                 {user.name.charAt(0).toUpperCase()}
@@ -80,7 +83,13 @@ export default function ProfileScreen(): React.JSX.Element {
                 📍 {user.profile.village}, {user.profile.district}
               </Typography>
             )}
-          </View>
+            <View style={styles.viewProfileHint}>
+              <Typography variant="caption" style={styles.viewProfileText}>
+                Tap to view profile / प्रोफाइल देखें
+              </Typography>
+              <Icon name="chevron-right" size={14} color={Colors.primary} />
+            </View>
+          </TouchableOpacity>
 
           {/* Email Verification Banner */}
           {user.email && !user.email_verified_at && (
@@ -106,6 +115,8 @@ export default function ProfileScreen(): React.JSX.Element {
           )}
 
           <View style={styles.menu}>
+            <MenuItem label="My Profile / मेरी प्रोफाइल" icon="👤" onPress={goToMyProfile} />
+            <MenuItem label="My Groups / मेरे समूह" icon="👥" onPress={goToMyGroups} />
             <MenuItem label="My Orchards / मेरे बाग" icon="🌳" onPress={goToOrchards} />
             <MenuItem label="Saved Items / सहेजी गईं चीज़ें" icon="🔖" />
             <MenuItem label="Orders / ऑर्डर" icon="📦" />
@@ -342,6 +353,21 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 15,
     fontWeight: '600',
+  },
+  viewProfileHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 12,
+    backgroundColor: Colors.primary + '10',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: Radius.full,
+  },
+  viewProfileText: {
+    color: Colors.primary,
+    fontWeight: '700',
+    fontSize: 12,
   },
   guestHint: {
     marginTop: 24,
