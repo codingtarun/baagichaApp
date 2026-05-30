@@ -40,6 +40,7 @@ import {
 } from '../services/groupApi';
 import { togglePostLike } from '../services/postApi';
 import type { FeedPost } from '../services/postApi';
+import PostImages from '../components/PostImages';
 
  type TabKey = 'feed' | 'about' | 'members';
 
@@ -62,6 +63,7 @@ export default function GroupDetailScreen(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<TabKey>('feed');
   const [postText, setPostText] = useState('');
   const [posting, setPosting] = useState(false);
+  const [likingPostIds, setLikingPostIds] = useState<Set<number>>(new Set());
 
   const fetchAll = useCallback(async () => {
     try {
@@ -149,17 +151,29 @@ export default function GroupDetailScreen(): React.JSX.Element {
   };
 
   const toggleLike = async (postId: number) => {
+    if (likingPostIds.has(postId)) return;
     const post = posts.find(p => p.id === postId);
     if (!post) return;
+
+    setLikingPostIds(prev => new Set(prev).add(postId));
     const oldPosts = [...posts];
     setPosts(prev => prev.map(p =>
       p.id === postId ? { ...p, is_liked: !p.is_liked, likes_count: p.is_liked ? p.likes_count - 1 : p.likes_count + 1 } : p
     ));
     try {
-      await togglePostLike(postId);
+      const result = await togglePostLike(postId);
+      setPosts(prev => prev.map(p =>
+        p.id === postId ? { ...p, is_liked: result.is_liked, likes_count: result.likes_count } : p
+      ));
     } catch {
       setPosts(oldPosts);
       showToast('Failed to like', 'error');
+    } finally {
+      setLikingPostIds(prev => {
+        const next = new Set(prev);
+        next.delete(postId);
+        return next;
+      });
     }
   };
 
@@ -399,6 +413,7 @@ function MembersTab({ members }: { members: GroupMember[] }) {
 }
 
 function FeedPostCard({ post, onToggleLike }: { post: FeedPost; onToggleLike: () => void }) {
+  const navigation = useNavigation<HomeNavigationProp>();
   const timeAgo = formatTimeAgo(post.created_at);
 
   return (
@@ -411,13 +426,10 @@ function FeedPostCard({ post, onToggleLike }: { post: FeedPost; onToggleLike: ()
         </View>
       </View>
       <Typography variant="body" style={styles.postBody}>{post.body}</Typography>
-      {post.images.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Space[2], marginTop: Space[3] }}>
-          {post.images.map(img => (
-            <Image key={img.id} source={{ uri: img.medium }} style={styles.postImage} resizeMode="cover" />
-          ))}
-        </ScrollView>
-      )}
+      <PostImages
+        images={post.images}
+        onImagePress={(index) => navigation.navigate('ImageViewer', { images: post.images, initialIndex: index })}
+      />
       <View style={styles.postStats}>
         <Typography variant="captionMuted">{post.likes_count} likes · {post.comments_count} comments</Typography>
       </View>
@@ -528,7 +540,6 @@ const styles = StyleSheet.create({
   postAuthorAvatar: { width: 40, height: 40, borderRadius: Radius.full },
   postAuthorName: { fontWeight: '700', fontSize: 14, color: Colors.gray900 },
   postBody: { fontSize: 14, color: Colors.gray600, lineHeight: 20 },
-  postImage: { width: 240, height: 160, borderRadius: Radius.lg },
   postStats: { marginTop: Space[3], paddingBottom: Space[3], borderBottomWidth: 1, borderBottomColor: Colors.gray200 },
   postActions: { flexDirection: 'row', marginTop: Space[2] },
   postActionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 6 },

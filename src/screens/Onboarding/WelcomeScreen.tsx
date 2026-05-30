@@ -24,8 +24,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors } from '../../theme/colors';
 import { Space, Radius, Shadows } from '../../theme/style';
 import { Typography, PrimaryHeading, HindiText } from '../../typography';
-import type { OnboardingStackParamList } from '../../navigation/types';
-type OnboardingNavProp = NativeStackNavigationProp<OnboardingStackParamList>;
+import type { RootStackParamList } from '../../navigation/types';
+type WelcomeNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -70,10 +70,20 @@ const SLIDES: Slide[] = [
     description: 'Buy quality seeds, fertilizers, and tools at fair prices — delivered to your orchard.',
     descriptionHi: 'उचित मूल्य पर बीज, उर्वरक और उपकरण खरीदें — आपके बाग तक पहुंचाएं।', bgColor: 'transparent',
   },
+  {
+    id: '7', icon: '❓', title: 'Ask Questions from Experts', titleHi: 'विशेषज्ञों से सवाल पूछें',
+    description: 'Get answers from agricultural experts and experienced farmers in your community.',
+    descriptionHi: 'कृषि विशेषज्ञों और अनुभवी किसानों से अपने सवालों के जवाब पाएं।', bgColor: 'transparent',
+  },
+  {
+    id: '8', icon: '👥', title: 'Join Groups & Community', titleHi: 'समूह और समुदाय में शामिल हों',
+    description: 'Connect with fellow farmers, share knowledge, and grow together.',
+    descriptionHi: 'किसान साथियों से जुड़ें, ज्ञान साझा करें, और साथ मिलकर आगे बढ़ें।', bgColor: 'transparent',
+  },
 ];
 
 export default function WelcomeScreen(): React.JSX.Element {
-  const navigation = useNavigation<OnboardingNavProp>();
+  const navigation = useNavigation<WelcomeNavProp>();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList<Slide>>(null);
 
@@ -101,12 +111,12 @@ export default function WelcomeScreen(): React.JSX.Element {
     if (currentIndex < SLIDES.length - 1) {
       scrollToIndex(currentIndex + 1);
     } else {
-      navigation.navigate('NotificationPermission');
+      navigation.navigate('Auth');
     }
   }, [currentIndex, scrollToIndex, navigation]);
 
   const handleSkip = useCallback(() => {
-    navigation.navigate('NotificationPermission');
+    navigation.navigate('Auth');
   }, [navigation]);
 
   const isLastSlide = currentIndex === SLIDES.length - 1;

@@ -10,6 +10,7 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { ShopStackParamList } from './stacks/ShopStack';
 import type { MyOrchardStackParamList } from './stacks/MyOrchardStack';
 import type { HomeStackParamList } from './stacks/HomeStack';
+import type { CommunityStackParamList } from './stacks/CommunityStack';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 
@@ -50,7 +51,13 @@ export type BottomTabParamList = {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// 3. DISCOVER STACK PARAM LIST
+// 3. COMMUNITY STACK PARAM LIST
+// ═══════════════════════════════════════════════════════════════
+
+export type { CommunityStackParamList };
+
+// ═══════════════════════════════════════════════════════════════
+// 3b. DISCOVER STACK PARAM LIST (legacy, accessible from other stacks)
 // ═══════════════════════════════════════════════════════════════
 
 export type DiscoverStackParamList = {
@@ -78,6 +85,9 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Auth: { screen?: keyof AuthStackParamList } | undefined;
   MainTabs: undefined;
+  Welcome: undefined;
+  NotificationPermission: undefined;
+  LocationPermission: undefined;
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -101,6 +111,9 @@ export type AuthNavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 /** Navigation prop for screens inside the bottom tabs */
 export type TabNavigationProp = BottomTabNavigationProp<BottomTabParamList>;
+
+/** Navigation prop for screens inside the Community stack */
+export type CommunityNavigationProp = NativeStackNavigationProp<CommunityStackParamList>;
 
 /** Navigation prop for screens inside the Discover stack */
 export type DiscoverNavigationProp = NativeStackNavigationProp<DiscoverStackParamList>;

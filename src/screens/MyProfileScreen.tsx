@@ -39,6 +39,7 @@ import {
 } from '../services/profileApi';
 import { togglePostLike, sharePost, type FeedPost } from '../services/postApi';
 import ShareSheet from '../components/ShareSheet';
+import PostImages from '../components/PostImages';
 
 type TabKey = 'posts' | 'activities' | 'likes';
 
@@ -62,6 +63,7 @@ export default function MyProfileScreen(): React.JSX.Element {
   const [loadingLikes, setLoadingLikes] = useState(false);
   const [loadingActivities, setLoadingActivities] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [likingPostIds, setLikingPostIds] = useState<Set<number>>(new Set());
 
   const fetchStats = useCallback(async () => {
     try {
@@ -237,16 +239,31 @@ export default function MyProfileScreen(): React.JSX.Element {
         <View style={styles.tabContent}>
           {activeTab === 'posts' && (
             <PostsTab posts={posts} loading={loadingPosts} onToggleLike={(postId) => {
+              if (likingPostIds.has(postId)) return;
               const post = posts.find(p => p.id === postId);
               if (!post) return;
               const oldPosts = [...posts];
+              setLikingPostIds(prev => new Set(prev).add(postId));
               setPosts(prev => prev.map(p =>
                 p.id === postId ? { ...p, is_liked: !p.is_liked, likes_count: p.is_liked ? p.likes_count - 1 : p.likes_count + 1 } : p
               ));
-              togglePostLike(postId).catch(() => {
-                setPosts(oldPosts);
-                showToast('Failed to update like', 'error');
-              });
+              togglePostLike(postId)
+                .then((result) => {
+                  setPosts(prev => prev.map(p =>
+                    p.id === postId ? { ...p, is_liked: result.is_liked, likes_count: result.likes_count } : p
+                  ));
+                })
+                .catch(() => {
+                  setPosts(oldPosts);
+                  showToast('Failed to update like', 'error');
+                })
+                .finally(() => {
+                  setLikingPostIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(postId);
+                    return next;
+                  });
+                });
             }} />
           )}
 
@@ -256,16 +273,31 @@ export default function MyProfileScreen(): React.JSX.Element {
 
           {activeTab === 'likes' && (
             <LikesTab posts={likedPosts} loading={loadingLikes} onToggleLike={(postId) => {
+              if (likingPostIds.has(postId)) return;
               const post = likedPosts.find(p => p.id === postId);
               if (!post) return;
               const oldPosts = [...likedPosts];
+              setLikingPostIds(prev => new Set(prev).add(postId));
               setLikedPosts(prev => prev.map(p =>
                 p.id === postId ? { ...p, is_liked: !p.is_liked, likes_count: p.is_liked ? p.likes_count - 1 : p.likes_count + 1 } : p
               ));
-              togglePostLike(postId).catch(() => {
-                setLikedPosts(oldPosts);
-                showToast('Failed to update like', 'error');
-              });
+              togglePostLike(postId)
+                .then((result) => {
+                  setLikedPosts(prev => prev.map(p =>
+                    p.id === postId ? { ...p, is_liked: result.is_liked, likes_count: result.likes_count } : p
+                  ));
+                })
+                .catch(() => {
+                  setLikedPosts(oldPosts);
+                  showToast('Failed to update like', 'error');
+                })
+                .finally(() => {
+                  setLikingPostIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(postId);
+                    return next;
+                  });
+                });
             }} />
           )}
         </View>
@@ -368,6 +400,7 @@ function ActivitiesTab({ activities, loading }: { activities: UserActivity[]; lo
 }
 
 function ProfilePostCard({ post, onToggleLike, showAuthor }: { post: FeedPost; onToggleLike: () => void; showAuthor?: boolean }) {
+  const navigation = useNavigation<MyOrchardNavigationProp>();
   const [shareVisible, setShareVisible] = useState(false);
   const [sharesCount, setSharesCount] = useState(post.shares_count);
 
@@ -401,13 +434,10 @@ function ProfilePostCard({ post, onToggleLike, showAuthor }: { post: FeedPost; o
         <Typography variant="captionMuted" style={styles.postTime}>{timeAgo}</Typography>
       )}
       <Typography variant="body" style={styles.postBody}>{post.body}</Typography>
-      {post.images.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Space[2], marginTop: Space[3] }}>
-          {post.images.map((img) => (
-            <Image key={img.id} source={{ uri: img.medium }} style={styles.postImage} resizeMode="cover" />
-          ))}
-        </ScrollView>
-      )}
+      <PostImages
+        images={post.images}
+        onImagePress={(index) => navigation.navigate('ImageViewer', { images: post.images, initialIndex: index })}
+      />
       <View style={styles.postStats}>
         <Typography variant="captionMuted">{post.likes_count} likes · {post.comments_count} comments · {sharesCount} shares</Typography>
       </View>
@@ -694,11 +724,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.gray600,
     lineHeight: 20,
-  },
-  postImage: {
-    width: 240,
-    height: 160,
-    borderRadius: Radius.lg,
   },
   postStats: {
     marginTop: Space[3],

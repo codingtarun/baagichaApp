@@ -28,7 +28,7 @@ import { Typography, PrimaryHeading, HindiText } from '../../typography';
 import { useAuthStore } from '../../store/authStore';
 import { showToast } from '../../store/toastStore';
 import { sendOtp, verifyOtp } from '../../services/authApi';
-import { finishOnboardingAndGoHome } from '../../navigation/onboardingNavigation';
+import { useOnboardingStore } from '../../store/onboardingStore';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type AuthNavProp = NativeStackNavigationProp<AuthStackParamList>;
@@ -97,7 +97,10 @@ export default function PhoneAuthScreen(): React.JSX.Element {
         } else {
           authLogin(response.data.token, response.data.user);
           showToast('Welcome back!', 'success');
-          finishOnboardingAndGoHome(navigation.getParent());
+          const hasSeen = useOnboardingStore.getState().hasSeenOnboarding;
+          if (!hasSeen) {
+            navigation.getParent()?.navigate('NotificationPermission');
+          }
         }
       }
     } catch (error: any) {

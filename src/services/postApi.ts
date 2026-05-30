@@ -22,7 +22,10 @@ export interface FeedPost {
     name: string;
     avatar: string | null;
     is_expert: boolean;
+    experience_level?: string;
+    reputation_score?: number;
   };
+  helpful_marks_count: number;
   images: {
     id: number;
     url: string;
@@ -37,11 +40,15 @@ export interface FeedComment {
   id: number;
   body: string;
   likes_count: number;
+  helpful_count: number;
+  is_helpful: boolean;
   created_at: string;
   user: {
     id: number;
     name: string;
     avatar: string | null;
+    experience_level?: string;
+    reputation_score?: number;
   };
   replies?: FeedComment[];
 }
@@ -160,6 +167,32 @@ export async function sharePost(postId: number): Promise<{ shares_count: number 
  */
 export async function toggleCommentLike(commentId: number): Promise<{ is_liked: boolean; likes_count: number }> {
   const response = await api.post<ApiResponse<{ is_liked: boolean; likes_count: number }>>(`/comments/${commentId}/like`);
+  return response.data.data;
+}
+
+/**
+ * GET /api/v1/questions
+ */
+export async function getQuestions(perPage = 10, page = 1): Promise<FeedPost[]> {
+  const response = await api.get<ApiResponse<FeedPost[]>>('/questions', {
+    params: { per_page: perPage, page },
+  });
+  return response.data.data;
+}
+
+/**
+ * POST /api/v1/posts/{postId}/comments/{commentId}/helpful
+ */
+export async function markHelpful(postId: number, commentId: number): Promise<{ helpful_count: number; asker_awarded: boolean; post_helpful_count: number }> {
+  const response = await api.post<ApiResponse<{ helpful_count: number; asker_awarded: boolean; post_helpful_count: number }>>(`/posts/${postId}/comments/${commentId}/helpful`);
+  return response.data.data;
+}
+
+/**
+ * DELETE /api/v1/posts/{postId}/comments/{commentId}/helpful
+ */
+export async function unmarkHelpful(postId: number, commentId: number): Promise<{ helpful_count: number; post_helpful_count: number }> {
+  const response = await api.delete<ApiResponse<{ helpful_count: number; post_helpful_count: number }>>(`/posts/${postId}/comments/${commentId}/helpful`);
   return response.data.data;
 }
 

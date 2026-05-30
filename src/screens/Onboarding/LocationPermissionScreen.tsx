@@ -1,10 +1,11 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * BAAGICHA — LOCATION PERMISSION SCREEN
+ * BAAGICCHA — LOCATION PERMISSION SCREEN
  * ═══════════════════════════════════════════════════════════════
  *
  * Friendly permission explanation + request for location access.
- * Why: Hyper-local weather forecasts, mandi prices by region, spray timing.
+ * After permission is granted, fetches GPS coordinates and
+ * reverse-geocodes to auto-fill district & state in user profile.
  */
 
 import React, { useState } from 'react';
@@ -13,15 +14,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import Geolocation from '@react-native-community/geolocation';
 
 import { Colors } from '../../theme/colors';
 import { Radius, Shadows } from '../../theme/style';
 import { Typography, PrimaryHeading, HindiText } from '../../typography';
 import { useOnboardingStore } from '../../store/onboardingStore';
-import type { OnboardingStackParamList } from '../../navigation/types';
+import { useAuthStore } from '../../store/authStore';
+import { showToast } from '../../store/toastStore';
+import { updateProfile } from '../../services/authApi';
 import type { RootStackParamList } from '../../navigation/types';
 
-type OnboardingNavProp = NativeStackNavigationProp<OnboardingStackParamList>;
 type RootNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const LOCATION_PERMISSION = Platform.select({
@@ -29,37 +32,113 @@ const LOCATION_PERMISSION = Platform.select({
   android: PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION,
 });
 
+interface NominatimAddress {
+  state?: string;
+  state_district?: string;
+  county?: string;
+  village?: string;
+  town?: string;
+  city?: string;
+}
+
 export default function LocationPermissionScreen(): React.JSX.Element {
-  const navigation = useNavigation<OnboardingNavProp>();
-  const rootNavigation = useNavigation<RootNavProp>();
+  const navigation = useNavigation<RootNavProp>();
   const setLocationPermission = useOnboardingStore((s) => s.setLocationPermission);
   const completeOnboarding = useOnboardingStore((s) => s.completeOnboarding);
+  const authUser = useAuthStore((s) => s.user);
 
   const [isRequesting, setIsRequesting] = useState(false);
 
+  const reverseGeocode = async (lat: number, lon: number): Promise<NominatimAddress | null> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=en`,
+        { headers: { 'User-Agent': 'BaagichaApp/1.0' } }
+      );
+      const data = await response.json();
+      return data.address ?? null;
+    } catch (err) {
+      console.warn('[Location] Reverse geocode failed:', err);
+      return null;
+    }
+  };
+
+  const fetchLocationAndUpdateProfile = async () => {
+    return new Promise<void>((resolve) => {
+      Geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log('[Location] GPS:', latitude, longitude);
+
+          const address = await reverseGeocode(latitude, longitude);
+          if (address && authUser) {
+            const district = address.state_district || address.county || address.city || address.town || '';
+            const state = address.state || '';
+            const village = address.village || '';
+
+            try {
+              await updateProfile({
+                village: village || undefined,
+                district: district || undefined,
+                state: state || undefined,
+                location_enabled: true,
+              });
+              // Update local user state
+              useAuthStore.getState().updateUser({
+                profile: {
+                  ...authUser.profile,
+                  village: village || authUser.profile?.village || null,
+                  district: district || authUser.profile?.district || null,
+                  state: state || authUser.profile?.state || null,
+                },
+              });
+              showToast(`Location set: ${district || village}, ${state}`, 'success');
+            } catch (err) {
+              console.warn('[Location] Profile update failed:', err);
+            }
+          }
+          resolve();
+        },
+        (error) => {
+          console.warn('[Location] GPS fetch failed:', error.message);
+          resolve();
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      );
+    });
+  };
+
   const handleAllow = async () => {
     setIsRequesting(true);
+    let granted = false;
     try {
       if (LOCATION_PERMISSION) {
         const result = await request(LOCATION_PERMISSION);
-        setLocationPermission(result === RESULTS.GRANTED);
+        granted = result === RESULTS.GRANTED;
+        setLocationPermission(granted);
       } else {
         setLocationPermission(false);
       }
     } catch {
       setLocationPermission(false);
-    } finally {
-      setIsRequesting(false);
     }
-    // After location, mark onboarding complete and go to main app
+
+    if (granted) {
+      await fetchLocationAndUpdateProfile();
+    } else {
+      showToast('Location access denied. You can enable it later in Settings.', 'warning');
+    }
+
+    setIsRequesting(false);
     completeOnboarding();
-    rootNavigation.navigate('MainTabs');
+    navigation.navigate('MainTabs');
   };
 
   const handleSkip = () => {
     setLocationPermission(false);
+    showToast('You can enable location later in Settings.', 'info');
     completeOnboarding();
-    rootNavigation.navigate('MainTabs');
+    navigation.navigate('MainTabs');
   };
 
   return (
@@ -94,7 +173,7 @@ export default function LocationPermissionScreen(): React.JSX.Element {
           disabled={isRequesting}
         >
           <Typography variant="button" style={styles.allowButtonText}>
-            Allow Location / स्थान की अनुमति दें
+            {isRequesting ? 'Getting location...' : 'Allow Location / स्थान की अनुमति दें'}
           </Typography>
         </TouchableOpacity>
 

@@ -18,12 +18,13 @@ import { Colors } from '../../theme/colors';
 import { Radius, Shadows } from '../../theme/style';
 import { Typography, PrimaryHeading, HindiText } from '../../typography';
 import { useOnboardingStore } from '../../store/onboardingStore';
-import type { OnboardingStackParamList } from '../../navigation/types';
+import { showToast } from '../../store/toastStore';
+import type { RootStackParamList } from '../../navigation/types';
 
-type OnboardingNavProp = NativeStackNavigationProp<OnboardingStackParamList>;
+type NotificationNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function NotificationPermissionScreen(): React.JSX.Element {
-  const navigation = useNavigation<OnboardingNavProp>();
+  const navigation = useNavigation<NotificationNavProp>();
   const setNotificationPermission = useOnboardingStore((s) => s.setNotificationPermission);
 
   const [isRequesting, setIsRequesting] = useState(false);
@@ -35,6 +36,7 @@ export default function NotificationPermissionScreen(): React.JSX.Element {
       setNotificationPermission(result.status === 'granted');
     } catch {
       setNotificationPermission(false);
+      showToast('Notification permission denied. You can enable it later.', 'warning');
     } finally {
       setIsRequesting(false);
     }
@@ -43,6 +45,7 @@ export default function NotificationPermissionScreen(): React.JSX.Element {
 
   const handleSkip = () => {
     setNotificationPermission(false);
+    showToast('You can enable notifications later in Settings.', 'info');
     navigation.navigate('LocationPermission');
   };
 

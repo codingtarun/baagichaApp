@@ -22,7 +22,7 @@ import {
   Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
@@ -34,23 +34,16 @@ import { showToast } from '../store/toastStore';
 import type { HomeNavigationProp } from '../navigation/types';
 import type { PriorityCardData } from '../navigation/stacks/HomeStack';
 import ShareSheet from '../components/ShareSheet';
+import PostImages from '../components/PostImages';
+import StoryComposer from '../components/StoryComposer';
 import { getSuggestedUsers, type SuggestedUser } from '../services/userApi';
-import { getFeed, createPost, togglePostLike, sharePost, type FeedPost } from '../services/postApi';
+import { getFeed, getQuestions, createPost, togglePostLike, sharePost, type FeedPost } from '../services/postApi';
 import { getGroups, joinGroup, type GroupCard } from '../services/groupApi';
+import { getStoryFeed, type StoryGroup } from '../services/storyApi';
 
 // ═══════════════════════════════════════════════════════════════
 // MOCK DATA
 // ═══════════════════════════════════════════════════════════════
-
-const STORIES = [
-  { id: 'mine', name: 'Your Story', avatar: 'https://i.pravatar.cc/150?u=me', hasStory: false, isMine: true },
-  { id: '1', name: 'Ramesh N.', avatar: 'https://i.pravatar.cc/150?u=1', hasStory: true },
-  { id: '2', name: 'Sunita C.', avatar: 'https://i.pravatar.cc/150?u=2', hasStory: true },
-  { id: '3', name: 'Ajay T.', avatar: 'https://i.pravatar.cc/150?u=3', hasStory: false },
-  { id: '4', name: 'Priya D.', avatar: 'https://i.pravatar.cc/150?u=4', hasStory: true },
-  { id: '5', name: 'Mohan V.', avatar: 'https://i.pravatar.cc/150?u=5', hasStory: true },
-  { id: '6', name: 'Geeta R.', avatar: 'https://i.pravatar.cc/150?u=8', hasStory: true },
-];
 
 const POST_TEMPLATES = [
   { id: 'spray', icon: 'spray', label: 'Spraying', text: 'I am spraying today on my orchard. Preventive care during this season is crucial! 🍎🚿' },
@@ -174,8 +167,30 @@ export default function HomeScreen(): React.JSX.Element {
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [suggestedGroups, setSuggestedGroups] = useState<GroupCard[]>([]);
   const [posting, setPosting] = useState(false);
+  const [isAskCommunity, setIsAskCommunity] = useState(false);
+  const [likingPostIds, setLikingPostIds] = useState<Set<number>>(new Set());
+  const [questions, setQuestions] = useState<FeedPost[]>([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(true);
+  const [storyGroups, setStoryGroups] = useState<StoryGroup[]>([]);
+  const [myStories, setMyStories] = useState<any[]>([]);
+  const [loadingStories, setLoadingStories] = useState(true);
+  const [composerVisible, setComposerVisible] = useState(false);
 
   const sortedCards = sortByPriority(PRIORITY_CARDS);
+
+  // Refresh stories when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      getStoryFeed()
+        .then((data) => {
+          setMyStories(data.my_stories);
+          setStoryGroups(data.feed);
+        })
+        .catch((err) => {
+          console.error('[Home] Focus refresh failed:', err.response?.data ?? err.message);
+        });
+    }, [])
+  );
 
   // Fetch feed + experts + suggested friends on mount
   useEffect(() => {
@@ -228,20 +243,61 @@ export default function HomeScreen(): React.JSX.Element {
       })
       .finally(() => { if (!cancelled) setLoadingGroups(false); });
 
+    // Fetch community questions
+    getQuestions(5, 1)
+      .then((data) => { if (!cancelled) setQuestions(data); })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('[Home] Questions fetch failed:', err.response?.data ?? err.message);
+          setQuestions([]);
+        }
+      })
+      .finally(() => { if (!cancelled) setLoadingQuestions(false); });
+
+    // Fetch stories
+    getStoryFeed()
+      .then((data) => {
+        if (!cancelled) {
+          setMyStories(data.my_stories);
+          setStoryGroups(data.feed);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('[Home] Stories fetch failed:', err.response?.data ?? err.message);
+          setStoryGroups([]);
+          setMyStories([]);
+        }
+      })
+      .finally(() => { if (!cancelled) setLoadingStories(false); });
+
     return () => { cancelled = true; };
   }, []);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    getFeed(10, 1)
-      .then((feed) => { setPosts(feed); showToast('Refreshed', 'success'); })
+    Promise.all([
+      getFeed(10, 1),
+      getQuestions(5, 1),
+      getStoryFeed(),
+    ])
+      .then(([feed, qs, storyData]) => {
+        setPosts(feed);
+        setQuestions(qs);
+        setMyStories(storyData.my_stories);
+        setStoryGroups(storyData.feed);
+        showToast('Refreshed', 'success');
+      })
       .catch((err) => { console.error('[Home] Refresh failed:', err); showToast('Refresh failed', 'error'); })
       .finally(() => setRefreshing(false));
   }, []);
 
   const toggleLike = async (postId: number) => {
+    if (likingPostIds.has(postId)) return;
     const post = posts.find(p => p.id === postId);
     if (!post) return;
+
+    setLikingPostIds(prev => new Set(prev).add(postId));
     // Optimistic update
     setPosts(prev => prev.map(p =>
       p.id === postId ? { ...p, is_liked: !p.is_liked, likes_count: p.is_liked ? p.likes_count - 1 : p.likes_count + 1 } : p
@@ -257,6 +313,12 @@ export default function HomeScreen(): React.JSX.Element {
         p.id === postId ? { ...p, is_liked: post.is_liked, likes_count: post.likes_count } : p
       ));
       showToast('Failed to like post', 'error');
+    } finally {
+      setLikingPostIds(prev => {
+        const next = new Set(prev);
+        next.delete(postId);
+        return next;
+      });
     }
   };
 
@@ -266,13 +328,14 @@ export default function HomeScreen(): React.JSX.Element {
     try {
       const newPost = await createPost({
         body: postText.trim(),
-        type: 'status',
+        type: isAskCommunity ? 'question' : 'status',
         visibility: 'public',
         images: selectedImages.length > 0 ? selectedImages : undefined,
       });
       setPosts(prev => [newPost, ...prev]);
       setPostText('');
       setSelectedImages([]);
+      setIsAskCommunity(false);
       showToast('Post shared!', 'success');
     } catch (err: any) {
       console.error('[Home] Post failed:', err.response?.data ?? err.message);
@@ -359,7 +422,23 @@ export default function HomeScreen(): React.JSX.Element {
         </View>
 
         {/* Stories inside hero */}
-        <StoryBar stories={STORIES} />
+        <StoryBar
+          myStories={myStories}
+          groups={storyGroups}
+          loading={loadingStories}
+          onViewStory={(groupIdx) => {
+            const allGroups: StoryGroup[] = myStories.length > 0
+              ? [{ user: { id: 0, name: 'You', avatar: null }, unseen_count: myStories.length, stories: myStories }, ...storyGroups]
+              : storyGroups;
+            navigation.navigate('StoryViewer', { groups: allGroups, initialGroupIndex: myStories.length > 0 ? groupIdx + 1 : groupIdx });
+          }}
+          onViewMyStory={() => {
+            if (myStories.length === 0) return;
+            const allGroups: StoryGroup[] = [{ user: { id: 0, name: 'You', avatar: null }, unseen_count: myStories.length, stories: myStories }, ...storyGroups];
+            navigation.navigate('StoryViewer', { groups: allGroups, initialGroupIndex: 0 });
+          }}
+          onAddStory={() => setComposerVisible(true)}
+        />
       </LinearGradient>
 
       <ScrollView
@@ -405,7 +484,13 @@ export default function HomeScreen(): React.JSX.Element {
           <View style={styles.inputActions}>
             <InputAction icon="image-outline" label="Gallery" color={Colors.success} onPress={pickFromGallery} />
             <InputAction icon="camera-outline" label="Camera" color={Colors.info} onPress={pickFromCamera} />
-            <InputAction icon="help-circle-outline" label="Ask Community" color={Colors.warning} />
+            <InputAction
+              icon={isAskCommunity ? 'help-circle' : 'help-circle-outline'}
+              label="Ask Community"
+              color={isAskCommunity ? Colors.warning : Colors.gray500}
+              onPress={() => setIsAskCommunity(prev => !prev)}
+              selected={isAskCommunity}
+            />
           </View>
           <TouchableOpacity
             style={[styles.postBtn, (!postText.trim() && selectedImages.length === 0) || posting && styles.postBtnDisabled]}
@@ -432,6 +517,48 @@ export default function HomeScreen(): React.JSX.Element {
             <PriorityCard key={card.id} card={card} onPress={navigateToCardDetail} onShare={openShareModal} />
           ))}
         </ScrollView>
+
+        {/* ── Community Questions ── */}
+        <View style={styles.sectionHeaderRow}>
+          <View style={styles.sectionTitleWrap}>
+            <Icon name="forum" size={18} color={Colors.primary} />
+            <Typography variant="body" style={styles.sectionTitle}>Community Questions</Typography>
+          </View>
+          <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate('Community')}>
+            <Typography variant="caption" style={styles.seeAll}>See all</Typography>
+          </TouchableOpacity>
+        </View>
+        {loadingQuestions ? (
+          <Typography variant="captionMuted" style={{ paddingVertical: 20, textAlign: 'center' }}>
+            Loading questions...
+          </Typography>
+        ) : questions.length === 0 ? (
+          <Typography variant="captionMuted" style={{ paddingVertical: 20, textAlign: 'center' }}>
+            No questions yet. Be the first to ask!
+          </Typography>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.questionsContainer}>
+            {questions.map((q) => (
+              <TouchableOpacity
+                key={q.id}
+                style={styles.questionCard}
+                onPress={() => navigation.navigate('PostDetail', { postId: String(q.id) })}
+                activeOpacity={0.85}
+              >
+                <View style={styles.questionBadgeSmall}>
+                  <Icon name="help-circle" size={10} color={Colors.white} />
+                  <Typography variant="caption" style={styles.questionBadgeSmallText}>Question</Typography>
+                </View>
+                <Typography variant="body" style={styles.questionBody} numberOfLines={3}>{q.body}</Typography>
+                <View style={styles.questionFooter}>
+                  <Image source={{ uri: q.user.avatar ?? `https://i.pravatar.cc/150?u=${q.user.id}` }} style={styles.questionAvatar} />
+                  <Typography variant="captionMuted" style={{ flex: 1 }}>{q.user.name}</Typography>
+                  <Typography variant="captionMuted">{q.comments_count} answers</Typography>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
 
         {/* ── Activity Feed ── */}
         <View style={styles.sectionHeaderRow}>
@@ -611,6 +738,21 @@ export default function HomeScreen(): React.JSX.Element {
           </View>
         </View>
       </Modal>
+
+      {/* Story Composer */}
+      <StoryComposer
+        visible={composerVisible}
+        onClose={() => setComposerVisible(false)}
+        onImageSelected={(uri, type) => {
+          navigation.navigate('StoryMediaPreview', { uri, mediaType: 'image', mimeType: type });
+        }}
+        onVideoSelected={(uri, type) => {
+          navigation.navigate('StoryMediaPreview', { uri, mediaType: 'video', mimeType: type });
+        }}
+        onTextSelected={() => {
+          navigation.navigate('StoryTextComposer');
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -619,25 +761,50 @@ export default function HomeScreen(): React.JSX.Element {
 // SUB-COMPONENTS
 // ═══════════════════════════════════════════════════════════════
 
-function StoryBar({ stories }: { stories: typeof STORIES }) {
+function StoryBar({ myStories, groups, loading, onViewStory, onViewMyStory, onAddStory }: {
+  myStories: any[];
+  groups: StoryGroup[];
+  loading: boolean;
+  onViewStory: (groupIndex: number) => void;
+  onViewMyStory: () => void;
+  onAddStory: () => void;
+}) {
+  const hasMyStory = myStories.length > 0;
+
   return (
     <View style={styles.storiesCardShadow}>
       <View style={styles.storiesCardInner}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storiesContainer}>
-        {stories.map((story) => (
-          <TouchableOpacity key={story.id} style={styles.storyItem} activeOpacity={0.7}>
-            <View style={[styles.storyRing, story.hasStory && styles.storyRingActive]}>
-              <Image source={{ uri: story.avatar }} style={styles.storyAvatar} />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storiesContainer}>
+          {/* My Story */}
+          <TouchableOpacity style={styles.storyItem} onPress={hasMyStory ? onViewMyStory : onAddStory} activeOpacity={0.7}>
+            <View style={[styles.storyRing, hasMyStory && styles.storyRingActive]}>
+              <Image source={{ uri: 'https://i.pravatar.cc/150?u=me' }} style={styles.storyAvatar} />
             </View>
-            {story.isMine && (
+            {!hasMyStory && (
               <View style={styles.addStoryBtn}>
                 <Icon name="plus" size={12} color={Colors.white} />
               </View>
             )}
-            <Typography variant="caption" style={styles.storyName} lines={1}>{story.name}</Typography>
+            <Typography variant="caption" style={styles.storyName} numberOfLines={1}>Your Story</Typography>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+
+          {/* Loading */}
+          {loading && (
+            <Typography variant="captionMuted" style={{ paddingVertical: 20, width: 120, textAlign: 'center' }}>
+              Loading...
+            </Typography>
+          )}
+
+          {/* Other users' stories */}
+          {!loading && groups.map((group, idx) => (
+            <TouchableOpacity key={group.user.id} style={styles.storyItem} onPress={() => onViewStory(idx)} activeOpacity={0.7}>
+              <View style={[styles.storyRing, group.unseen_count > 0 && styles.storyRingActive]}>
+                <Image source={{ uri: group.user.avatar ?? `https://i.pravatar.cc/150?u=${group.user.id}` }} style={styles.storyAvatar} />
+              </View>
+              <Typography variant="caption" style={styles.storyName} numberOfLines={1}>{group.user.name}</Typography>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
     </View>
   );
@@ -702,11 +869,11 @@ function PriorityCard({ card, onPress, onShare }: { card: PriorityCardData; onPr
   );
 }
 
-function InputAction({ icon, label, color, onPress }: { icon: string; label: string; color: string; onPress?: () => void }) {
+function InputAction({ icon, label, color, onPress, selected }: { icon: string; label: string; color: string; onPress?: () => void; selected?: boolean }) {
   return (
-    <TouchableOpacity style={styles.inputActionBtn} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={[styles.inputActionBtn, selected ? styles.inputActionBtnSelected : undefined]} onPress={onPress} activeOpacity={0.7}>
       <Icon name={icon} size={18} color={color} />
-      <Typography variant="caption" style={styles.inputActionText}>{label}</Typography>
+      <Typography variant="caption" style={[styles.inputActionText, selected && { color, fontWeight: '700' }]}>{label}</Typography>
     </TouchableOpacity>
   );
 }
@@ -746,7 +913,15 @@ function FeedPost({ post, onLike }: { post: FeedPost; onLike: () => void }) {
           <TouchableOpacity onPress={navigateToUser} activeOpacity={0.7} style={{ flex: 1 }}>
             <View style={styles.feedHeaderText}>
               <Typography variant="body" style={styles.feedAuthor}>{post.user.name}</Typography>
-              <Typography variant="captionMuted">{timeAgo}</Typography>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Typography variant="captionMuted">{timeAgo}</Typography>
+                {post.type === 'question' && (
+                  <View style={styles.questionBadge}>
+                    <Icon name="help-circle" size={10} color={Colors.white} />
+                    <Typography variant="caption" style={styles.questionBadgeText}>Question</Typography>
+                  </View>
+                )}
+              </View>
             </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.feedMore} activeOpacity={0.7}>
@@ -754,13 +929,10 @@ function FeedPost({ post, onLike }: { post: FeedPost; onLike: () => void }) {
           </TouchableOpacity>
         </View>
         <Typography variant="body" style={styles.feedText}>{post.body}</Typography>
-        {post.images.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Space[2], marginTop: Space[3] }}>
-            {post.images.map(img => (
-              <Image key={img.id} source={{ uri: img.medium }} style={styles.feedImage} resizeMode="cover" />
-            ))}
-          </ScrollView>
-        )}
+        <PostImages
+          images={post.images}
+          onImagePress={(index) => navigation.navigate('ImageViewer', { images: post.images, initialIndex: index })}
+        />
         <View style={styles.feedStats}>
           <Typography variant="captionMuted">{post.likes_count} likes · {post.comments_count} comments · {sharesCount} shares</Typography>
         </View>
@@ -957,7 +1129,8 @@ const styles = StyleSheet.create({
   previewImage: { width: 120, height: 120, borderRadius: Radius.lg },
   removePreview: { position: 'absolute', top: -8, right: -8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: Radius.full },
   inputActions: { flexDirection: 'row', alignItems: 'center', marginTop: Space[3], paddingTop: Space[3], borderTopWidth: 1, borderTopColor: Colors.gray200 },
-  inputActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Space[2], paddingVertical: 4 },
+  inputActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Space[2], paddingVertical: 4, borderRadius: Radius.md },
+  inputActionBtnSelected: { backgroundColor: Colors.warning + '15' },
   inputActionText: { fontSize: 12, color: Colors.gray500, fontWeight: '500' },
   postBtn: { backgroundColor: Colors.primary, paddingVertical: 10, borderRadius: Radius.full, alignItems: 'center', marginTop: Space[3] },
   postBtnDisabled: { opacity: 0.4 },
@@ -1020,11 +1193,40 @@ const styles = StyleSheet.create({
   feedAuthor: { fontWeight: '700', fontSize: 14, color: Colors.gray900 },
   feedMore: { padding: 4 },
   feedText: { fontSize: 14, color: Colors.gray500, marginTop: Space[3], lineHeight: 20 },
-  feedImage: { width: 260, height: 180, borderRadius: Radius.lg },
   feedStats: { marginTop: Space[3], paddingBottom: Space[3], borderBottomWidth: 1, borderBottomColor: Colors.gray200 },
   feedActions: { flexDirection: 'row', marginTop: Space[2] },
   feedActionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 6 },
   feedActionText: { fontSize: 12, color: Colors.gray500, fontWeight: '500' },
+  questionBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 2,
+    backgroundColor: Colors.warning,
+    paddingHorizontal: 5, paddingVertical: 1, borderRadius: Radius.sm,
+  },
+  questionBadgeText: { fontSize: 9, fontWeight: '700', color: Colors.white },
+
+  // ── Community Questions ──
+  questionsContainer: { paddingHorizontal: Space[4], gap: Space[3] },
+  questionCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius['2xl'],
+    padding: Space[4],
+    marginRight: Space[3],
+    width: 260,
+    borderWidth: 1,
+    borderColor: Colors.warning + '20',
+    ...Shadows.medium,
+  },
+  questionBadgeSmall: {
+    flexDirection: 'row', alignItems: 'center', gap: 2,
+    backgroundColor: Colors.warning,
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: Radius.md,
+    alignSelf: 'flex-start',
+    marginBottom: Space[2],
+  },
+  questionBadgeSmallText: { fontSize: 10, fontWeight: '700', color: Colors.white },
+  questionBody: { fontSize: 13, color: Colors.gray800, lineHeight: 18, marginBottom: Space[3] },
+  questionFooter: { flexDirection: 'row', alignItems: 'center', gap: Space[2] },
+  questionAvatar: { width: 20, height: 20, borderRadius: Radius.full },
 
   // ── Suggested Friends ──
   friendsContainer: { paddingHorizontal: Space[4] },

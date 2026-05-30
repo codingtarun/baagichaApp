@@ -165,7 +165,7 @@ const DISCOVER_ITEMS: DiscoverItem[] = [
     route: 'Diseases',
   },
   {
-    icon: 'apple-whole',
+    icon: 'food-apple',
     title: 'Variety',
     titleHi: 'किस्में',
     description: 'Explore apple varieties best suited for your altitude',

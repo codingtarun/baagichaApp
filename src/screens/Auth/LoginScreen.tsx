@@ -32,7 +32,7 @@ import { showToast } from '../../store/toastStore';
 import { loginByEmail, loginBySocial } from '../../services/authApi';
 import { signInWithGoogle, signInWithFacebook } from '../../services/socialAuth';
 import SocialAuthButtons from '../../components/SocialAuthButtons';
-import { finishOnboardingAndGoHome } from '../../navigation/onboardingNavigation';
+import { useOnboardingStore } from '../../store/onboardingStore';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type AuthNavProp = NativeStackNavigationProp<AuthStackParamList>;
@@ -63,7 +63,10 @@ export default function LoginScreen(): React.JSX.Element {
       if (response.success && response.data) {
         authLogin(response.data.token, response.data.user);
         showToast('Welcome back!', 'success');
-        finishOnboardingAndGoHome(navigation.getParent());
+        const hasSeen = useOnboardingStore.getState().hasSeenOnboarding;
+        if (!hasSeen) {
+          navigation.getParent()?.navigate('NotificationPermission');
+        }
         return;
       }
     } catch (error: any) {
@@ -129,7 +132,10 @@ export default function LoginScreen(): React.JSX.Element {
           } else {
             authLogin(response.data.token, response.data.user);
             showToast('Welcome back!', 'success');
-            finishOnboardingAndGoHome(navigation.getParent());
+            const hasSeen = useOnboardingStore.getState().hasSeenOnboarding;
+            if (!hasSeen) {
+              navigation.getParent()?.navigate('NotificationPermission');
+            }
           }
         }
       } catch (error: any) {

@@ -17,6 +17,7 @@
 import { create } from 'zustand';
 import { MMKV } from 'react-native-mmkv';
 import { logout as logoutApi } from '../services/authApi';
+import { useOnboardingStore } from './onboardingStore';
 
 // ── MMKV Storage Instance (with graceful fallback) ──
 let mmkvInstance: MMKV | null = null;
@@ -140,6 +141,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     authStorage.delete('token');
     authStorage.delete('user');
     set({ token: null, user: null, isAuthenticated: false, isLoading: false });
+    useOnboardingStore.getState().resetOnboarding();
   },
 
   // Full logout — notify backend then clear local state
@@ -153,6 +155,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     authStorage.delete('token');
     authStorage.delete('user');
     set({ token: null, user: null, isAuthenticated: false, isLoading: false });
+    useOnboardingStore.getState().resetOnboarding();
   },
 
   // Update user fields (e.g., after profile update)

@@ -25,6 +25,25 @@ import GroupDetailScreen from '../../screens/GroupDetailScreen';
 import GroupCreateScreen from '../../screens/GroupCreateScreen';
 import GroupEditScreen from '../../screens/GroupEditScreen';
 import GroupJoinRequestsScreen from '../../screens/GroupJoinRequestsScreen';
+import GroupListScreen from '../../screens/GroupListScreen';
+import ImageViewerScreen from '../../screens/ImageViewerScreen';
+
+// Discover / Baagicha screens (moved from Discover tab to Home tab)
+import VarietyScreen from '../../screens/VarietyScreen';
+import VarietyDetailScreen from '../../screens/VarietyDetailScreen';
+import VarietyCompareScreen from '../../screens/VarietyCompareScreen';
+import DiseaseScreen from '../../screens/DiseaseScreen';
+import DiseaseDetailScreen from '../../screens/DiseaseDetailScreen';
+import WeatherScreen from '../../screens/WeatherScreen';
+import BlogScreen from '../../screens/BlogScreen';
+import BlogDetailScreen from '../../screens/BlogDetailScreen';
+import RootstockListScreen from '../../screens/RootstockListScreen';
+import RootstockDetailScreen from '../../screens/RootstockDetailScreen';
+import CommunityScreen from '../../screens/CommunityScreen';
+import StoryViewerScreen from '../../screens/StoryViewerScreen';
+import StoryTextComposer from '../../screens/StoryTextComposer';
+import StoryMediaPreview from '../../screens/StoryMediaPreview';
+import type { StoryGroup } from '../../services/storyApi';
 
 export type PriorityCardData = {
   id: string;
@@ -49,6 +68,37 @@ export type HomeStackParamList = {
   GroupCreate: undefined;
   GroupEdit: { slug: string };
   GroupJoinRequests: { slug: string };
+  GroupList: undefined;
+  ImageViewer: {
+    images: {
+      id: number;
+      url: string;
+      thumb: string;
+      medium: string;
+      large: string;
+    }[];
+    initialIndex: number;
+  };
+
+  // Discover / Baagicha screens
+  VarietyList: undefined;
+  VarietyDetail: { slug: string };
+  VarietyCompare: { slugs: string[] };
+  Diseases: undefined;
+  DiseaseDetail: { slug: string };
+  Weather: undefined;
+  Blog: undefined;
+  BlogDetail: { slug: string };
+  RootstockList: undefined;
+  RootstockDetail: { slug: string };
+
+  // Community Q&A (accessed from Home tab)
+  Community: undefined;
+
+  // Stories
+  StoryViewer: { groups: StoryGroup[]; initialGroupIndex: number };
+  StoryTextComposer: undefined;
+  StoryMediaPreview: { uri: string; mediaType: 'image' | 'video'; mimeType: string };
 };
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -65,6 +115,24 @@ export default function HomeStack(): React.JSX.Element {
       <Stack.Screen name="GroupCreate" component={GroupCreateScreen} />
       <Stack.Screen name="GroupEdit" component={GroupEditScreen} />
       <Stack.Screen name="GroupJoinRequests" component={GroupJoinRequestsScreen} />
+      <Stack.Screen name="GroupList" component={GroupListScreen} />
+      <Stack.Screen name="ImageViewer" component={ImageViewerScreen} />
+
+      {/* Discover / Baagicha screens */}
+      <Stack.Screen name="VarietyList" component={VarietyScreen} />
+      <Stack.Screen name="VarietyDetail" component={VarietyDetailScreen} />
+      <Stack.Screen name="VarietyCompare" component={VarietyCompareScreen} />
+      <Stack.Screen name="Diseases" component={DiseaseScreen} />
+      <Stack.Screen name="DiseaseDetail" component={DiseaseDetailScreen} />
+      <Stack.Screen name="Weather" component={WeatherScreen} />
+      <Stack.Screen name="Blog" component={BlogScreen} />
+      <Stack.Screen name="BlogDetail" component={BlogDetailScreen} />
+      <Stack.Screen name="RootstockList" component={RootstockListScreen} />
+      <Stack.Screen name="RootstockDetail" component={RootstockDetailScreen} />
+      <Stack.Screen name="Community" component={CommunityScreen} />
+      <Stack.Screen name="StoryViewer" component={StoryViewerScreen} />
+      <Stack.Screen name="StoryTextComposer" component={StoryTextComposer} />
+      <Stack.Screen name="StoryMediaPreview" component={StoryMediaPreview} />
     </Stack.Navigator>
   );
 }

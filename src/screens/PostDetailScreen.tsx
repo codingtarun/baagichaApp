@@ -28,6 +28,7 @@ import type { HomeNavigationProp } from '../navigation/types';
 import type { RouteProp } from '@react-navigation/native';
 import type { HomeStackParamList } from '../navigation/stacks/HomeStack';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useAuthStore } from '../store/authStore';
 import {
   getPost,
   getComments,
@@ -35,6 +36,8 @@ import {
   addReply,
   togglePostLike,
   toggleCommentLike,
+  markHelpful,
+  unmarkHelpful,
   type FeedPost,
   type FeedComment,
 } from '../services/postApi';
@@ -52,6 +55,10 @@ export default function PostDetailScreen(): React.JSX.Element {
   const [commentText, setCommentText] = useState('');
   const [replyingTo, setReplyingTo] = useState<FeedComment | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [likingPost, setLikingPost] = useState(false);
+  const [likingCommentIds, setLikingCommentIds] = useState<Set<number>>(new Set());
+  const [markingHelpfulIds, setMarkingHelpfulIds] = useState<Set<number>>(new Set());
+  const currentUser = useAuthStore((s) => s.user);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,16 +85,21 @@ export default function PostDetailScreen(): React.JSX.Element {
   }, [postId]);
 
   const handleLike = useCallback(async () => {
-    if (!post) return;
+    if (!post || likingPost) return;
+    setLikingPost(true);
     try {
       const result = await togglePostLike(post.id);
       setPost({ ...post, is_liked: result.is_liked, likes_count: result.likes_count });
     } catch {
       showToast('Failed to like post', 'error');
+    } finally {
+      setLikingPost(false);
     }
-  }, [post]);
+  }, [post, likingPost]);
 
   const handleCommentLike = useCallback(async (comment: FeedComment) => {
+    if (likingCommentIds.has(comment.id)) return;
+    setLikingCommentIds(prev => new Set(prev).add(comment.id));
     try {
       const result = await toggleCommentLike(comment.id);
       setComments(prev => prev.map(c =>
@@ -95,8 +107,60 @@ export default function PostDetailScreen(): React.JSX.Element {
       ));
     } catch {
       showToast('Failed to like comment', 'error');
+    } finally {
+      setLikingCommentIds(prev => {
+        const next = new Set(prev);
+        next.delete(comment.id);
+        return next;
+      });
     }
-  }, []);
+  }, [likingCommentIds]);
+
+  const isAsker = currentUser?.id === post?.user.id;
+  const isQuestion = post?.type === 'question';
+  const helpfulCount = post?.helpful_marks_count ?? 0;
+  const maxHelpfulReached = helpfulCount >= 3;
+
+  const handleMarkHelpful = useCallback(async (comment: FeedComment) => {
+    if (!post || markingHelpfulIds.has(comment.id)) return;
+    if (!isAsker || !isQuestion) {
+      showToast('Only the question asker can mark answers as helpful', 'error');
+      return;
+    }
+    if (maxHelpfulReached && !comment.is_helpful) {
+      showToast('Maximum 3 helpful marks allowed per question', 'error');
+      return;
+    }
+
+    setMarkingHelpfulIds(prev => new Set(prev).add(comment.id));
+    try {
+      if (comment.is_helpful) {
+        const result = await unmarkHelpful(post.id, comment.id);
+        setComments(prev => prev.map(c =>
+          c.id === comment.id ? { ...c, is_helpful: false, helpful_count: result.helpful_count } : c
+        ));
+        setPost({ ...post, helpful_marks_count: result.post_helpful_count });
+      } else {
+        const result = await markHelpful(post.id, comment.id);
+        setComments(prev => prev.map(c =>
+          c.id === comment.id ? { ...c, is_helpful: true, helpful_count: result.helpful_count } : c
+        ));
+        setPost({ ...post, helpful_marks_count: result.post_helpful_count });
+        if (result.asker_awarded) {
+          showToast('You earned 5 points for marking a helpful answer!', 'success');
+        }
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Failed to mark helpful';
+      showToast(msg, 'error');
+    } finally {
+      setMarkingHelpfulIds(prev => {
+        const next = new Set(prev);
+        next.delete(comment.id);
+        return next;
+      });
+    }
+  }, [post, isAsker, isQuestion, maxHelpfulReached, markingHelpfulIds]);
 
   const handleSubmitComment = useCallback(async () => {
     if (!commentText.trim() || !post) return;
@@ -169,7 +233,15 @@ export default function PostDetailScreen(): React.JSX.Element {
                 />
                 <View style={styles.authorInfo}>
                   <Typography variant="body" style={styles.authorName}>{post.user.name}</Typography>
-                  <Typography variant="captionMuted">{timeAgo}</Typography>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Typography variant="captionMuted">{timeAgo}</Typography>
+                    {isQuestion && (
+                      <View style={styles.questionBadge}>
+                        <Icon name="help-circle" size={10} color={Colors.white} />
+                        <Typography variant="caption" style={styles.questionBadgeText}>Question</Typography>
+                      </View>
+                    )}
+                  </View>
                 </View>
                 {post.user.is_expert && (
                   <Icon name="check-decagram" size={16} color={Colors.primary} />
@@ -195,6 +267,9 @@ export default function PostDetailScreen(): React.JSX.Element {
               {/* Stats */}
               <Typography variant="captionMuted" style={styles.statsText}>
                 {post.likes_count} likes · {post.comments_count} comments · {post.shares_count} shares
+                {isQuestion && (
+                  <Typography variant="captionMuted"> · {helpfulCount}/3 helpful</Typography>
+                )}
               </Typography>
 
               {/* Actions */}
@@ -228,6 +303,11 @@ export default function PostDetailScreen(): React.JSX.Element {
                     comment={comment}
                     onReply={(c) => { setReplyingTo(c); setCommentText(''); }}
                     onLike={handleCommentLike}
+                    onMarkHelpful={handleMarkHelpful}
+                    showHelpful={isQuestion}
+                    isAsker={isAsker}
+                    maxHelpfulReached={maxHelpfulReached}
+                    markingHelpful={markingHelpfulIds.has(comment.id)}
                     onUserPress={(userId) => navigateToUser(userId)}
                   />
                 ))
@@ -279,18 +359,32 @@ export default function PostDetailScreen(): React.JSX.Element {
   );
 }
 
-function CommentItem({ comment, onReply, onLike, onUserPress }: {
+function CommentItem({ comment, onReply, onLike, onMarkHelpful, showHelpful, isAsker, maxHelpfulReached, markingHelpful, onUserPress }: {
   comment: FeedComment;
   onReply: (c: FeedComment) => void;
   onLike: (c: FeedComment) => void;
+  onMarkHelpful?: (c: FeedComment) => void;
+  showHelpful?: boolean;
+  isAsker?: boolean;
+  maxHelpfulReached?: boolean;
+  markingHelpful?: boolean;
   onUserPress: (userId: number) => void;
 }) {
   return (
-    <View style={styles.commentCard}>
+    <View style={[styles.commentCard, comment.is_helpful && styles.helpfulCommentCard]}>
       <TouchableOpacity onPress={() => onUserPress(comment.user.id)} activeOpacity={0.7} style={styles.commentAuthorRow}>
         <Image source={{ uri: comment.user.avatar ?? `https://i.pravatar.cc/150?u=${comment.user.id}` }} style={styles.commentAvatar} />
         <View style={{ flex: 1 }}>
-          <Typography variant="bodySmall" style={styles.commentName}>{comment.user.name}</Typography>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Typography variant="bodySmall" style={styles.commentName}>{comment.user.name}</Typography>
+            {comment.user.experience_level && comment.user.experience_level !== 'beginner' && (
+              <View style={[styles.experienceBadge, comment.user.experience_level === 'expert' && styles.expertBadge]}>
+                <Typography variant="caption" style={styles.experienceBadgeText}>
+                  {comment.user.experience_level === 'expert' ? 'Expert' : 'Intermediate'}
+                </Typography>
+              </View>
+            )}
+          </View>
           <Typography variant="captionMuted">{formatTimeAgo(comment.created_at)}</Typography>
         </View>
       </TouchableOpacity>
@@ -304,6 +398,35 @@ function CommentItem({ comment, onReply, onLike, onUserPress }: {
           <Icon name="reply-outline" size={14} color={Colors.gray500} />
           <Typography variant="captionMuted">Reply</Typography>
         </TouchableOpacity>
+        {showHelpful && onMarkHelpful && (
+          <TouchableOpacity
+            onPress={() => onMarkHelpful(comment)}
+            activeOpacity={0.7}
+            style={[
+              styles.commentAction,
+              styles.helpfulBtn,
+              comment.is_helpful && styles.helpfulBtnActive,
+              (!isAsker || (maxHelpfulReached && !comment.is_helpful)) && styles.helpfulBtnDisabled,
+            ]}
+            disabled={!isAsker || markingHelpful || (maxHelpfulReached && !comment.is_helpful)}
+          >
+            {markingHelpful ? (
+              <ActivityIndicator size="small" color={comment.is_helpful ? Colors.white : Colors.primary} />
+            ) : (
+              <>
+                <Icon name={comment.is_helpful ? 'check-circle' : 'check-circle-outline'} size={14} color={comment.is_helpful ? Colors.white : Colors.primary} />
+                <Typography variant="caption" style={[styles.helpfulBtnText, comment.is_helpful && styles.helpfulBtnTextActive]}>
+                  {comment.is_helpful ? 'Helpful' : 'Find this helpful'}
+                </Typography>
+                {comment.helpful_count > 0 && (
+                  <Typography variant="caption" style={[styles.helpfulCount, comment.is_helpful && styles.helpfulBtnTextActive]}>
+                    ({comment.helpful_count})
+                  </Typography>
+                )}
+              </>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Replies */}
@@ -400,4 +523,26 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center',
   },
   sendBtnDisabled: { opacity: 0.4 },
+  questionBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 2,
+    backgroundColor: Colors.warning ?? '#F59E0B',
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: Radius.md,
+  },
+  questionBadgeText: { fontSize: 10, fontWeight: '700', color: Colors.white },
+  helpfulCommentCard: { borderWidth: 1, borderColor: Colors.primary + '40' },
+  helpfulBtn: {
+    backgroundColor: Colors.primary + '10',
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.md,
+  },
+  helpfulBtnActive: { backgroundColor: Colors.primary },
+  helpfulBtnDisabled: { opacity: 0.4 },
+  helpfulBtnText: { fontSize: 11, fontWeight: '600', color: Colors.primary },
+  helpfulBtnTextActive: { color: Colors.white },
+  helpfulCount: { fontSize: 11, fontWeight: '600', color: Colors.primary },
+  experienceBadge: {
+    backgroundColor: Colors.gray200,
+    paddingHorizontal: 5, paddingVertical: 1, borderRadius: Radius.sm,
+  },
+  expertBadge: { backgroundColor: Colors.primary + '18' },
+  experienceBadgeText: { fontSize: 9, fontWeight: '700', color: Colors.gray600 },
 });

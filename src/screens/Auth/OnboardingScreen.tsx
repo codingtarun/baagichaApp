@@ -29,7 +29,7 @@ import { Typography, PrimaryHeading, HindiText } from '../../typography';
 import { useAuthStore } from '../../store/authStore';
 import { showToast } from '../../store/toastStore';
 import { updateProfile, type UpdateProfileRequest } from '../../services/authApi';
-import { finishOnboardingAndGoHome } from '../../navigation/onboardingNavigation';
+import { useOnboardingStore } from '../../store/onboardingStore';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type AuthNavProp = NativeStackNavigationProp<AuthStackParamList>;
@@ -67,7 +67,10 @@ export default function OnboardingScreen(): React.JSX.Element {
           response.data.user
         );
         showToast('Profile completed! Welcome to Baagicha.', 'success');
-        finishOnboardingAndGoHome(navigation.getParent());
+        const hasSeen = useOnboardingStore.getState().hasSeenOnboarding;
+        if (!hasSeen) {
+          navigation.getParent()?.navigate('NotificationPermission');
+        }
       }
     } catch (error: any) {
       if (error.response?.status === 422) {
@@ -81,8 +84,10 @@ export default function OnboardingScreen(): React.JSX.Element {
   }, [name, village, district, state, loginAction, route.params, navigation]);
 
   const handleSkip = useCallback(() => {
-    // Skip onboarding and go home
-    finishOnboardingAndGoHome(navigation.getParent());
+    const hasSeen = useOnboardingStore.getState().hasSeenOnboarding;
+    if (!hasSeen) {
+      navigation.getParent()?.navigate('NotificationPermission');
+    }
   }, [navigation]);
 
   return (

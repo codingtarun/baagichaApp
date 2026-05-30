@@ -68,7 +68,7 @@ export default function OrchardDetailScreen(): React.JSX.Element {
 
   const goToVarietyDetail = useCallback(
     (slug: string) => {
-      navigation.navigate('Discover' as never, {
+      navigation.navigate('Home' as never, {
         screen: 'VarietyDetail',
         params: { slug },
       } as never);

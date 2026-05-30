@@ -22,6 +22,7 @@ import OrchardDetailScreen from '../../screens/OrchardDetailScreen';
 import OrchardFormScreen from '../../screens/OrchardFormScreen';
 import BlockFormScreen from '../../screens/BlockFormScreen';
 import OrchardVarietyFormScreen from '../../screens/OrchardVarietyFormScreen';
+import ImageViewerScreen from '../../screens/ImageViewerScreen';
 
 export type MyOrchardStackParamList = {
   MyOrchard: undefined;
@@ -36,6 +37,16 @@ export type MyOrchardStackParamList = {
   OrchardForm: { orchardId?: number } | undefined;
   BlockForm: { orchardId: number; blockId?: number } | undefined;
   OrchardVarietyForm: { orchardId: number; varietyId?: number } | undefined;
+  ImageViewer: {
+    images: {
+      id: number;
+      url: string;
+      thumb: string;
+      medium: string;
+      large: string;
+    }[];
+    initialIndex: number;
+  };
 };
 
 const Stack = createNativeStackNavigator<MyOrchardStackParamList>();
@@ -55,6 +66,7 @@ export default function MyOrchardStack(): React.JSX.Element {
       <Stack.Screen name="OrchardForm" component={OrchardFormScreen} />
       <Stack.Screen name="BlockForm" component={BlockFormScreen} />
       <Stack.Screen name="OrchardVarietyForm" component={OrchardVarietyFormScreen} />
+      <Stack.Screen name="ImageViewer" component={ImageViewerScreen} />
     </Stack.Navigator>
   );
 }

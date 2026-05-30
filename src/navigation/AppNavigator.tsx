@@ -3,9 +3,12 @@
  * BAAGICHA — APP NAVIGATOR
  * ═══════════════════════════════════════════════════════════════
  *
- * ROOT navigator. All app screens are gated behind authentication.
- *   - Not authenticated → AuthStack ONLY (Login / Register / OTP)
- *   - Authenticated     → OnboardingStack (first launch) or MainTabs
+ * ROOT navigator.
+ *
+ * Flow:
+ *   - Authenticated → MainTabs (always — returning users skip everything)
+ *   - Not authenticated + hasCompletedOnboarding → AuthStack
+ *   - Not authenticated + first launch → Welcome → Auth → Notification → Location → MainTabs
  */
 
 import React, { useEffect } from 'react';
@@ -16,9 +19,13 @@ import { useAuthStore } from '../store/authStore';
 import { useOnboardingStore } from '../store/onboardingStore';
 
 // Navigators
-import OnboardingStack from './OnboardingStack';
 import AuthStack from './AuthStack';
 import BottomTabNavigator from './BottomTabNavigator';
+
+// Screens (for first-launch unauthenticated flow)
+import WelcomeScreen from '../screens/Onboarding/WelcomeScreen';
+import NotificationPermissionScreen from '../screens/Onboarding/NotificationPermissionScreen';
+import LocationPermissionScreen from '../screens/Onboarding/LocationPermissionScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -41,8 +48,18 @@ export default function AppNavigator(): React.JSX.Element {
     return <></>;
   }
 
-  // ── NOT AUTHENTICATED → Auth screens only ──
-  if (!isAuthenticated) {
+  // ── AUTHENTICATED → Always home (skip onboarding & permissions) ──
+  if (isAuthenticated) {
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
+      </Stack.Navigator>
+    );
+  }
+
+  // ── NOT AUTHENTICATED ──
+  if (hasSeenOnboarding) {
+    // User completed full flow before but is now logged out
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Auth" component={AuthStack} />
@@ -50,19 +67,14 @@ export default function AppNavigator(): React.JSX.Element {
     );
   }
 
-  // ── AUTHENTICATED → Onboarding (first launch) or Main app ──
+  // First-launch flow: Welcome → Auth → Notification → Location → Home
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!hasSeenOnboarding ? (
-        <>
-          <Stack.Screen name="Onboarding" component={OnboardingStack} />
-          <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
-        </>
-      ) : (
-        <>
-          <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
-        </>
-      )}
+      <Stack.Screen name="Welcome" component={WelcomeScreen} />
+      <Stack.Screen name="Auth" component={AuthStack} />
+      <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
+      <Stack.Screen name="LocationPermission" component={LocationPermissionScreen} />
+      <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
     </Stack.Navigator>
   );
 }
