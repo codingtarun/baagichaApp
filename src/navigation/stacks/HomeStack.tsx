@@ -27,6 +27,7 @@ import GroupEditScreen from '../../screens/GroupEditScreen';
 import GroupJoinRequestsScreen from '../../screens/GroupJoinRequestsScreen';
 import GroupListScreen from '../../screens/GroupListScreen';
 import ImageViewerScreen from '../../screens/ImageViewerScreen';
+import NotificationsScreen from '../../screens/NotificationsScreen';
 
 // Discover / Baagicha screens (moved from Discover tab to Home tab)
 import VarietyScreen from '../../screens/VarietyScreen';
@@ -99,6 +100,7 @@ export type HomeStackParamList = {
   StoryViewer: { groups: StoryGroup[]; initialGroupIndex: number };
   StoryTextComposer: undefined;
   StoryMediaPreview: { uri: string; mediaType: 'image' | 'video'; mimeType: string };
+  Notifications: undefined;
 };
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -133,6 +135,7 @@ export default function HomeStack(): React.JSX.Element {
       <Stack.Screen name="StoryViewer" component={StoryViewerScreen} />
       <Stack.Screen name="StoryTextComposer" component={StoryTextComposer} />
       <Stack.Screen name="StoryMediaPreview" component={StoryMediaPreview} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
     </Stack.Navigator>
   );
 }

@@ -17,6 +17,15 @@ import type { RootStackParamList } from './types';
 
 import { useAuthStore } from '../store/authStore';
 import { useOnboardingStore } from '../store/onboardingStore';
+import {
+  initializePushNotifications,
+  registerFcmToken,
+  onTokenRefresh,
+  onForegroundMessage,
+  onNotificationOpenedApp,
+  getInitialNotification,
+  handleNotificationNavigation,
+} from '../services/notificationService';
 
 // Navigators
 import AuthStack from './AuthStack';
@@ -42,6 +51,43 @@ export default function AppNavigator(): React.JSX.Element {
     restoreOnboarding();
     restoreSession();
   }, [restoreOnboarding, restoreSession]);
+
+  // Initialize Firebase push notifications when authenticated
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Get FCM token and register with backend
+    initializePushNotifications();
+
+    // Listen for token refreshes
+    const unsubscribeTokenRefresh = onTokenRefresh((token) => {
+      registerFcmToken(token);
+    });
+
+    // Listen for foreground messages
+    const unsubscribeForeground = onForegroundMessage();
+
+    // Listen for notification tap (app was in background)
+    const unsubscribeOpened = onNotificationOpenedApp((payload) => {
+      handleNotificationNavigation(payload);
+    });
+
+    // Check if app was opened from a notification (cold start)
+    getInitialNotification().then((payload) => {
+      if (payload) {
+        // Small delay to ensure navigation is ready
+        setTimeout(() => {
+          handleNotificationNavigation(payload);
+        }, 500);
+      }
+    });
+
+    return () => {
+      unsubscribeTokenRefresh();
+      unsubscribeForeground();
+      unsubscribeOpened();
+    };
+  }, [isAuthenticated]);
 
   // Show nothing while we read MMKV (prevents flash of wrong screen)
   if (isAuthLoading || isOnboardingLoading) {

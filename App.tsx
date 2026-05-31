@@ -21,6 +21,10 @@ import { Colors } from './src/theme/colors';
 import AppNavigator from './src/navigation/AppNavigator';
 import Toast from './src/components/Toast';
 import { navigationRef } from './src/navigation/navigationRef';
+import { setupBackgroundHandler } from './src/services/notificationService';
+
+// Register Firebase background message handler BEFORE app mounts
+setupBackgroundHandler();
 
 export default function App(): React.JSX.Element {
   return (
