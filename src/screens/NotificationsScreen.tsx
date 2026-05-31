@@ -5,6 +5,9 @@
  *
  * In-app notification list. Pull-to-refresh, infinite scroll,
  * mark-as-read, and delete actions.
+ *
+ * NOTE: Uses FlatList as the root scrollable (NOT inside ScreenLayout)
+ * to avoid the "VirtualizedLists should never be nested" error.
  */
 
 import React from 'react';
@@ -14,11 +17,11 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import ScreenLayout from '../components/ScreenLayout';
-import { Typography } from '../typography';
+import { Typography, PrimaryHeading } from '../typography';
 import { Colors } from '../theme/colors';
 import { Radius, Shadows } from '../theme/style';
 import { useNotifications } from '../hooks/useNotifications';
@@ -61,7 +64,7 @@ export default function NotificationsScreen(): React.JSX.Element {
   };
 
   const renderEmpty = () => {
-    if (loading) return null;
+    if (loading && !refreshing) return null;
     return (
       <View style={styles.emptyState}>
         <Typography variant="displayHeading" style={styles.emptyIcon}>
@@ -77,49 +80,56 @@ export default function NotificationsScreen(): React.JSX.Element {
     );
   };
 
+  const listHeader = (
+    <>
+      {/* Screen title */}
+      <View style={styles.headerRow}>
+        <PrimaryHeading style={styles.screenTitle}>Notifications</PrimaryHeading>
+      </View>
+
+      {/* Actions bar */}
+      {notifications.length > 0 && (
+        <View style={styles.actionsBar}>
+          <TouchableOpacity onPress={markAllAsRead} activeOpacity={0.7}>
+            <Typography variant="body" color={Colors.primary}>
+              Mark all read
+            </Typography>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={clearRead} activeOpacity={0.7}>
+            <Typography variant="body" color={Colors.danger}>
+              Clear read
+            </Typography>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {error && (
+        <View style={styles.errorBanner}>
+          <Typography variant="body" color={Colors.danger} center>
+            {error}
+          </Typography>
+        </View>
+      )}
+    </>
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenLayout
-        refreshing={refreshing}
-        onRefresh={refresh}
-        headerProps={{}}
-      >
-        {/* Actions bar */}
-        {notifications.length > 0 && (
-          <View style={styles.actionsBar}>
-            <TouchableOpacity onPress={markAllAsRead} activeOpacity={0.7}>
-              <Typography variant="body" color={Colors.primary}>
-                Mark all read
-              </Typography>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={clearRead} activeOpacity={0.7}>
-              <Typography variant="body" color={Colors.danger}>
-                Clear read
-              </Typography>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {error && (
-          <View style={styles.errorBanner}>
-            <Typography variant="body" color={Colors.danger} center>
-              {error}
-            </Typography>
-          </View>
-        )}
-
-        <FlatList
-          data={notifications}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={renderFooter}
-          ListEmptyComponent={renderEmpty}
-        />
-      </ScreenLayout>
+      <FlatList
+        data={notifications}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderItem}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListHeaderComponent={listHeader}
+        ListFooterComponent={renderFooter}
+        ListEmptyComponent={renderEmpty}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={Colors.primary} />
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -139,10 +149,7 @@ function NotificationCard({
 
   return (
     <TouchableOpacity
-      style={[
-        styles.card,
-        notification.is_read && styles.cardRead,
-      ]}
+      style={[styles.card, notification.is_read && styles.cardRead]}
       onPress={onPress}
       activeOpacity={0.8}
     >
@@ -232,6 +239,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  headerRow: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  screenTitle: {
+    fontSize: 24,
+  },
   actionsBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -246,8 +261,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
   },
   listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
+    paddingBottom: 120,
     gap: 12,
   },
   card: {
@@ -255,6 +269,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: Radius.lg,
     overflow: 'hidden',
+    marginHorizontal: 16,
     ...Shadows.subtle,
   },
   cardRead: {

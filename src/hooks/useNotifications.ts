@@ -5,9 +5,11 @@
  *
  * Data hook for the notification list screen.
  * Follows the project's pattern: loading, refreshing, refresh, error.
+ *
+ * NOTE: Uses Zustand store selectors to prevent infinite re-render loops.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   fetchNotifications,
   fetchUnreadCount,
@@ -20,101 +22,118 @@ import { useNotificationStore } from '../store/notificationStore';
 import { showToast } from '../store/toastStore';
 
 export function useNotifications() {
-  const store = useNotificationStore();
+  // Use selectors to subscribe only to specific state slices
+  const notifications = useNotificationStore((s) => s.notifications);
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const setNotifications = useNotificationStore((s) => s.setNotifications);
+  const appendNotifications = useNotificationStore((s) => s.appendNotifications);
+  const setUnreadCount = useNotificationStore((s) => s.setUnreadCount);
+  const markAsReadInStore = useNotificationStore((s) => s.markAsRead);
+  const markAllAsReadInStore = useNotificationStore((s) => s.markAllAsRead);
+  const removeNotification = useNotificationStore((s) => s.removeNotification);
+
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+
+  // Use a ref to prevent double-loading on mount
+  const hasLoaded = useRef(false);
 
   const load = useCallback(
-    async (page = 1, append = false) => {
-      if (page === 1) {
-        store.setLoading(true);
+    async (targetPage = 1, append = false) => {
+      if (targetPage === 1 && !append) {
+        setLoading(true);
       }
-      store.setError(null);
+      setError(null);
 
       try {
-        const response = await fetchNotifications(page);
+        const response = await fetchNotifications(targetPage);
 
         if (response.success) {
           const { data, current_page, last_page } = response.data;
 
           if (append) {
-            store.appendNotifications(data);
+            appendNotifications(data);
           } else {
-            store.setNotifications(data);
+            setNotifications(data);
           }
 
-          store.setHasMore(current_page < last_page);
-          store.setPage(current_page);
+          setHasMore(current_page < last_page);
+          setPage(current_page);
         } else {
-          store.setError(response.message);
+          setError(response.message);
         }
       } catch (err: any) {
-        store.setError(err.response?.data?.message ?? 'Failed to load notifications');
+        setError(err.response?.data?.message ?? 'Failed to load notifications');
       } finally {
-        store.setLoading(false);
+        setLoading(false);
       }
     },
-    [store]
+    [setNotifications, appendNotifications]
   );
 
   const refresh = useCallback(async () => {
-    store.setRefreshing(true);
+    setRefreshing(true);
     await load(1, false);
-    store.setRefreshing(false);
-  }, [load, store]);
+    setRefreshing(false);
+  }, [load]);
 
   const loadMore = useCallback(async () => {
-    if (store.loading || store.refreshing || !store.hasMore) return;
-    await load(store.page + 1, true);
-  }, [load, store]);
+    if (loading || refreshing || !hasMore) return;
+    await load(page + 1, true);
+  }, [load, loading, refreshing, hasMore, page]);
 
   const refreshUnreadCount = useCallback(async () => {
     try {
       const response = await fetchUnreadCount();
       if (response.success) {
-        store.setUnreadCount(response.data.unread_count);
+        setUnreadCount(response.data.unread_count);
       }
     } catch (err) {
-      console.error('[useNotifications] Failed to fetch unread count:', err);
+      console.warn('[useNotifications] Failed to fetch unread count:', err);
     }
-  }, [store]);
+  }, [setUnreadCount]);
 
   const markAsRead = useCallback(
     async (id: number) => {
       try {
         const response = await markNotificationAsRead(id);
         if (response.success) {
-          store.markAsRead(id);
+          markAsReadInStore(id);
         }
       } catch (err: any) {
         showToast(err.response?.data?.message ?? 'Failed to mark as read', 'error');
       }
     },
-    [store]
+    [markAsReadInStore]
   );
 
   const markAllAsRead = useCallback(async () => {
     try {
       const response = await markAllNotificationsAsRead();
       if (response.success) {
-        store.markAllAsRead();
+        markAllAsReadInStore();
         showToast('All notifications marked as read', 'success');
       }
     } catch (err: any) {
       showToast(err.response?.data?.message ?? 'Failed to mark all as read', 'error');
     }
-  }, [store]);
+  }, [markAllAsReadInStore]);
 
   const remove = useCallback(
     async (id: number) => {
       try {
         const response = await deleteNotification(id);
         if (response.success) {
-          store.removeNotification(id);
+          removeNotification(id);
         }
       } catch (err: any) {
         showToast(err.response?.data?.message ?? 'Failed to delete notification', 'error');
       }
     },
-    [store]
+    [removeNotification]
   );
 
   const clearRead = useCallback(async () => {
@@ -129,19 +148,21 @@ export function useNotifications() {
     }
   }, [refresh]);
 
-  // Load on mount
+  // Load on mount (once only)
   useEffect(() => {
+    if (hasLoaded.current) return;
+    hasLoaded.current = true;
     load(1, false);
     refreshUnreadCount();
   }, [load, refreshUnreadCount]);
 
   return {
-    notifications: store.notifications,
-    unreadCount: store.unreadCount,
-    loading: store.loading,
-    refreshing: store.refreshing,
-    error: store.error,
-    hasMore: store.hasMore,
+    notifications,
+    unreadCount,
+    loading,
+    refreshing,
+    error,
+    hasMore,
     refresh,
     loadMore,
     markAsRead,

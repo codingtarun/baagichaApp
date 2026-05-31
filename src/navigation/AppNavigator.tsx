@@ -26,6 +26,7 @@ import {
   getInitialNotification,
   handleNotificationNavigation,
 } from '../services/notificationService';
+import { fetchUnreadCount } from '../api/notifications';
 
 // Navigators
 import AuthStack from './AuthStack';
@@ -64,8 +65,10 @@ export default function AppNavigator(): React.JSX.Element {
       registerFcmToken(token);
     });
 
-    // Listen for foreground messages
-    const unsubscribeForeground = onForegroundMessage();
+    // Listen for foreground messages — refresh bell badge, no toast
+    const unsubscribeForeground = onForegroundMessage(() => {
+      fetchUnreadCount().catch(() => {});
+    });
 
     // Listen for notification tap (app was in background)
     const unsubscribeOpened = onNotificationOpenedApp((payload) => {

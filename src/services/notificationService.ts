@@ -10,7 +10,6 @@
 import { Platform } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import { registerDevice } from './authApi';
-import { showToast } from '../store/toastStore';
 import { navigationRef } from '../navigation/navigationRef';
 
 // ── Types ──
@@ -91,7 +90,9 @@ export function onTokenRefresh(callback: (token: string) => void): () => void {
 
 /**
  * Handle push notifications when the app is in the foreground.
- * Shows an in-app toast with the notification content.
+ * Instead of showing a toast, we silently refresh the unread count
+ * so the bell badge updates. The user sees the notification in the
+ * list when they tap the bell.
  */
 export function onForegroundMessage(
   callback?: (payload: NotificationPayload) => void
@@ -99,9 +100,6 @@ export function onForegroundMessage(
   return messaging().onMessage(async (remoteMessage) => {
     const payload = extractPayload(remoteMessage);
     console.log('[FCM] Foreground message:', payload);
-
-    // Show a toast notification
-    showToast(`${payload.title}\n${payload.body}`, 'info');
 
     if (callback) {
       callback(payload);

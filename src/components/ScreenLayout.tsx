@@ -20,7 +20,7 @@
  *   </ScreenLayout>
  */
 
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect, useState } from 'react';
 import {
   View,
   Animated,
@@ -31,6 +31,9 @@ import {
 } from 'react-native';
 import { Colors } from '../theme/colors';
 import GlobalHeader from './GlobalHeader';
+import { fetchUnreadCount } from '../api/notifications';
+import { navigationRef } from '../navigation/navigationRef';
+import { useAuthStore } from '../store/authStore';
 
 // Scroll distance (in px) before header enters compact mode
 const COMPACT_THRESHOLD = 50;
@@ -54,6 +57,42 @@ export default function ScreenLayout({
   refreshing,
   onRefresh,
 }: ScreenLayoutProps): React.JSX.Element {
+  // Unread notification count for the bell badge
+  const [unreadCount, setUnreadCount] = useState(0);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  const loadUnreadCount = useCallback(async () => {
+    if (!isAuthenticated) {
+      setUnreadCount(0);
+      return;
+    }
+    try {
+      const response = await fetchUnreadCount();
+      if (response.success) {
+        setUnreadCount(response.data.unread_count);
+      }
+    } catch (err) {
+      console.warn('[ScreenLayout] Failed to fetch unread count:', err);
+    }
+  }, [isAuthenticated]);
+
+  // Poll unread count on mount and every 30 seconds
+  useEffect(() => {
+    loadUnreadCount();
+    const interval = setInterval(loadUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [loadUnreadCount]);
+
+  const handleNotificationPress = useCallback(() => {
+    if (navigationRef.isReady()) {
+      // Navigate to MainTabs → Home → Notifications
+      (navigationRef as any).navigate('MainTabs', {
+        screen: 'Home',
+        params: { screen: 'Notifications' },
+      });
+    }
+  }, []);
+
   // Animated value: 0 = at top, 1 = scrolled past threshold
   const scrollProgress = useRef(new Animated.Value(0)).current;
 
@@ -77,7 +116,12 @@ export default function ScreenLayout({
   return (
     <View style={styles.container}>
       {/* Global Header — receives scroll progress for compact animation */}
-      <GlobalHeader scrollProgress={scrollProgress} {...headerProps} />
+      <GlobalHeader
+        scrollProgress={scrollProgress}
+        notificationCount={unreadCount}
+        onNotificationPress={handleNotificationPress}
+        {...headerProps}
+      />
 
       {/* Scrollable content area */}
       <Animated.ScrollView
