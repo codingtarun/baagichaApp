@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "PLACEHOLDER",
-    "project_id": "baagicha-app-placeholder",
-    "storage_bucket": "baagicha-app-placeholder.appspot.com"
+    "project_number": "698233344486",
+    "project_id": "baagichaapp",
+    "storage_bucket": "baagichaapp.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:PLACEHOLDER:android:PLACEHOLDER",
+        "mobilesdk_app_id": "1:698233344486:android:aa7aef3aa196bd42e20627",
         "android_client_info": {
           "package_name": "com.baagichaapp"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "PLACEHOLDER"
+          "current_key": "AIzaSyALdj441UuMBHzq2H5TO9CMnKSvrovJgqg"
         }
       ],
       "services": {
