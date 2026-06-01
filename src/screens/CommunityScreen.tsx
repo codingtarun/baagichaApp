@@ -17,7 +17,7 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import ScreenLayout from '../components/ScreenLayout';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../theme/colors';
 import { Space, Radius, Shadows } from '../theme/style';
@@ -208,14 +208,16 @@ export default function CommunityScreen(): React.JSX.Element {
 
   if (loading && questions.length === 0) {
     return (
-      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </SafeAreaView>
+      <ScreenLayout scrollable={false}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </ScreenLayout>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <ScreenLayout scrollable={false}>
       {/* Header */}
       <View style={styles.header}>
         <Typography variant="displayHeading" style={styles.headerTitle}>Community</Typography>
@@ -248,7 +250,7 @@ export default function CommunityScreen(): React.JSX.Element {
           ) : null
         }
       />
-    </SafeAreaView>
+    </ScreenLayout>
   );
 }
 

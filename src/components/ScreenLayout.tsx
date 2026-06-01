@@ -4,23 +4,23 @@
  * ═══════════════════════════════════════════════════════════════
  *
  * WRAPPER component that EVERY screen should use.
- * It provides:
- *   1. GlobalHeader (greeting, weather, stats) — auto-compacts on scroll
- *   2. Animated.ScrollView — detects scroll position
- *   3. Safe bottom padding — avoids the bottom tab bar
- *   4. Consistent background color
+ * Provides:
+ *   1. GlobalHeader (orchard-aware, weather, notifications)
+ *   2. Scrollable content area
+ *   3. Safe bottom padding for the tab bar
  *
- * LEARN: Instead of copy-pasting <AppHeader /> + <ScrollView> into
- * every screen, we wrap the screen content with <ScreenLayout>.
- * The header behavior (compact on scroll) is handled automatically.
- *
- * Usage in any screen:
+ * Usage:
  *   <ScreenLayout>
  *     <YourContent />
  *   </ScreenLayout>
+ *
+ * For screens that manage their own scroll (e.g. FlatList):
+ *   <ScreenLayout scrollable={false}>
+ *     <FlatList ... />
+ *   </ScreenLayout>
  */
 
-import React, { useRef, useCallback, useEffect, useState } from 'react';
+import React, { useRef, useCallback } from 'react';
 import {
   View,
   Animated,
@@ -29,115 +29,74 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../theme/colors';
 import GlobalHeader from './GlobalHeader';
-import { fetchUnreadCount } from '../api/notifications';
-import { navigationRef } from '../navigation/navigationRef';
-import { useAuthStore } from '../store/authStore';
+import { TAB_BAR_TOTAL_HEIGHT } from '../navigation/CustomTabBar';
 
 // Scroll distance (in px) before header enters compact mode
 const COMPACT_THRESHOLD = 50;
 
 interface ScreenLayoutProps {
   children: React.ReactNode;
-  /** Extra padding at bottom (default 100 covers bottom tab bar) */
-  /** Extra padding at bottom (default 120px covers custom tab bar + safe area) */
+  /** Extra padding at bottom (default: safe area + tab bar + 16px) */
   bottomPadding?: number;
-  /** Props passed through to GlobalHeader */
-  headerProps?: Omit<React.ComponentProps<typeof GlobalHeader>, 'scrollProgress'>;
-  /** Pull-to-refresh control — pass when screen loads remote data */
+  /** When false, children manage their own scroll (e.g. FlatList) */
+  scrollable?: boolean;
+  /** Pull-to-refresh control */
   refreshing?: boolean;
   onRefresh?: () => void;
 }
 
 export default function ScreenLayout({
   children,
-  bottomPadding = 120,
-  headerProps,
+  bottomPadding,
+  scrollable = true,
   refreshing,
   onRefresh,
 }: ScreenLayoutProps): React.JSX.Element {
-  // Unread notification count for the bell badge
-  const [unreadCount, setUnreadCount] = useState(0);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const insets = useSafeAreaInsets();
 
-  const loadUnreadCount = useCallback(async () => {
-    if (!isAuthenticated) {
-      setUnreadCount(0);
-      return;
-    }
-    try {
-      const response = await fetchUnreadCount();
-      if (response.success) {
-        setUnreadCount(response.data.unread_count);
-      }
-    } catch (err) {
-      console.warn('[ScreenLayout] Failed to fetch unread count:', err);
-    }
-  }, [isAuthenticated]);
-
-  // Poll unread count on mount and every 30 seconds
-  useEffect(() => {
-    loadUnreadCount();
-    const interval = setInterval(loadUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, [loadUnreadCount]);
-
-  const handleNotificationPress = useCallback(() => {
-    if (navigationRef.isReady()) {
-      // Navigate to MainTabs → Home → Notifications
-      (navigationRef as any).navigate('MainTabs', {
-        screen: 'Home',
-        params: { screen: 'Notifications' },
-      });
-    }
-  }, []);
-
+  // Dynamic bottom padding: system safe-area + tab bar height + extra spacing.
+  // This ensures content never hides behind the tab bar or system nav buttons.
+  const computedBottomPadding = bottomPadding ?? (insets.bottom + TAB_BAR_TOTAL_HEIGHT + 16);
   // Animated value: 0 = at top, 1 = scrolled past threshold
   const scrollProgress = useRef(new Animated.Value(0)).current;
-
-  // Track raw scroll Y for direct comparison
   const scrollY = useRef(0);
 
   const handleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const y = event.nativeEvent.contentOffset.y;
       scrollY.current = y;
-
-      // Calculate progress: 0 when y=0, 1 when y >= COMPACT_THRESHOLD
       const progress = Math.min(y / COMPACT_THRESHOLD, 1);
-
-      // Use setValue for smooth native-driven animation
       scrollProgress.setValue(progress);
     },
-    [scrollProgress],
+    [scrollProgress]
   );
 
   return (
     <View style={styles.container}>
-      {/* Global Header — receives scroll progress for compact animation */}
-      <GlobalHeader
-        scrollProgress={scrollProgress}
-        notificationCount={unreadCount}
-        onNotificationPress={handleNotificationPress}
-        {...headerProps}
-      />
+      {/* Global Header — self-contained (fetches its own data) */}
+      <GlobalHeader scrollProgress={scrollProgress} />
 
-      {/* Scrollable content area */}
-      <Animated.ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={{ paddingBottom: bottomPadding }}
-        showsVerticalScrollIndicator={false}
-        scrollEventThrottle={16} // 60fps updates
-        onScroll={handleScroll}
-        refreshControl={
-          onRefresh ? (
-            <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
-          ) : undefined
-        }
-      >
-        {children}
-      </Animated.ScrollView>
+      {scrollable ? (
+        <Animated.ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={{ paddingBottom: computedBottomPadding }}
+          showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={handleScroll}
+          refreshControl={
+            onRefresh ? (
+              <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+            ) : undefined
+          }
+        >
+          {children}
+        </Animated.ScrollView>
+      ) : (
+        <View style={styles.content}>{children}</View>
+      )}
     </View>
   );
 }
@@ -148,6 +107,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   scrollView: {
+    flex: 1,
+  },
+  content: {
     flex: 1,
   },
 });

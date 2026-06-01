@@ -19,6 +19,7 @@ import { useAuthStore } from '../store/authStore';
 import { useOnboardingStore } from '../store/onboardingStore';
 import {
   initializePushNotifications,
+  linkOrphanTokens,
   registerFcmToken,
   onTokenRefresh,
   onForegroundMessage,
@@ -58,7 +59,10 @@ export default function AppNavigator(): React.JSX.Element {
     if (!isAuthenticated) return;
 
     // Get FCM token and register with backend
-    initializePushNotifications();
+    initializePushNotifications().then(() => {
+      // Link any tokens that were registered before login (orphans)
+      linkOrphanTokens().catch(() => {});
+    });
 
     // Listen for token refreshes
     const unsubscribeTokenRefresh = onTokenRefresh((token) => {

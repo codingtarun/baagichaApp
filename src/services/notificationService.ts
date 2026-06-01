@@ -9,7 +9,7 @@
 
 import { Platform } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
-import { registerDevice } from './authApi';
+import { registerDevice, linkDevices } from './authApi';
 import { navigationRef } from '../navigation/navigationRef';
 
 // ── Types ──
@@ -72,6 +72,24 @@ export async function initializePushNotifications(): Promise<void> {
   const token = await requestFcmPermission();
   if (token) {
     await registerFcmToken(token);
+  }
+}
+
+/**
+ * Link orphaned device tokens (tokens registered before login)
+ * to the currently authenticated user.
+ */
+export async function linkOrphanTokens(): Promise<void> {
+  try {
+    const token = await messaging().getToken();
+    if (!token) return;
+
+    const response = await linkDevices([token]);
+    if (response.data?.linked_count && response.data.linked_count > 0) {
+      console.log('[FCM] Linked', response.data.linked_count, 'orphan token(s) to user');
+    }
+  } catch (error) {
+    console.error('[FCM] Failed to link orphan tokens:', error);
   }
 }
 

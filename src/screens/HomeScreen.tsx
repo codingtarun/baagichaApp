@@ -25,7 +25,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
-import LinearGradient from 'react-native-linear-gradient';
+import ScreenLayout from '../components/ScreenLayout';
 
 import { Colors } from '../theme/colors';
 import { Space, Radius, Shadows } from '../theme/style';
@@ -35,11 +35,9 @@ import type { HomeNavigationProp } from '../navigation/types';
 import type { PriorityCardData } from '../navigation/stacks/HomeStack';
 import ShareSheet from '../components/ShareSheet';
 import PostImages from '../components/PostImages';
-import StoryComposer from '../components/StoryComposer';
 import { getSuggestedUsers, type SuggestedUser } from '../services/userApi';
 import { getFeed, getQuestions, createPost, togglePostLike, sharePost, type FeedPost } from '../services/postApi';
 import { getGroups, joinGroup, type GroupCard } from '../services/groupApi';
-import { getStoryFeed, type StoryGroup } from '../services/storyApi';
 
 // ═══════════════════════════════════════════════════════════════
 // MOCK DATA
@@ -171,26 +169,9 @@ export default function HomeScreen(): React.JSX.Element {
   const [likingPostIds, setLikingPostIds] = useState<Set<number>>(new Set());
   const [questions, setQuestions] = useState<FeedPost[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(true);
-  const [storyGroups, setStoryGroups] = useState<StoryGroup[]>([]);
-  const [myStories, setMyStories] = useState<any[]>([]);
-  const [loadingStories, setLoadingStories] = useState(true);
-  const [composerVisible, setComposerVisible] = useState(false);
+
 
   const sortedCards = sortByPriority(PRIORITY_CARDS);
-
-  // Refresh stories when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      getStoryFeed()
-        .then((data) => {
-          setMyStories(data.my_stories);
-          setStoryGroups(data.feed);
-        })
-        .catch((err) => {
-          console.error('[Home] Focus refresh failed:', err.response?.data ?? err.message);
-        });
-    }, [])
-  );
 
   // Fetch feed + experts + suggested friends on mount
   useEffect(() => {
@@ -254,23 +235,6 @@ export default function HomeScreen(): React.JSX.Element {
       })
       .finally(() => { if (!cancelled) setLoadingQuestions(false); });
 
-    // Fetch stories
-    getStoryFeed()
-      .then((data) => {
-        if (!cancelled) {
-          setMyStories(data.my_stories);
-          setStoryGroups(data.feed);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          console.error('[Home] Stories fetch failed:', err.response?.data ?? err.message);
-          setStoryGroups([]);
-          setMyStories([]);
-        }
-      })
-      .finally(() => { if (!cancelled) setLoadingStories(false); });
-
     return () => { cancelled = true; };
   }, []);
 
@@ -279,13 +243,10 @@ export default function HomeScreen(): React.JSX.Element {
     Promise.all([
       getFeed(10, 1),
       getQuestions(5, 1),
-      getStoryFeed(),
     ])
-      .then(([feed, qs, storyData]) => {
+      .then(([feed, qs]) => {
         setPosts(feed);
         setQuestions(qs);
-        setMyStories(storyData.my_stories);
-        setStoryGroups(storyData.feed);
         showToast('Refreshed', 'success');
       })
       .catch((err) => { console.error('[Home] Refresh failed:', err); showToast('Refresh failed', 'error'); })
@@ -402,45 +363,7 @@ export default function HomeScreen(): React.JSX.Element {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* ── Hero Gradient Header ── */}
-      <LinearGradient
-        colors={[Colors.primary, Colors.primary600]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.heroGradient}
-      >
-        <View style={styles.heroHeader}>
-          <View>
-            <Typography variant="displayHeading" style={styles.heroTitle}>Baagicha</Typography>
-            <Typography variant="caption" style={styles.heroSubtitle}>Shimla, HP · 1950m</Typography>
-          </View>
-          <TouchableOpacity style={styles.notifBtn} activeOpacity={0.7}>
-            <Icon name="bell-outline" size={24} color={Colors.white} />
-            <View style={styles.notifBadge} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Stories inside hero */}
-        <StoryBar
-          myStories={myStories}
-          groups={storyGroups}
-          loading={loadingStories}
-          onViewStory={(groupIdx) => {
-            const allGroups: StoryGroup[] = myStories.length > 0
-              ? [{ user: { id: 0, name: 'You', avatar: null }, unseen_count: myStories.length, stories: myStories }, ...storyGroups]
-              : storyGroups;
-            navigation.navigate('StoryViewer', { groups: allGroups, initialGroupIndex: myStories.length > 0 ? groupIdx + 1 : groupIdx });
-          }}
-          onViewMyStory={() => {
-            if (myStories.length === 0) return;
-            const allGroups: StoryGroup[] = [{ user: { id: 0, name: 'You', avatar: null }, unseen_count: myStories.length, stories: myStories }, ...storyGroups];
-            navigation.navigate('StoryViewer', { groups: allGroups, initialGroupIndex: 0 });
-          }}
-          onAddStory={() => setComposerVisible(true)}
-        />
-      </LinearGradient>
-
+    <ScreenLayout scrollable={false}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[Colors.primary]} />}
@@ -493,7 +416,7 @@ export default function HomeScreen(): React.JSX.Element {
             />
           </View>
           <TouchableOpacity
-            style={[styles.postBtn, (!postText.trim() && selectedImages.length === 0) || posting && styles.postBtnDisabled]}
+            style={[styles.postBtn, ((!postText.trim() && selectedImages.length === 0) || posting) ? styles.postBtnDisabled : null]}
             onPress={handlePost}
             activeOpacity={0.8}
             disabled={(!postText.trim() && selectedImages.length === 0) || posting}
@@ -739,76 +662,13 @@ export default function HomeScreen(): React.JSX.Element {
         </View>
       </Modal>
 
-      {/* Story Composer */}
-      <StoryComposer
-        visible={composerVisible}
-        onClose={() => setComposerVisible(false)}
-        onImageSelected={(uri, type) => {
-          navigation.navigate('StoryMediaPreview', { uri, mediaType: 'image', mimeType: type });
-        }}
-        onVideoSelected={(uri, type) => {
-          navigation.navigate('StoryMediaPreview', { uri, mediaType: 'video', mimeType: type });
-        }}
-        onTextSelected={() => {
-          navigation.navigate('StoryTextComposer');
-        }}
-      />
-    </SafeAreaView>
+    </ScreenLayout>
   );
 }
 
 // ═══════════════════════════════════════════════════════════════
 // SUB-COMPONENTS
 // ═══════════════════════════════════════════════════════════════
-
-function StoryBar({ myStories, groups, loading, onViewStory, onViewMyStory, onAddStory }: {
-  myStories: any[];
-  groups: StoryGroup[];
-  loading: boolean;
-  onViewStory: (groupIndex: number) => void;
-  onViewMyStory: () => void;
-  onAddStory: () => void;
-}) {
-  const hasMyStory = myStories.length > 0;
-
-  return (
-    <View style={styles.storiesCardShadow}>
-      <View style={styles.storiesCardInner}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storiesContainer}>
-          {/* My Story */}
-          <TouchableOpacity style={styles.storyItem} onPress={hasMyStory ? onViewMyStory : onAddStory} activeOpacity={0.7}>
-            <View style={[styles.storyRing, hasMyStory && styles.storyRingActive]}>
-              <Image source={{ uri: 'https://i.pravatar.cc/150?u=me' }} style={styles.storyAvatar} />
-            </View>
-            {!hasMyStory && (
-              <View style={styles.addStoryBtn}>
-                <Icon name="plus" size={12} color={Colors.white} />
-              </View>
-            )}
-            <Typography variant="caption" style={styles.storyName} numberOfLines={1}>Your Story</Typography>
-          </TouchableOpacity>
-
-          {/* Loading */}
-          {loading && (
-            <Typography variant="captionMuted" style={{ paddingVertical: 20, width: 120, textAlign: 'center' }}>
-              Loading...
-            </Typography>
-          )}
-
-          {/* Other users' stories */}
-          {!loading && groups.map((group, idx) => (
-            <TouchableOpacity key={group.user.id} style={styles.storyItem} onPress={() => onViewStory(idx)} activeOpacity={0.7}>
-              <View style={[styles.storyRing, group.unseen_count > 0 && styles.storyRingActive]}>
-                <Image source={{ uri: group.user.avatar ?? `https://i.pravatar.cc/150?u=${group.user.id}` }} style={styles.storyAvatar} />
-              </View>
-              <Typography variant="caption" style={styles.storyName} numberOfLines={1}>{group.user.name}</Typography>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-    </View>
-  );
-}
 
 function PriorityCard({ card, onPress, onShare }: { card: PriorityCardData; onPress: (c: PriorityCardData) => void; onShare?: (c: PriorityCardData) => void }) {
   const style = PRIORITY_PAIR[card.priority as keyof typeof PRIORITY_PAIR] ?? PRIORITY_PAIR.medium;
@@ -1035,51 +895,6 @@ function JoinGroupButton({ group, onJoined }: { group: GroupCard; onJoined: (slu
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scrollContent: { paddingTop: 0 },
-
-  // ── Hero ──
-  heroGradient: {
-    paddingTop: Space[3],
-    paddingBottom: Space[4],
-    borderBottomLeftRadius: Radius.xl,
-    borderBottomRightRadius: Radius.xl,
-    ...Shadows.medium,
-    zIndex: 10,
-  },
-  heroHeader: {
-    flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
-    paddingHorizontal: Space[4], paddingBottom: Space[3],
-  },
-  heroTitle: { fontSize: 28, fontWeight: '800', color: Colors.white, letterSpacing: -0.5 },
-  heroSubtitle: { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 },
-  notifBtn: { position: 'relative', padding: 8, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: Radius.full },
-  notifBadge: {
-    position: 'absolute', top: 6, right: 6,
-    width: 10, height: 10, borderRadius: 5,
-    backgroundColor: Colors.accent500, borderWidth: 1.5, borderColor: Colors.primary,
-  },
-
-  // ── Stories ──
-  storiesCardShadow: {
-    borderRadius: Radius['2xl'],
-    marginHorizontal: Space[4],
-    ...Shadows.medium,
-  },
-  storiesCardInner: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius['2xl'],
-    overflow: 'hidden',
-  },
-  storiesContainer: { paddingHorizontal: Space[3], paddingVertical: Space[3], gap: Space[1] },
-  storyItem: { alignItems: 'center', marginRight: Space[3], width: 66 },
-  storyRing: { width: 60, height: 60, borderRadius: 30, padding: 2.5, backgroundColor: Colors.gray200 },
-  storyRingActive: { backgroundColor: Colors.primary },
-  storyAvatar: { width: 55, height: 55, borderRadius: 27.5, borderWidth: 2.5, borderColor: Colors.white },
-  addStoryBtn: {
-    position: 'absolute', bottom: 18, right: 2,
-    width: 20, height: 20, borderRadius: 10, backgroundColor: Colors.accent500,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Colors.white,
-  },
-  storyName: { marginTop: 4, fontSize: 10, color: Colors.gray900, textAlign: 'center', fontWeight: '500' },
 
   // ── Section Headers ──
   sectionHeaderRow: {

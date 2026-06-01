@@ -1,210 +1,322 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * BAAGICHA — GLOBAL HEADER (Compact)
+ * BAAGICHA — GLOBAL HEADER (Orchard-Aware)
  * ═══════════════════════════════════════════════════════════════
  *
- * Compact header that maximizes screen real estate.
- * Collapses further when user scrolls down > 50px.
- *
- * Layout (Single dense row + stat chips):
- *   [Greeting + Location]  [Weather]  [Notif]
- *   [Bloom] [Sprays] [Mandi] — inline mini chips
+ * Compact header shown on ALL screens. Features:
+ *   • Orchard location dropdown (tap to switch)
+ *   • Live weather for selected orchard
+ *   • Notification bell with unread badge
+ *   • Collapses on scroll to save space
  */
 
-import React from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   TouchableOpacity,
   StyleSheet,
   Animated,
   Platform,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../theme/colors';
+import { Radius, Shadows } from '../theme/style';
 import { Typography } from '../typography';
+import { useAuthStore } from '../store/authStore';
+import { useOrchardStore } from '../store/orchardStore';
+import { fetchWeather, type WeatherData } from '../services/weatherApi';
+import { fetchOrchards, type Orchard } from '../services/orchardApi';
+import { fetchUnreadCount } from '../api/notifications';
+import { navigationRef } from '../navigation/navigationRef';
 
 interface GlobalHeaderProps {
-  scrollProgress: Animated.Value;
-  farmerName?: string;
-  location?: string;
-  temperature?: string;
-  condition?: string;
-  sprayStatus?: string;
-  daysToBloom?: number;
-  pendingSprays?: number;
-  mandiTrend?: string;
-  notificationCount?: number;
-  onLocationPress?: () => void;
-  onWeatherPress?: () => void;
-  onNotificationPress?: () => void;
+  scrollProgress?: Animated.Value;
 }
 
 export default function GlobalHeader({
   scrollProgress,
-  farmerName = 'Ramesh',
-  location = 'Shimla, HP',
-  temperature = '18',
-  condition = 'Sunny',
-  sprayStatus = 'Safe',
-  daysToBloom = 14,
-  pendingSprays = 3,
-  mandiTrend = '+₹12',
-  notificationCount = 0,
-  onLocationPress,
-  onWeatherPress,
-  onNotificationPress,
 }: GlobalHeaderProps): React.JSX.Element {
-  const headerPaddingTop = scrollProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [Platform.select({ ios: 48, android: 36 }), Platform.select({ ios: 44, android: 32 })],
-    extrapolate: 'clamp',
-  });
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  const headerPaddingBottom = scrollProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [10, 6],
-    extrapolate: 'clamp',
-  });
+  const orchards = useOrchardStore((s) => s.orchards);
+  const selectedOrchardId = useOrchardStore((s) => s.selectedOrchardId);
+  const selectOrchard = useOrchardStore((s) => s.selectOrchard);
+  const setOrchards = useOrchardStore((s) => s.setOrchards);
 
-  const statsOpacity = scrollProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [loadingOrchards, setLoadingOrchards] = useState(false);
 
-  const statsHeight = scrollProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [28, 0],
-    extrapolate: 'clamp',
-  });
+  const hasFetched = useRef(false);
 
-  const getGreeting = (): string => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Morning';
-    if (hour < 17) return 'Afternoon';
-    return 'Evening';
-  };
+  // ── Load orchards once on mount when authenticated ──
+  useEffect(() => {
+    if (!isAuthenticated || hasFetched.current) return;
+    hasFetched.current = true;
 
-  const getMandiColor = (): string => {
-    if (mandiTrend.startsWith('+')) return Colors.success;
-    if (mandiTrend.startsWith('-')) return Colors.danger;
-    return Colors.gray400;
-  };
+    setLoadingOrchards(true);
+    fetchOrchards()
+      .then((res) => {
+        const list: Orchard[] = res.data ?? [];
+        setOrchards(
+          list.map((o) => ({
+            id: o.id,
+            orchard_name: o.orchard_name,
+            village: o.village,
+            district: o.district,
+            state: o.state,
+            altitude_meters: o.altitude_meters,
+            latitude: o.latitude,
+            longitude: o.longitude,
+          }))
+        );
+      })
+      .catch((err) => console.warn('[GlobalHeader] Failed to fetch orchards:', err))
+      .finally(() => setLoadingOrchards(false));
+  }, [isAuthenticated, setOrchards]);
 
-  const getSprayColor = (): string => {
-    if (sprayStatus.toLowerCase().includes('safe')) return Colors.success;
-    if (sprayStatus.toLowerCase().includes('caution')) return Colors.warning;
-    return Colors.danger;
-  };
+  // ── Fetch weather when selected orchard changes ──
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const orchard = orchards.find((o) => o.id === selectedOrchardId);
+    if (orchard?.latitude && orchard?.longitude) {
+      fetchWeather(orchard.latitude, orchard.longitude, orchard.orchard_name)
+        .then((res) => {
+          if (res.success) setWeather(res.data);
+        })
+        .catch((err) => console.warn('[GlobalHeader] Weather fetch failed:', err));
+    } else {
+      // Fallback: fetch weather for user (backend uses primary orchard or device location)
+      fetchWeather()
+        .then((res) => {
+          if (res.success) setWeather(res.data);
+        })
+        .catch((err) => console.warn('[GlobalHeader] Weather fetch failed:', err));
+    }
+  }, [isAuthenticated, selectedOrchardId, orchards]);
+
+  // ── Poll unread notification count ──
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const load = () => {
+      fetchUnreadCount()
+        .then((res) => {
+          if (res.success) setUnreadCount(res.data.unread_count);
+        })
+        .catch(() => {});
+    };
+
+    load();
+    const interval = setInterval(load, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
+  // ── Scroll animation (only when scrollProgress is provided) ──
+  const headerPaddingTop = scrollProgress
+    ? scrollProgress.interpolate({
+        inputRange: [0, 1],
+        outputRange: [Platform.select({ ios: 48, android: 36 }) ?? 36, Platform.select({ ios: 44, android: 32 }) ?? 32],
+        extrapolate: 'clamp',
+      })
+    : (Platform.select({ ios: 48, android: 36 }) ?? 36);
+
+  const headerPaddingBottom = scrollProgress
+    ? scrollProgress.interpolate({
+        inputRange: [0, 1],
+        outputRange: [10, 6],
+        extrapolate: 'clamp',
+      })
+    : 10;
+
+  // ── Orchard switch handler ──
+  const handleOrchardSelect = useCallback(
+    (id: number) => {
+      selectOrchard(id);
+      setShowDropdown(false);
+      // TODO: emit event or callback so screens can refetch orchard-specific data
+    },
+    [selectOrchard]
+  );
+
+  // ── Navigate to add orchard ──
+  const handleAddOrchard = useCallback(() => {
+    setShowDropdown(false);
+    if (navigationRef.isReady()) {
+      (navigationRef as any).navigate('MainTabs', { screen: 'MyOrchard' });
+    }
+  }, []);
+
+  // ── Navigate to notifications ──
+  const handleNotificationPress = useCallback(() => {
+    if (navigationRef.isReady()) {
+      (navigationRef as any).navigate('MainTabs', {
+        screen: 'Home',
+        params: { screen: 'Notifications' },
+      });
+    }
+  }, []);
+
+  // ── Location text ──
+  const selectedOrchard = orchards.find((o) => o.id === selectedOrchardId);
+  const locationText = selectedOrchard
+    ? [selectedOrchard.village, selectedOrchard.district]
+        .filter(Boolean)
+        .join(', ') || selectedOrchard.orchard_name
+    : user?.profile?.village
+    ? [user.profile.village, user.profile.district, user.profile.state]
+        .filter(Boolean)
+        .join(', ')
+    : 'Select Location';
+
+  const altitudeText = selectedOrchard?.altitude_meters
+    ? ` · ${selectedOrchard.altitude_meters}m`
+    : '';
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          paddingTop: headerPaddingTop,
-          paddingBottom: headerPaddingBottom,
-        },
-      ]}
-    >
-      {/* ═══════════════════════════════════════════
-          MAIN ROW: Greeting | Weather | Notif
-         ═══════════════════════════════════════════ */}
-      <View style={styles.mainRow}>
-        {/* Left: Greeting + Location */}
-        <View style={styles.leftBlock}>
-          <Typography variant="body" style={styles.greetingText}>
-            {getGreeting()},{' '}
-            <Typography variant="body" style={styles.nameText}>
-              {farmerName}
-            </Typography>
-          </Typography>
-
-          <TouchableOpacity
-            style={styles.locationChip}
-            onPress={onLocationPress}
-            activeOpacity={0.7}
-          >
-            <Icon name="map-marker" size={10} color={Colors.accent} />
-            <Typography variant="overline" style={styles.locationText}>
-              {location}
-            </Typography>
-            <Icon name="chevron-down" size={10} color="rgba(255,255,255,0.5)" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Center: Compact Weather */}
-        <TouchableOpacity
-          style={styles.weatherBlock}
-          onPress={onWeatherPress}
-          activeOpacity={0.7}
-        >
-          <Icon name="weather-partly-cloudy" size={16} color={Colors.accent} />
-          <Typography variant="chipText" style={styles.tempText}>
-            {temperature}°
-          </Typography>
-          <View style={[styles.sprayDot, { backgroundColor: getSprayColor() }]} />
-        </TouchableOpacity>
-
-        {/* Right: Notification */}
-        <TouchableOpacity
-          style={styles.notifButton}
-          onPress={onNotificationPress}
-          activeOpacity={0.7}
-        >
-          <Icon
-            name={notificationCount > 0 ? 'bell' : 'bell-outline'}
-            size={18}
-            color={Colors.white}
-          />
-          {notificationCount > 0 && (
-            <View style={styles.badge}>
-              <Typography variant="overline" style={styles.badgeText}>
-                {notificationCount > 99 ? '99+' : notificationCount}
-              </Typography>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* ═══════════════════════════════════════════
-          MINI STATS ROW (collapses on scroll)
-         ═══════════════════════════════════════════ */}
+    <>
       <Animated.View
         style={[
-          styles.statsRow,
+          styles.container,
           {
-            opacity: statsOpacity,
-            height: statsHeight,
+            paddingTop: headerPaddingTop,
+            paddingBottom: headerPaddingBottom,
           },
         ]}
       >
-        <View style={styles.miniChip}>
-          <Icon name="flower-tulip" size={10} color={Colors.accentLight} />
-          <Typography variant="overline" style={styles.miniChipText}>
-            Bloom <Typography variant="overline" style={styles.miniChipValue}>{daysToBloom}d</Typography>
-          </Typography>
-        </View>
+        {/* MAIN ROW */}
+        <View style={styles.mainRow}>
+          {/* Left: App name + Location */}
+          <View style={styles.leftBlock}>
+            <Typography variant="body" style={styles.appName}>
+              Baagicha
+            </Typography>
 
-        <View style={styles.miniDivider} />
+            <TouchableOpacity
+              style={styles.locationChip}
+              onPress={() => orchards.length > 0 && setShowDropdown(true)}
+              activeOpacity={0.7}
+              disabled={orchards.length === 0}
+            >
+              <Icon name="map-marker" size={10} color={Colors.accent} />
+              <Typography variant="overline" style={styles.locationText} numberOfLines={1}>
+                {locationText}
+                {altitudeText}
+              </Typography>
+              {orchards.length > 0 && (
+                <Icon name="chevron-down" size={10} color="rgba(255,255,255,0.5)" />
+              )}
+            </TouchableOpacity>
+          </View>
 
-        <View style={styles.miniChip}>
-          <Icon name="spray-bottle" size={10} color={Colors.info} />
-          <Typography variant="overline" style={styles.miniChipText}>
-            Sprays <Typography variant="overline" style={styles.miniChipValue}>{pendingSprays}</Typography>
-          </Typography>
-        </View>
+          {/* Center: Weather */}
+          <TouchableOpacity style={styles.weatherBlock} activeOpacity={0.7}>
+            <Icon name="weather-partly-cloudy" size={16} color={Colors.accent} />
+            <Typography variant="chipText" style={styles.tempText}>
+              {weather?.temperature ?? '--'}°
+            </Typography>
+          </TouchableOpacity>
 
-        <View style={styles.miniDivider} />
-
-        <View style={styles.miniChip}>
-          <Icon name="trending-up" size={10} color={getMandiColor()} />
-          <Typography variant="overline" style={styles.miniChipText}>
-            Mandi <Typography variant="overline" style={[styles.miniChipValue, { color: getMandiColor() }]}>{mandiTrend}</Typography>
-          </Typography>
+          {/* Right: Notification */}
+          <TouchableOpacity style={styles.notifButton} onPress={handleNotificationPress} activeOpacity={0.7}>
+            <Icon
+              name={unreadCount > 0 ? 'bell' : 'bell-outline'}
+              size={18}
+              color={Colors.white}
+            />
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Typography variant="overline" style={styles.badgeText}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Typography>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
       </Animated.View>
-    </Animated.View>
+
+      {/* ORCHARD DROPDOWN MODAL */}
+      <Modal
+        visible={showDropdown}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDropdown(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowDropdown(false)}
+        >
+          <View style={styles.dropdownContainer}>
+            <View style={styles.dropdownHeader}>
+              <Typography variant="cardTitle">Your Orchards</Typography>
+              <TouchableOpacity onPress={() => setShowDropdown(false)}>
+                <Icon name="close" size={20} color={Colors.gray500} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.dropdownList} showsVerticalScrollIndicator={false}>
+              {orchards.map((orchard) => (
+                <TouchableOpacity
+                  key={orchard.id}
+                  style={[
+                    styles.orchardItem,
+                    orchard.id === selectedOrchardId && styles.orchardItemActive,
+                  ]}
+                  onPress={() => handleOrchardSelect(orchard.id)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.orchardIcon}>
+                    <Icon name="sprout" size={18} color={Colors.primary} />
+                  </View>
+                  <View style={styles.orchardInfo}>
+                    <Typography
+                      variant="body"
+                      style={
+                        orchard.id === selectedOrchardId
+                          ? styles.orchardNameActive
+                          : undefined
+                      }
+                    >
+                      {orchard.orchard_name}
+                    </Typography>
+                    <Typography variant="caption" color={Colors.gray400}>
+                      {[orchard.village, orchard.district, orchard.state]
+                        .filter(Boolean)
+                        .join(', ')}
+                      {orchard.altitude_meters ? ` · ${orchard.altitude_meters}m` : ''}
+                    </Typography>
+                  </View>
+                  {orchard.id === selectedOrchardId && (
+                    <Icon name="check-circle" size={18} color={Colors.primary} />
+                  )}
+                </TouchableOpacity>
+              ))}
+
+              {/* Add Orchard button */}
+              <TouchableOpacity
+                style={styles.addOrchardItem}
+                onPress={handleAddOrchard}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.orchardIcon, { backgroundColor: Colors.primaryLight }]}
+                >
+                  <Icon name="plus" size={18} color={Colors.primary} />
+                </View>
+                <Typography variant="body" color={Colors.primary}>
+                  Add New Orchard
+                </Typography>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
   );
 }
 
@@ -220,7 +332,6 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
 
-  // ── Main Row ──
   mainRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -233,13 +344,9 @@ const styles = StyleSheet.create({
     gap: 1,
   },
 
-  greetingText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 12,
-  },
-
-  nameText: {
+  appName: {
     color: Colors.white,
+    fontSize: 16,
     fontWeight: '700',
   },
 
@@ -254,9 +361,9 @@ const styles = StyleSheet.create({
     color: Colors.accentLight,
     fontSize: 10,
     fontWeight: '600',
+    maxWidth: 160,
   },
 
-  // Weather
   weatherBlock: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -273,14 +380,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  sprayDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginLeft: 2,
-  },
-
-  // Notification
   notifButton: {
     width: 32,
     height: 32,
@@ -302,7 +401,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.bgPrimary,
+    borderColor: Colors.primary,
     paddingHorizontal: 2,
   },
 
@@ -312,35 +411,75 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // ── Mini Stats Row ──
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  // ── Dropdown Modal ──
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-start',
-    gap: 8,
-    marginTop: 8,
+    paddingTop: Platform.select({ ios: 100, android: 80 }),
+    paddingHorizontal: 16,
+  },
+
+  dropdownContainer: {
+    backgroundColor: Colors.white,
+    borderRadius: Radius.lg,
+    ...Shadows.strong,
+    maxHeight: 400,
     overflow: 'hidden',
   },
 
-  miniChip: {
+  dropdownHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    justifyContent: 'space-between',
+    padding: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray100,
   },
 
-  miniChipText: {
-    color: 'rgba(255, 255, 255, 0.5)',
-    fontSize: 9,
+  dropdownList: {
+    paddingVertical: 4,
   },
 
-  miniChipValue: {
-    color: Colors.white,
+  orchardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+
+  orchardItemActive: {
+    backgroundColor: Colors.primaryLight,
+  },
+
+  orchardIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.gray50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  orchardInfo: {
+    flex: 1,
+    gap: 2,
+  },
+
+  orchardNameActive: {
+    color: Colors.primary,
     fontWeight: '700',
   },
 
-  miniDivider: {
-    width: 1,
-    height: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  addOrchardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray100,
+    marginTop: 4,
   },
 });

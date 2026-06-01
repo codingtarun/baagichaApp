@@ -13,9 +13,9 @@ import {
   View,
   TouchableOpacity,
   StyleSheet,
-  Platform,
 } from 'react-native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../theme/colors';
 import { Radius, Shadows } from '../theme/style';
@@ -52,10 +52,14 @@ function getFocusedRouteName(navState: any): string | null {
   return route.name ?? null;
 }
 
+// Total visual height the tab bar occupies (bar + FAB rise)
+export const TAB_BAR_TOTAL_HEIGHT = 52 + 16 + 8; // BAR_H + FAB_RISE + margin
+
 export default function CustomTabBar({
   state,
   navigation,
 }: BottomTabBarProps): React.JSX.Element | null {
+  const insets = useSafeAreaInsets();
   const focusedRoute = getFocusedRouteName(state);
 
   if (focusedRoute && HIDDEN_TABBAR_SCREENS.includes(focusedRoute)) {
@@ -111,7 +115,7 @@ export default function CustomTabBar({
   };
 
   return (
-    <View style={styles.wrapper} pointerEvents="box-none">
+    <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 6) }]} pointerEvents="box-none">
       {/* Tab bar container — FAB is positioned absolutely inside this */}
       <View style={styles.bar} pointerEvents="auto">
         {/* Left side tabs */}
@@ -171,7 +175,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingBottom: Platform.select({ ios: 12, android: 6 }),
     zIndex: 1000,
   },
   bar: {

@@ -21,7 +21,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RESULTS, openSettings } from 'react-native-permissions';
-import LinearGradient from 'react-native-linear-gradient';
+import ScreenLayout from '../components/ScreenLayout';
 
 import { Colors } from '../theme/colors';
 import { Space, Radius, Shadows } from '../theme/style';
@@ -151,70 +151,31 @@ export default function SprayScreen(): React.JSX.Element {
 
   if (loading && !data) {
     return (
-      <SafeAreaView style={[styles.container, styles.centered]} edges={['top']}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-        <Typography variant="bodyMuted" style={styles.loadingText}>Loading spray schedule…</Typography>
-      </SafeAreaView>
+      <ScreenLayout scrollable={false}>
+        <View style={[styles.centered, { flex: 1 }]}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Typography variant="bodyMuted" style={styles.loadingText}>Loading spray schedule…</Typography>
+        </View>
+      </ScreenLayout>
     );
   }
 
   if (error) {
     return (
-      <SafeAreaView style={[styles.container, styles.centered]} edges={['top']}>
-        <Icon name="alert-circle" size={40} color={Colors.danger} />
-        <Typography variant="body" color={Colors.danger} style={styles.errorText}>{error}</Typography>
-        <TouchableOpacity onPress={refresh} style={styles.retryBtn}>
-          <Typography variant="bodySmall" color={Colors.primary}>Retry</Typography>
-        </TouchableOpacity>
-      </SafeAreaView>
+      <ScreenLayout scrollable={false}>
+        <View style={[styles.centered, { flex: 1 }]}>
+          <Icon name="alert-circle" size={40} color={Colors.danger} />
+          <Typography variant="body" color={Colors.danger} style={styles.errorText}>{error}</Typography>
+          <TouchableOpacity onPress={refresh} style={styles.retryBtn}>
+            <Typography variant="bodySmall" color={Colors.primary}>Retry</Typography>
+          </TouchableOpacity>
+        </View>
+      </ScreenLayout>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* ── Gradient Header ── */}
-      <LinearGradient
-        colors={[Colors.primary, Colors.primary]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.heroGradient}
-      >
-        <View style={styles.header}>
-          <View>
-            <Typography variant="displayHeading" style={styles.title}>
-              छिड़काव कैलेंडर
-            </Typography>
-            <Typography variant="bodySmall" style={styles.subtitle}>
-              Apple Spray Schedule 2026
-            </Typography>
-          </View>
-          <TouchableOpacity
-            onPress={handleLocationPress}
-            activeOpacity={0.7}
-            style={[
-              styles.locationTag,
-              !currentLocation && locPermissionStatus !== RESULTS.GRANTED && styles.locationTagPrompt,
-            ]}
-          >
-            {locLoading ? (
-              <ActivityIndicator size="small" color={Colors.white} />
-            ) : (
-              <Icon name="map-marker" size={12} color={Colors.white} />
-            )}
-            <Typography variant="caption" style={styles.locationText}>
-              {locLoading
-                ? 'Getting location…'
-                : currentLocation?.name ?? data?.location?.name ?? 'Himachal Pradesh'}
-              {' · '}
-              {data?.location?.altitude ?? 8800}ft
-            </Typography>
-            {!currentLocation && locPermissionStatus !== RESULTS.GRANTED && !locLoading && (
-              <Icon name="crosshairs-gps" size={12} color={Colors.white} />
-            )}
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
-
+    <ScreenLayout scrollable={false}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={loading && !!data} onRefresh={refresh} colors={[Colors.primary]} />}
@@ -400,7 +361,7 @@ export default function SprayScreen(): React.JSX.Element {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </SafeAreaView>
+    </ScreenLayout>
   );
 }
 

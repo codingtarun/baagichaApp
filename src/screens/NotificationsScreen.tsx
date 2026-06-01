@@ -55,7 +55,7 @@ export default function NotificationsScreen(): React.JSX.Element {
   );
 
   const renderFooter = () => {
-    if (!hasMore) return null;
+    if (notifications.length === 0 || !hasMore) return null;
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={Colors.primary} />
