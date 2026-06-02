@@ -38,6 +38,7 @@ import PostImages from '../components/PostImages';
 import { getSuggestedUsers, type SuggestedUser } from '../services/userApi';
 import { getFeed, getQuestions, createPost, togglePostLike, sharePost, type FeedPost } from '../services/postApi';
 import { getGroups, joinGroup, type GroupCard } from '../services/groupApi';
+import { fetchWeatherDashboard, type WeatherDashboardData } from '../services/weatherApi';
 
 // ═══════════════════════════════════════════════════════════════
 // MOCK DATA
@@ -50,40 +51,78 @@ const POST_TEMPLATES = [
   { id: 'work', icon: 'hammer-wrench', label: 'Orchard Work', text: 'Working hard in the orchard today! 🌳💪' },
 ];
 
-const PRIORITY_CARDS: PriorityCardData[] = [
-  {
-    id: 'c1', type: 'weather_alert', title: 'Heavy Rain Alert', titleHi: 'भारी बारिश की चेतावनी',
-    description: '75% chance of heavy rain starting Tuesday evening. Complete all spray applications before 4 PM.',
-    descriptionHi: 'मंगलवार शाम से भारी बारिश की 75% संभावना।', priority: 'critical',
-    ctaText: 'View Spray Schedule', timestamp: 'Updated 10 min ago',
-    extraInfo: [{ icon: 'weather-rainy', label: 'Expected Rainfall', value: '35-50mm' }, { icon: 'clock-outline', label: 'Start Time', value: 'Tue 4:00 PM' }],
-  },
-  {
-    id: 'c2', type: 'work', title: 'Spray Before Rain', titleHi: 'बारिश से पहले छिड़काव',
-    description: 'Apply Mancozeb 75WP (400g/200L) + Copper Oxychloride (300g/200L) on all blocks before the rain hits.',
-    descriptionHi: 'बारिश से पहले सभी ब्लॉकों पर छिड़काव करें।', priority: 'high',
-    ctaText: 'Mark as Done', timestamp: 'Due today',
-    extraInfo: [{ icon: 'flask', label: 'Tank Mix', value: 'Mancozeb + Copper' }, { icon: 'spray', label: 'Coverage', value: 'All 4 blocks' }],
-  },
-  {
-    id: 'c3', type: 'weekly_recommendation', title: 'Soil Drench — Urea', titleHi: 'जड़ों में यूरिया डालें',
-    description: 'Weekly nutrition: Apply Urea 46% (1kg/tree) dissolved in 20L water per tree. Best done in early morning.',
-    descriptionHi: 'साप्ताहिक पोषण: प्रति पेड़ यूरिया 46% (1kg) लगाएं।', priority: 'medium',
-    ctaText: 'View Details', timestamp: 'Recommended for Thu',
-  },
-  {
-    id: 'c4', type: 'notification', title: 'Mandi Price Up 📈', titleHi: 'मंडी भाव बढ़े',
-    description: 'Royal Delicious Grade A prices increased by ₹4/kg at Shimla Mandi. Current rate: ₹92/kg.',
-    descriptionHi: 'शिमला मंडी में रॉयल डिलीशियस के भाव में ₹4/kg की बढ़ोतरी।', priority: 'low',
-    timestamp: 'Today, 10:30 AM',
-  },
-  {
-    id: 'c5', type: 'weather_alert', title: 'Frost Warning', titleHi: 'पाला चेतावनी',
-    description: 'Night temperature expected to drop to 2°C on Thursday. Protect young buds with smoke pots or frost fans.',
-    descriptionHi: 'गुरुवार को रात का तापमान 2°C तक गिरने की संभावना।', priority: 'high',
-    ctaText: 'View Protection Tips', timestamp: 'Thu night forecast',
-  },
-];
+// Weather priority cards are now generated dynamically from API
+function generatePriorityCards(dashboard: WeatherDashboardData | null): PriorityCardData[] {
+  if (!dashboard) return [];
+
+  const cards: PriorityCardData[] = [];
+  const { today_recommendations, active_alerts } = dashboard;
+
+  // 1. Spray recommendation card
+  const spray = today_recommendations.spray;
+  cards.push({
+    id: 'w-spray',
+    type: 'work',
+    title: spray.recommendation === 'excellent' ? 'Excellent Spray Window' :
+           spray.recommendation === 'good' ? 'Good Spray Conditions' :
+           spray.recommendation === 'short' ? 'Short Spray Window' : 'Avoid Spraying Today',
+    titleHi: spray.recommendation === 'avoid' ? 'आज छिड़काव न करें' : 'छिड़काव की सलाह',
+    description: spray.reason,
+    descriptionHi: spray.reason,
+    priority: spray.recommendation === 'avoid' ? 'high' : spray.recommendation === 'excellent' ? 'high' : 'medium',
+    ctaText: spray.recommendation === 'avoid' ? 'View Calendar' : 'Schedule Spray',
+    timestamp: 'Weather Engine',
+  });
+
+  // 2. Fertigation recommendation card
+  const fert = today_recommendations.fertigation;
+  if (fert.recommendation === 'apply_now' || fert.recommendation === 'wait_for_rain') {
+    cards.push({
+      id: 'w-fert',
+      type: 'weekly_recommendation',
+      title: fert.recommendation === 'apply_now' ? 'Fertigation Recommended' : 'Wait for Rain',
+      titleHi: fert.recommendation === 'apply_now' ? 'उर्वरक लगाने की सलाह' : 'बारिश का इंतज़ार करें',
+      description: fert.reason,
+      descriptionHi: fert.reason,
+      priority: fert.recommendation === 'apply_now' ? 'medium' : 'low',
+      ctaText: fert.recommendation === 'apply_now' ? 'Schedule' : 'View Forecast',
+      timestamp: 'Weather Engine',
+    });
+  }
+
+  // 3. Disease risk card
+  const disease = today_recommendations.disease_risk;
+  if (disease.level === 'high' || disease.level === 'critical') {
+    cards.push({
+      id: 'w-disease',
+      type: 'weather_alert',
+      title: `Disease Risk: ${disease.level.toUpperCase()}`,
+      titleHi: 'रोग जोखिम: अधिक',
+      description: disease.reason,
+      descriptionHi: disease.reason,
+      priority: disease.level === 'critical' ? 'critical' : 'high',
+      ctaText: 'View Spray Guide',
+      timestamp: 'Weather Engine',
+    });
+  }
+
+  // 4. Active weather alerts
+  active_alerts.forEach((alert, idx) => {
+    cards.push({
+      id: `w-alert-${idx}`,
+      type: 'weather_alert',
+      title: alert.title,
+      titleHi: alert.title,
+      description: alert.message,
+      descriptionHi: alert.message,
+      priority: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'high' : 'medium',
+      ctaText: 'View Details',
+      timestamp: 'Weather Alert',
+    });
+  });
+
+  return cards;
+}
 
 const SUGGESTED_FRIENDS = [
   { id: 'sf1', name: 'Vikram S.', avatar: 'https://i.pravatar.cc/150?u=9', location: 'Kullu, HP', mutual: 4 },
@@ -171,7 +210,11 @@ export default function HomeScreen(): React.JSX.Element {
   const [loadingQuestions, setLoadingQuestions] = useState(true);
 
 
-  const sortedCards = sortByPriority(PRIORITY_CARDS);
+  const [weatherDashboard, setWeatherDashboard] = useState<WeatherDashboardData | null>(null);
+  const [loadingWeather, setLoadingWeather] = useState(true);
+
+  const priorityCards = generatePriorityCards(weatherDashboard);
+  const sortedCards = sortByPriority(priorityCards);
 
   // Fetch feed + experts + suggested friends on mount
   useEffect(() => {
@@ -243,10 +286,14 @@ export default function HomeScreen(): React.JSX.Element {
     Promise.all([
       getFeed(10, 1),
       getQuestions(5, 1),
+      fetchWeatherDashboard(),
     ])
-      .then(([feed, qs]) => {
+      .then(([feed, qs, weatherRes]) => {
         setPosts(feed);
         setQuestions(qs);
+        if (weatherRes.success) {
+          setWeatherDashboard(weatherRes.data);
+        }
         showToast('Refreshed', 'success');
       })
       .catch((err) => { console.error('[Home] Refresh failed:', err); showToast('Refresh failed', 'error'); })

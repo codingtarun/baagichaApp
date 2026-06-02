@@ -1,14 +1,15 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * BAAGICHA — WEATHER SCREEN
+ * BAAGICHA — WEATHER SCREEN (Real Data)
  * ═══════════════════════════════════════════════════════════════
  *
  * Current weather widget, 7-day forecast list, hourly scroll,
  * spray suitability for each day, and weather alerts.
+ * NOW WIRED TO REAL API via /weather/dashboard
  */
 
-import React from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../theme/colors';
 import { Shadows, Radius } from '../theme/style';
@@ -16,53 +17,106 @@ import { Typography } from '../typography';
 import ScreenLayout from '../components/ScreenLayout';
 import PressableScale from '../components/PressableScale';
 import EmptyState from '../components/EmptyState';
+import {
+  fetchWeatherDashboard,
+  type WeatherDashboardData,
+  type Forecast7Day,
+} from '../services/weatherApi';
+import { showToast } from '../store/toastStore';
 
-// Mock data
-const CURRENT = {
-  temp: 18,
-  condition: 'Partly Cloudy',
-  conditionHi: 'आंशिक रूप से बादलवाह',
-  high: 20,
-  low: 5,
-  humidity: 62,
-  wind: 8,
-  rainChance: 15,
-  spraySuit: 'perfect' as const,
+const SUIT_CONFIG: Record<string, { icon: string; color: string; bg: string; label: string }> = {
+  excellent: { icon: 'check-circle', color: Colors.success, bg: Colors.success + '12', label: 'Excellent' },
+  good:      { icon: 'check-circle', color: Colors.success, bg: Colors.success + '12', label: 'Good' },
+  short:     { icon: 'alert-circle', color: Colors.warning, bg: Colors.warning + '12', label: 'Short' },
+  caution:   { icon: 'alert-circle', color: Colors.warning, bg: Colors.warning + '12', label: 'Caution' },
+  avoid:     { icon: 'close-circle',  color: Colors.danger,  bg: Colors.danger + '12',  label: 'Avoid' },
 };
 
-const HOURLY = [
-  { time: '6 AM', temp: 6, icon: 'weather-night-partly-cloudy', iconColor: Colors.gray400 },
-  { time: '9 AM', temp: 12, icon: 'weather-partly-cloudy', iconColor: '#f59e0b' },
-  { time: '12 PM', temp: 18, icon: 'weather-sunny', iconColor: '#f59e0b' },
-  { time: '3 PM', temp: 19, icon: 'weather-sunny', iconColor: '#f59e0b' },
-  { time: '6 PM', temp: 14, icon: 'weather-partly-cloudy', iconColor: '#64748b' },
-  { time: '9 PM', temp: 8, icon: 'weather-night', iconColor: Colors.gray400 },
-];
+function getSuitConfig(day: Forecast7Day) {
+  if (day.spray_suitable) return SUIT_CONFIG['good'];
+  return SUIT_CONFIG['avoid'];
+}
 
-const DAILY = [
-  { day: 'Sun', dayHi: 'रवि', date: 'Mar 9', icon: 'weather-sunny', iconColor: '#f59e0b', high: 18, low: 4, wind: 8, rain: 10, suit: 'perfect' as const, suitLabel: 'Good', suitHi: 'उचित' },
-  { day: 'Mon', dayHi: 'सोम', date: 'Mar 10', icon: 'weather-partly-cloudy', iconColor: '#64748b', high: 17, low: 5, wind: 10, rain: 20, suit: 'perfect' as const, suitLabel: 'Good', suitHi: 'उचित' },
-  { day: 'Tue', dayHi: 'मंगल', date: 'Mar 11', icon: 'weather-rainy', iconColor: '#3b82f6', high: 14, low: 3, wind: 14, rain: 70, suit: 'avoid' as const, suitLabel: 'Avoid', suitHi: 'टालें' },
-  { day: 'Wed', dayHi: 'बुध', date: 'Mar 12', icon: 'weather-cloudy', iconColor: '#94a3b8', high: 15, low: 4, wind: 12, rain: 40, suit: 'caution' as const, suitLabel: 'Caution', suitHi: 'सावधानी' },
-  { day: 'Thu', dayHi: 'गुरु', date: 'Mar 13', icon: 'weather-partly-cloudy', iconColor: '#64748b', high: 16, low: 5, wind: 9, rain: 15, suit: 'perfect' as const, suitLabel: 'Good', suitHi: 'उचित' },
-  { day: 'Fri', dayHi: 'शुक्र', date: 'Mar 14', icon: 'weather-sunny', iconColor: '#f59e0b', high: 19, low: 6, wind: 7, rain: 5, suit: 'perfect' as const, suitLabel: 'Good', suitHi: 'उचित' },
-  { day: 'Sat', dayHi: 'शनि', date: 'Mar 15', icon: 'weather-partly-cloudy', iconColor: '#64748b', high: 18, low: 5, wind: 10, rain: 20, suit: 'perfect' as const, suitLabel: 'Good', suitHi: 'उचित' },
-];
+function mapConditionToIcon(condition: string): { icon: string; color: string } {
+  const c = condition?.toLowerCase() ?? '';
+  if (c.includes('rain')) return { icon: 'weather-rainy', color: '#3b82f6' };
+  if (c.includes('cloud')) return { icon: 'weather-cloudy', color: '#64748b' };
+  if (c.includes('partly')) return { icon: 'weather-partly-cloudy', color: '#f59e0b' };
+  if (c.includes('clear') || c.includes('sun')) return { icon: 'weather-sunny', color: '#f59e0b' };
+  if (c.includes('snow')) return { icon: 'weather-snowy', color: '#94a3b8' };
+  if (c.includes('thunder') || c.includes('storm')) return { icon: 'weather-lightning', color: '#7c3aed' };
+  if (c.includes('fog') || c.includes('mist')) return { icon: 'weather-fog', color: '#94a3b8' };
+  return { icon: 'weather-partly-cloudy', color: '#f59e0b' };
+}
 
-const SUIT_CONFIG: Record<string, { icon: string; color: string; bg: string }> = {
-  perfect: { icon: 'check-circle', color: Colors.success, bg: Colors.success + '12' },
-  caution: { icon: 'alert-circle', color: Colors.warning, bg: Colors.warning + '12' },
-  avoid:   { icon: 'close-circle', color: Colors.danger, bg: Colors.danger + '12' },
-};
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function formatDay(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-IN', { weekday: 'short' });
+}
 
 export default function WeatherScreen(): React.JSX.Element {
-  const [refreshing, setRefreshing] = React.useState(false);
-  const onRefresh = React.useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1200);
+  const [dashboard, setDashboard] = useState<WeatherDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = useCallback(async (isRefresh = false) => {
+    try {
+      if (!isRefresh) setLoading(true);
+      const response = await fetchWeatherDashboard();
+      if (response.success) {
+        setDashboard(response.data);
+      } else {
+        showToast({ message: 'Failed to load weather data', type: 'error' });
+      }
+    } catch (err: any) {
+      showToast({ message: err?.message || 'Weather data unavailable', type: 'error' });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
-  const currentSuit = SUIT_CONFIG[CURRENT.spraySuit];
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadData(true);
+  }, [loadData]);
+
+  if (loading) {
+    return (
+      <ScreenLayout>
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color={Colors.accent} />
+          <Typography variant="bodyMuted" style={{ marginTop: 12 }}>Loading weather…</Typography>
+        </View>
+      </ScreenLayout>
+    );
+  }
+
+  if (!dashboard) {
+    return (
+      <ScreenLayout refreshing={refreshing} onRefresh={onRefresh}>
+        <EmptyState
+          icon="weather-partly-cloudy"
+          title="Weather Unavailable"
+          subtitle="We couldn't load weather data. Please try again."
+        />
+      </ScreenLayout>
+    );
+  }
+
+  const { current, today_recommendations, forecast_7d, active_alerts } = dashboard;
+  const sprayRec = today_recommendations.spray;
+  const spraySuit = SUIT_CONFIG[sprayRec.recommendation] ?? SUIT_CONFIG.avoid;
+  const currentIcon = mapConditionToIcon(current.condition);
 
   return (
     <ScreenLayout refreshing={refreshing} onRefresh={onRefresh}>
@@ -70,67 +124,157 @@ export default function WeatherScreen(): React.JSX.Element {
       <View style={styles.currentCard}>
         <View style={styles.currentTop}>
           <View>
-            <Typography variant="displayHeading" style={styles.currentTemp}>{CURRENT.temp}°</Typography>
-            <Typography variant="body" style={styles.currentCondition}>{CURRENT.condition}</Typography>
-            <Typography variant="hindiBody">{CURRENT.conditionHi}</Typography>
+            <Typography variant="displayHeading" style={styles.currentTemp}>{Math.round(current.temp_c)}°</Typography>
+            <Typography variant="body" style={styles.currentCondition}>{current.condition}</Typography>
+            <Typography variant="hindiBody">{current.condition}</Typography>
           </View>
-          <Icon name="weather-partly-cloudy" size={56} color={Colors.accent} />
+          <Icon name={currentIcon.icon as any} size={56} color={currentIcon.color} />
         </View>
         <View style={styles.currentMeta}>
-          <MetaPill icon="arrow-up" label={`High ${CURRENT.high}°`} />
-          <MetaPill icon="arrow-down" label={`Low ${CURRENT.low}°`} />
-          <MetaPill icon="water-percent" label={`${CURRENT.humidity}%`} />
-          <MetaPill icon="weather-windy" label={`${CURRENT.wind} km/h`} />
+          <MetaPill icon="water-percent" label={`${current.humidity_percent}%`} />
+          <MetaPill icon="weather-windy" label={`${Math.round(current.wind_speed_kmh)} km/h`} />
+          {current.delta_t !== null && (
+            <MetaPill icon="thermometer" label={`ΔT ${current.delta_t}`} />
+          )}
+          {current.uv_index !== null && (
+            <MetaPill icon="white-balance-sunny" label={`UV ${current.uv_index}`} />
+          )}
         </View>
-        <View style={[styles.suitBanner, { backgroundColor: currentSuit.bg }]}>
-          <Icon name={currentSuit.icon} size={18} color={currentSuit.color} />
-          <Typography variant="bodySmall" style={[styles.suitText, { color: currentSuit.color }]}>
-            Spray Today: {currentSuit.icon === 'check-circle' ? 'Good Conditions' : 'Check Details'}
+        <View style={[styles.suitBanner, { backgroundColor: spraySuit.bg }]}>
+          <Icon name={spraySuit.icon as any} size={18} color={spraySuit.color} />
+          <Typography variant="bodySmall" style={[styles.suitText, { color: spraySuit.color }]}>
+            Spray: {sprayRec.recommendation.toUpperCase()} — {sprayRec.reason}
           </Typography>
         </View>
       </View>
 
-      {/* Hourly */}
-      <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
-        <Typography variant="sectionTitle" style={{ marginBottom: 12 }}>Hourly / प्रति घंटा</Typography>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hourlyScroll}>
-          {HOURLY.map((h, i) => (
-            <View key={i} style={styles.hourCard}>
-              <Typography variant="caption" style={{ color: Colors.gray500 }}>{h.time}</Typography>
-              <Icon name={h.icon as any} size={24} color={h.iconColor} style={{ marginVertical: 8 }} />
-              <Typography variant="body" style={{ fontWeight: '700', color: Colors.gray900 }}>{h.temp}°</Typography>
+      {/* Active Alerts */}
+      {active_alerts.length > 0 && (
+        <View style={{ marginTop: 16, paddingHorizontal: 16 }}>
+          <Typography variant="sectionTitle" style={{ marginBottom: 10 }}>Alerts / चेतावनी</Typography>
+          {active_alerts.map((alert, i) => (
+            <View key={i} style={[styles.alertCard, { borderLeftColor: alert.severity === 'critical' ? Colors.danger : Colors.warning }]}>
+              <Icon
+                name={alert.severity === 'critical' ? 'alert-circle' : 'information-outline'}
+                size={18}
+                color={alert.severity === 'critical' ? Colors.danger : Colors.warning}
+              />
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Typography variant="bodySmall" style={{ fontWeight: '700', color: Colors.gray900 }}>{alert.title}</Typography>
+                <Typography variant="caption" style={{ color: Colors.gray600, marginTop: 2 }}>{alert.message}</Typography>
+              </View>
             </View>
           ))}
-        </ScrollView>
-      </View>
+        </View>
+      )}
+
+      {/* Fertigation Card */}
+      {today_recommendations.fertigation && (
+        <View style={{ marginTop: 16, paddingHorizontal: 16 }}>
+          <Typography variant="sectionTitle" style={{ marginBottom: 10 }}>Fertigation / उर्वरक सलाह</Typography>
+          <View style={styles.fertCard}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Icon
+                name={today_recommendations.fertigation.recommendation === 'apply_now' ? 'check-circle' : 'close-circle'}
+                size={20}
+                color={today_recommendations.fertigation.recommendation === 'apply_now' ? Colors.success : Colors.danger}
+              />
+              <Typography variant="body" style={{ fontWeight: '700', color: Colors.gray900, flex: 1 }}>
+                {today_recommendations.fertigation.recommendation === 'apply_now' ? 'Good for Fertigation' :
+                 today_recommendations.fertigation.recommendation === 'wait_for_rain' ? 'Wait for Rain' :
+                 today_recommendations.fertigation.recommendation === 'irrigate_first' ? 'Irrigate First' : 'Avoid Fertigation'}
+              </Typography>
+            </View>
+            <Typography variant="bodySmall" style={{ color: Colors.gray600, marginTop: 6 }}>
+              {today_recommendations.fertigation.reason}
+            </Typography>
+            {today_recommendations.fertigation.best_time && (
+              <Typography variant="caption" style={{ color: Colors.accent, marginTop: 4, fontWeight: '600' }}>
+                Suggested time: {today_recommendations.fertigation.best_time}
+              </Typography>
+            )}
+          </View>
+        </View>
+      )}
+
+      {/* Disease Risk */}
+      {today_recommendations.disease_risk && (
+        <View style={{ marginTop: 16, paddingHorizontal: 16 }}>
+          <Typography variant="sectionTitle" style={{ marginBottom: 10 }}>Disease Risk / रोग जोखिम</Typography>
+          <View style={styles.diseaseCard}>
+            <View style={styles.diseaseHeader}>
+              <Typography variant="body" style={{ fontWeight: '700', color: Colors.gray900 }}>
+                Risk Score: {today_recommendations.disease_risk.score}/100
+              </Typography>
+              <View style={[styles.diseaseBadge, {
+                backgroundColor: today_recommendations.disease_risk.level === 'high' || today_recommendations.disease_risk.level === 'critical'
+                  ? Colors.danger + '18'
+                  : today_recommendations.disease_risk.level === 'moderate'
+                  ? Colors.warning + '18'
+                  : Colors.success + '18'
+              }]}>
+                <Typography variant="caption" style={{
+                  color: today_recommendations.disease_risk.level === 'high' || today_recommendations.disease_risk.level === 'critical'
+                    ? Colors.danger
+                    : today_recommendations.disease_risk.level === 'moderate'
+                    ? Colors.warning
+                    : Colors.success,
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                }}>
+                  {today_recommendations.disease_risk.level}
+                </Typography>
+              </View>
+            </View>
+            <Typography variant="bodySmall" style={{ color: Colors.gray600, marginTop: 6 }}>
+              {today_recommendations.disease_risk.reason}
+            </Typography>
+            {today_recommendations.disease_risk.active_diseases.length > 0 && (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                {today_recommendations.disease_risk.active_diseases.map((disease, idx) => (
+                  <View key={idx} style={styles.diseaseChip}>
+                    <Typography variant="caption" style={{ color: Colors.danger, fontWeight: '600' }}>
+                      {disease.replace('_', ' ')}
+                    </Typography>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        </View>
+      )}
 
       {/* 7-Day Forecast */}
       <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
         <Typography variant="sectionTitle" style={{ marginBottom: 12 }}>7-Day Forecast / 7-दिन का पूर्वानुमान</Typography>
         <View style={styles.dailyList}>
-          {DAILY.map((d, i) => {
-            const suit = SUIT_CONFIG[d.suit];
+          {forecast_7d.map((d, i) => {
+            const suit = getSuitConfig(d);
+            const iconInfo = mapConditionToIcon(d.condition);
             return (
               <PressableScale key={i} scale={0.98}>
                 <View style={styles.dailyRow}>
                   <View style={styles.dailyDay}>
-                    <Typography variant="body" style={{ fontWeight: '700', color: Colors.gray900 }}>{d.day}</Typography>
-                    <Typography variant="hindiMicro">{d.dayHi}</Typography>
+                    <Typography variant="body" style={{ fontWeight: '700', color: Colors.gray900 }}>{formatDay(d.date)}</Typography>
+                    <Typography variant="caption" style={{ color: Colors.gray400 }}>{formatDate(d.date)}</Typography>
                   </View>
-                  <Icon name={d.icon as any} size={22} color={d.iconColor} style={{ marginHorizontal: 10 }} />
+                  <Icon name={iconInfo.icon as any} size={22} color={iconInfo.color} style={{ marginHorizontal: 10 }} />
                   <View style={{ flex: 1 }}>
-                    <Typography variant="caption" style={{ color: Colors.gray500 }}>{d.date}</Typography>
+                    <Typography variant="caption" style={{ color: Colors.gray500 }}>{d.condition}</Typography>
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 2 }}>
-                      <Typography variant="caption"><Icon name="weather-windy" size={10} color={Colors.gray400} /> {d.wind}km/h</Typography>
-                      <Typography variant="caption"><Icon name="water" size={10} color={Colors.gray400} /> {d.rain}%</Typography>
+                      <Typography variant="caption"><Icon name="water" size={10} color={Colors.gray400} /> {d.precipitation_mm}mm</Typography>
                     </View>
                   </View>
                   <View style={styles.dailyTemps}>
-                    <Typography variant="bodySmall" style={{ fontWeight: '700', color: Colors.gray900 }}>{d.high}°</Typography>
-                    <Typography variant="caption" style={{ color: Colors.gray400 }}>{d.low}°</Typography>
+                    <Typography variant="bodySmall" style={{ fontWeight: '700', color: Colors.gray900 }}>
+                      {d.temp_max_c !== null ? Math.round(d.temp_max_c) : '--'}°
+                    </Typography>
+                    <Typography variant="caption" style={{ color: Colors.gray400 }}>
+                      {d.temp_min_c !== null ? Math.round(d.temp_min_c) : '--'}°
+                    </Typography>
                   </View>
                   <View style={[styles.dailySuit, { backgroundColor: suit.bg }]}>
-                    <Icon name={suit.icon} size={10} color={suit.color} />
+                    <Icon name={suit.icon as any} size={10} color={suit.color} />
                   </View>
                 </View>
               </PressableScale>
@@ -139,7 +283,7 @@ export default function WeatherScreen(): React.JSX.Element {
         </View>
       </View>
 
-      <View style={{ height: 24 }} />
+      <View style={{ height: 32 }} />
     </ScreenLayout>
   );
 }
@@ -154,6 +298,12 @@ function MetaPill({ icon, label }: { icon: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 80,
+  },
   currentCard: {
     backgroundColor: Colors.surface,
     marginHorizontal: 16,
@@ -204,16 +354,43 @@ const styles = StyleSheet.create({
   suitText: {
     fontWeight: '700',
   },
-  hourlyScroll: {
-    gap: 10,
-  },
-  hourCard: {
-    width: 72,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius['2xl'],
-    padding: 10,
+  alertCard: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    padding: 14,
+    marginBottom: 8,
+    borderLeftWidth: 4,
     ...Shadows.subtle,
+  },
+  fertCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    padding: 16,
+    ...Shadows.subtle,
+  },
+  diseaseCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    padding: 16,
+    ...Shadows.subtle,
+  },
+  diseaseHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  diseaseBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: Radius.full,
+  },
+  diseaseChip: {
+    backgroundColor: Colors.danger + '10',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: Radius.md,
   },
   dailyList: {
     gap: 8,
@@ -227,7 +404,7 @@ const styles = StyleSheet.create({
     ...Shadows.subtle,
   },
   dailyDay: {
-    width: 50,
+    width: 70,
   },
   dailyTemps: {
     alignItems: 'flex-end',
