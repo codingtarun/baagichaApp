@@ -92,12 +92,23 @@ export default function MyFarmSegment(): React.JSX.Element {
   const goToSpray = () => navigation.navigate('Spray' as any);
   const goToWeather = () => navigation.navigate('Weather' as any);
   const goToDisease = () => navigation.navigate('Diseases' as any);
+  const goToShop = () => navigation.navigate('Shop' as any);
+
+  const actionsWithNav = ACTIONS.map((a) => {
+    switch (a.key) {
+      case 'log-spray': return { ...a, onPress: goToSpray };
+      case 'weather': return { ...a, onPress: goToWeather };
+      case 'disease': return { ...a, onPress: goToDisease };
+      case 'mandi': return { ...a, onPress: goToShop };
+      default: return a;
+    }
+  });
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
       <CompactHeroCard stage={STAGE} weather={WEATHER} />
       <QuickStatsStrip stats={STATS} />
-      <QuickActionsGrid actions={ACTIONS.map(a => ({ ...a, onPress: a.key === 'weather' ? goToWeather : a.onPress }))} />
+      <QuickActionsGrid actions={actionsWithNav} />
       <CompactTaskList tasks={TASKS} onViewAll={goToSpray} />
       <CompactForecastStrip forecast={FORECAST} onViewAll={goToWeather} />
       <CompactAlertRow alerts={ALERTS} onViewAll={goToDisease} />
