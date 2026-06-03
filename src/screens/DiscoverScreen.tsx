@@ -28,10 +28,6 @@ import type { DiscoverNavigationProp } from '../navigation/types';
 import { useNavigation } from '@react-navigation/native';
 
 import {
-  DoNowBanner,
-  ForecastStrip,
-  WeeklyTasks,
-  AlertsSection,
   TopVarieties,
   TopRootstocks,
   TopBlogs,
@@ -151,7 +147,7 @@ interface DiscoverItem {
   description: string;
   color: string;
   bgColor: string;
-  route: keyof DiscoverNavigationProp;
+  route: string;
 }
 
 const DISCOVER_ITEMS: DiscoverItem[] = [
@@ -200,9 +196,6 @@ export default function DiscoverScreen(): React.JSX.Element {
     navigation.navigate(item.route as any);
   };
 
-  const goToSpray = () => navigation.navigate('Spray' as any);
-  const goToWeather = () => navigation.navigate('Weather' as any);
-  const goToDisease = () => navigation.navigate('Diseases' as any);
   const goToVariety = () => navigation.navigate('VarietyList' as any);
   const goToRootstock = () => navigation.navigate('RootstockList' as any);
   const goToBlog = () => navigation.navigate('Blog' as any);
@@ -247,32 +240,6 @@ export default function DiscoverScreen(): React.JSX.Element {
             </TouchableOpacity>
           ))}
         </View>
-
-        {/* ── Farming Dashboard (moved from old HomeScreen) ── */}
-        <View style={styles.sectionHeader}>
-          <Typography variant="sectionHeader">Farming Dashboard / कृषि डैशबोर्ड</Typography>
-        </View>
-
-        <DoNowBanner
-          stage={STAGE}
-          sprays={SPRAYS}
-          diseaseWatch={DISEASE_WATCH}
-          soilNutrition={SOIL_NUTRITION}
-          weatherWarnings={WEATHER_WARNINGS}
-          suitType="perfect"
-          suitLabel="Good for Spray"
-          suitLabelHi="उचित"
-        />
-
-        <ForecastStrip forecast={FORECAST} location="Shimla, HP" onViewAll={goToWeather} />
-
-        <WeeklyTasks tasks={TASKS} onViewAll={goToSpray} />
-
-        <AlertsSection
-          preventiveAlerts={PREVENTIVE_ALERTS}
-          outbreakAlerts={OUTBREAK_ALERTS}
-          onViewAll={goToDisease}
-        />
 
         {/* ── Top Lists ── */}
         <TopVarieties varieties={TOP_VARIETIES} onViewAll={goToVariety} />
@@ -330,10 +297,5 @@ const styles = StyleSheet.create({
   },
   arrow: {
     marginLeft: 8,
-  },
-  sectionHeader: {
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    marginTop: 8,
   },
 });
