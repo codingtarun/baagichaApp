@@ -15,3 +15,6 @@ export type { CompactForecastDay } from './CompactForecastStrip';
 
 export { default as CompactAlertRow } from './CompactAlertRow';
 export type { CompactAlert } from './CompactAlertRow';
+
+export { default as HorizontalAlertStrip } from './HorizontalAlertStrip';
+export type { HorizontalAlert } from './HorizontalAlertStrip';

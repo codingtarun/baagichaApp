@@ -285,7 +285,11 @@ export default function GlobalHeader({
                     >
                       {orchard.orchard_name}
                     </Typography>
-                    <Typography variant="caption" color={Colors.gray400}>
+                    <Typography
+                      variant="caption"
+                      color={orchard.id === selectedOrchardId ? Colors.white : Colors.gray400}
+                      style={orchard.id === selectedOrchardId ? { opacity: 0.85 } : undefined}
+                    >
                       {[orchard.village, orchard.district, orchard.state]
                         .filter(Boolean)
                         .join(', ')}
@@ -293,22 +297,22 @@ export default function GlobalHeader({
                     </Typography>
                   </View>
                   {orchard.id === selectedOrchardId && (
-                    <Icon name="check-circle" size={18} color={Colors.primary} />
+                    <Icon name="check-circle" size={18} color={Colors.white} />
                   )}
                 </TouchableOpacity>
               ))}
 
               {/* Add Orchard button */}
               <TouchableOpacity
-                style={styles.addOrchardItem}
+                style={[styles.addOrchardItem, { backgroundColor: Colors.primary }]}
                 onPress={handleAddOrchard}
                 activeOpacity={0.7}
               >
-                <View style={[styles.orchardIcon, { backgroundColor: Colors.primaryLight }]}
+                <View style={[styles.orchardIcon, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
                 >
-                  <Icon name="plus" size={18} color={Colors.primary} />
+                  <Icon name="plus" size={18} color={Colors.white} />
                 </View>
-                <Typography variant="body" color={Colors.primary}>
+                <Typography variant="body" color={Colors.white}>
                   Add New Orchard
                 </Typography>
               </TouchableOpacity>
@@ -450,7 +454,7 @@ const styles = StyleSheet.create({
   },
 
   orchardItemActive: {
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: Colors.primary,
   },
 
   orchardIcon: {
@@ -468,7 +472,7 @@ const styles = StyleSheet.create({
   },
 
   orchardNameActive: {
-    color: Colors.primary,
+    color: Colors.white,
     fontWeight: '700',
   },
 

@@ -18,9 +18,9 @@ import {
   QuickActionsGrid,
   CompactTaskList,
   CompactForecastStrip,
-  CompactAlertRow,
+  HorizontalAlertStrip,
 } from '../../components/dashboard';
-import type { CompactHeroStage, CompactHeroWeather, QuickStat, QuickAction, CompactTask, CompactForecastDay, CompactAlert } from '../../components/dashboard';
+import type { CompactHeroStage, CompactHeroWeather, QuickStat, QuickAction, CompactTask, CompactForecastDay, HorizontalAlert } from '../../components/dashboard';
 import { Colors } from '../../theme/colors';
 
 // ── Mock Data (will be replaced by API in Phase 6) ──
@@ -55,7 +55,7 @@ const ACTIONS: QuickAction[] = [
   { key: 'log-spray', icon: 'spray-bottle', label: 'Log Spray', labelHi: 'छिड़काव लॉग', color: Colors.primary, onPress: () => {} },
   { key: 'weather', icon: 'weather-partly-cloudy', label: 'Weather', labelHi: 'मौसम', color: Colors.info, onPress: () => {} },
   { key: 'disease', icon: 'virus', label: 'Disease Scan', labelHi: 'रोग स्कैन', color: Colors.danger, onPress: () => {} },
-  { key: 'mandi', icon: 'chart-line', label: 'Mandi Rates', labelHi: 'मंडी भाव', color: Colors.accent, onPress: () => {} },
+  { key: 'tools', icon: 'calculator-variant', label: 'Tools', labelHi: 'उपकरण', color: Colors.primary, onPress: () => {} },
 ];
 
 const TASKS = {
@@ -81,9 +81,11 @@ const FORECAST: CompactForecastDay[] = [
   { day: 'बुध', dayEn: 'Wed', date: 'Mar 12', icon: 'weather-cloudy', iconColor: '#94a3b8', high: 15, low: 4, suit: 'caution' },
 ];
 
-const ALERTS: CompactAlert[] = [
-  { id: 'a1', title: 'Apple Scab Risk — High', titleHi: 'सेब खुजली का खतरा — अधिक', desc: 'Wet conditions forecast Mar 12–13. Apply Mancozeb before rain.', severity: 'critical', type: 'preventive', meta: '3 orchards nearby affected' },
-  { id: 'a2', title: 'Late Frost Possible', titleHi: 'देर से पाला पड़ सकता है', desc: 'Temperatures may drop to −2°C above 7500ft. Protect young grafts.', severity: 'high', type: 'preventive' },
+const HORIZONTAL_ALERTS: HorizontalAlert[] = [
+  { id: 'ha1', icon: 'biohazard', title: 'Apple Scab Risk — High', titleHi: 'सेब खुजली का खतरा', message: 'Wet conditions forecast Mar 12–13. Apply Mancozeb before rain for best protection.', severity: 'critical', type: 'warning' },
+  { id: 'ha2', icon: 'snowflake', title: 'Late Frost Possible', titleHi: 'देर से पाला संभव', message: 'Temperatures may drop to −2°C above 7500ft. Protect young grafts and new shoots.', severity: 'high', type: 'warning' },
+  { id: 'ha3', icon: 'spray-bottle', title: 'Copper Spray Due', titleHi: 'कॉपर छिड़काव बाकी', message: 'Copper Oxychloride spray is overdue. Apply before bud break for canker control.', severity: 'medium', type: 'todo' },
+  { id: 'ha4', icon: 'bug', title: 'Woolly Aphid Season', titleHi: 'ऊनी माहू का मौसम', message: 'Monitor trunk & branches weekly. Apply Imidacloprid at first sighting.', severity: 'medium', type: 'info' },
 ];
 
 export default function MyFarmSegment(): React.JSX.Element {
@@ -93,6 +95,7 @@ export default function MyFarmSegment(): React.JSX.Element {
   const goToWeather = () => navigation.navigate('Weather' as any);
   const goToDisease = () => navigation.navigate('Diseases' as any);
   const goToShop = () => navigation.navigate('Shop' as any);
+  const goToTools = () => navigation.navigate('Tools' as any);
 
   const actionsWithNav = ACTIONS.map((a) => {
     switch (a.key) {
@@ -100,6 +103,7 @@ export default function MyFarmSegment(): React.JSX.Element {
       case 'weather': return { ...a, onPress: goToWeather };
       case 'disease': return { ...a, onPress: goToDisease };
       case 'mandi': return { ...a, onPress: goToShop };
+      case 'tools': return { ...a, onPress: goToTools };
       default: return a;
     }
   });
@@ -108,10 +112,10 @@ export default function MyFarmSegment(): React.JSX.Element {
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
       <CompactHeroCard stage={STAGE} weather={WEATHER} />
       <QuickStatsStrip stats={STATS} />
+      <HorizontalAlertStrip alerts={HORIZONTAL_ALERTS} onViewAll={goToDisease} />
       <QuickActionsGrid actions={actionsWithNav} />
       <CompactTaskList tasks={TASKS} onViewAll={goToSpray} />
       <CompactForecastStrip forecast={FORECAST} onViewAll={goToWeather} />
-      <CompactAlertRow alerts={ALERTS} onViewAll={goToDisease} />
       <View style={{ height: 24 }} />
     </ScrollView>
   );

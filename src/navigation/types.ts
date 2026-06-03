@@ -62,6 +62,7 @@ export type { CommunityStackParamList };
 
 export type DiscoverStackParamList = {
   Discover: undefined;
+  Tools: undefined;
   VarietyList: undefined;
   VarietyDetail: { slug: string };
   VarietyCompare: { slugs: string[] };

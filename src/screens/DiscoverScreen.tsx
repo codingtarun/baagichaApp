@@ -152,6 +152,15 @@ interface DiscoverItem {
 
 const DISCOVER_ITEMS: DiscoverItem[] = [
   {
+    icon: 'calculator-variant',
+    title: 'Kisan Tools',
+    titleHi: 'किसान उपकरण',
+    description: 'Calculators, planners, and guides for your orchard',
+    color: Colors.primary,
+    bgColor: 'rgba(60, 179, 113, 0.1)',
+    route: 'Tools',
+  },
+  {
     icon: 'virus',
     title: 'Diseases',
     titleHi: 'रोग',

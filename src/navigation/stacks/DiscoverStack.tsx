@@ -39,9 +39,11 @@ import BlogListScreen from '../../screens/BlogListScreen';
 import BlogDetailScreen from '../../screens/BlogDetailScreen';
 import GroupListScreen from '../../screens/GroupListScreen';
 import GroupDetailScreen from '../../screens/GroupDetailScreen';
+import ToolsScreen from '../../screens/ToolsScreen';
 
 export type DiscoverStackParamList = {
   Discover: undefined;
+  Tools: undefined;
   VarietyList: undefined;
   VarietyDetail: { slug: string };
   VarietyCompare: { slugs: string[] };
@@ -74,6 +76,7 @@ export default function DiscoverStack(): React.JSX.Element {
       <Stack.Screen name="RootstockDetail" component={RootstockDetailScreen} />
       <Stack.Screen name="GroupList" component={GroupListScreen} />
       <Stack.Screen name="GroupDetail" component={GroupDetailScreen} />
+      <Stack.Screen name="Tools" component={ToolsScreen} />
     </Stack.Navigator>
   );
 }
