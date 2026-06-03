@@ -64,21 +64,21 @@ export default function SegmentedControl({ segments, activeKey, onChange }: Segm
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     backgroundColor: Colors.background,
   },
   pill: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingVertical: 5,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: Colors.gray200,
     backgroundColor: Colors.surface,
-    minHeight: 40,
+    minHeight: 32,
   },
   pillActive: {
     backgroundColor: Colors.primary,
@@ -87,16 +87,20 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: '600',
     color: Colors.gray600,
+    fontSize: 12,
   },
   labelActive: {
     color: Colors.white,
     fontWeight: '700',
+    fontSize: 12,
   },
   labelHi: {
     color: Colors.gray400,
-    marginTop: 1,
+    marginTop: 0,
+    fontSize: 8,
   },
   labelHiActive: {
     color: 'rgba(255,255,255,0.7)',
+    fontSize: 8,
   },
 });

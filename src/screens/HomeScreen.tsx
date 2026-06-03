@@ -19,8 +19,8 @@ import MyFarmSegment from './Home/MyFarmSegment';
 import CommunitySegment from './Home/CommunitySegment';
 
 const SEGMENTS = [
-  { key: 'farm', label: 'My Farm', labelHi: 'मेरी खेती' },
   { key: 'community', label: 'Community', labelHi: 'समुदाय' },
+  { key: 'farm', label: 'My Farm', labelHi: 'मेरी खेती' },
 ];
 
 export default function HomeScreen(): React.JSX.Element {
