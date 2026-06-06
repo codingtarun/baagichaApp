@@ -3,9 +3,7 @@
  * BAAGICHA — WELCOME / ONBOARDING SLIDES SCREEN
  * ═══════════════════════════════════════════════════════════════
  *
- * Horizontal swipeable carousel introducing app features.
- * 6 slides: Welcome, Orchards, Spray, Varieties, Weather, Shop.
- * Skip button (left), Next/Get Started button (right), dot indicator.
+ * 4 clean, centered slides introducing app features.
  */
 
 import React, { useState, useRef, useCallback } from 'react';
@@ -20,6 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { Colors } from '../../theme/colors';
 import { Space, Radius, Shadows } from '../../theme/style';
@@ -36,49 +35,48 @@ interface Slide {
   titleHi: string;
   description: string;
   descriptionHi: string;
-  bgColor: string;
 }
 
 const SLIDES: Slide[] = [
   {
-    id: '1', icon: '🍎', title: 'Welcome to Baagicha', titleHi: 'बागीचा में आपका स्वागत है',
-    description: 'Your all-in-one companion for apple farming in the Himalayan apple belt.',
-    descriptionHi: 'हिमालयी सेब बेल्ट में सेब की खेती के लिए आपका साथी।', bgColor: 'transparent',
+    id: '1',
+    icon: '🍎',
+    title: 'Welcome to Baagicha',
+    titleHi: 'बागीचा में आपका स्वागत है',
+    description:
+      'Your all-in-one companion for apple farming in the Himalayan apple belt.',
+    descriptionHi:
+      'हिमालयी सेब बेल्ट में सेब की खेती के लिए आपका साथी।',
   },
   {
-    id: '2', icon: '🌳', title: 'Manage Your Orchards', titleHi: 'अपने बागों का प्रबंधन करें',
-    description: 'Track multiple orchards, record spray schedules, and monitor tree health in one place.',
-    descriptionHi: 'एक स्थान पर कई बागों को ट्रैक करें, स्प्रे शेड्यूल दर्ज करें।', bgColor: 'transparent',
+    id: '2',
+    icon: '🌳',
+    title: 'Your Orchard',
+    titleHi: 'आपका बाग',
+    description:
+      'Track multiple orchards, record spray schedules, and get timely weather-based spray reminders.',
+    descriptionHi:
+      'कई बागों को ट्रैक करें, स्प्रे शेड्यूल दर्ज करें, और समय पर रिमाइंडर पाएं।',
   },
   {
-    id: '3', icon: '💧', title: 'Never Miss a Spray', titleHi: 'स्प्रे कभी न चूकें',
-    description: 'Get timely reminders for fungicide, pesticide, and nutrition sprays based on weather.',
-    descriptionHi: 'मौसम के आधार पर समय पर स्प्रे रिमाइंडर प्राप्त करें।', bgColor: 'transparent',
+    id: '3',
+    icon: '📖',
+    title: 'Expert Knowledge',
+    titleHi: 'विशेषज्ञ ज्ञान',
+    description:
+      'Explore apple varieties, disease guides, and get hyper-local weather forecasts with frost alerts.',
+    descriptionHi:
+      'सेब की किस्में, रोग मार्गदर्शिका और स्थानीय मौसम पूर्वानुमान जानें।',
   },
   {
-    id: '4', icon: '📖', title: 'Variety & Disease Guide', titleHi: 'किस्म और रोग मार्गदर्शिका',
-    description: 'Explore apple varieties, rootstocks, and disease symptoms with expert advice.',
-    descriptionHi: 'सेब की किस्में, रूटस्टॉक और रोग लक्षणों का अन्वेषण करें।', bgColor: 'transparent',
-  },
-  {
-    id: '5', icon: '🌤️', title: 'Weather Alerts', titleHi: 'मौसम अलर्ट',
-    description: 'Receive hyper-local weather forecasts and frost alerts for your village.',
-    descriptionHi: 'अपने गांव के लिए स्थानीय मौसम पूर्वानुमान और पाला अलर्ट प्राप्त करें।', bgColor: 'transparent',
-  },
-  {
-    id: '6', icon: '🛒', title: 'Shop Farming Inputs', titleHi: 'कृषि इनपुट खरीदें',
-    description: 'Buy quality seeds, fertilizers, and tools at fair prices — delivered to your orchard.',
-    descriptionHi: 'उचित मूल्य पर बीज, उर्वरक और उपकरण खरीदें — आपके बाग तक पहुंचाएं।', bgColor: 'transparent',
-  },
-  {
-    id: '7', icon: '❓', title: 'Ask Questions from Experts', titleHi: 'विशेषज्ञों से सवाल पूछें',
-    description: 'Get answers from agricultural experts and experienced farmers in your community.',
-    descriptionHi: 'कृषि विशेषज्ञों और अनुभवी किसानों से अपने सवालों के जवाब पाएं।', bgColor: 'transparent',
-  },
-  {
-    id: '8', icon: '👥', title: 'Join Groups & Community', titleHi: 'समूह और समुदाय में शामिल हों',
-    description: 'Connect with fellow farmers, share knowledge, and grow together.',
-    descriptionHi: 'किसान साथियों से जुड़ें, ज्ञान साझा करें, और साथ मिलकर आगे बढ़ें।', bgColor: 'transparent',
+    id: '4',
+    icon: '🛒',
+    title: 'Shop & Connect',
+    titleHi: 'खरीदें और जुड़ें',
+    description:
+      'Buy quality seeds, fertilizers, and tools. Ask experts and connect with fellow farmers.',
+    descriptionHi:
+      'बीज, उर्वरक और उपकरण खरीदें। विशेषज्ञों से पूछें और किसानों से जुड़ें।',
   },
 ];
 
@@ -100,12 +98,9 @@ export default function WelcomeScreen(): React.JSX.Element {
     viewAreaCoveragePercentThreshold: 50,
   }).current;
 
-  const scrollToIndex = useCallback(
-    (index: number) => {
-      flatListRef.current?.scrollToIndex({ index, animated: true });
-    },
-    []
-  );
+  const scrollToIndex = useCallback((index: number) => {
+    flatListRef.current?.scrollToIndex({ index, animated: true });
+  }, []);
 
   const handleNext = useCallback(() => {
     if (currentIndex < SLIDES.length - 1) {
@@ -126,12 +121,20 @@ export default function WelcomeScreen(): React.JSX.Element {
       <View style={styles.slide}>
         <View style={styles.slideCard}>
           <View style={styles.iconCircle}>
-            <Typography variant="displayHeading" style={styles.icon}>{item.icon}</Typography>
+            <Typography variant="displayHeading" style={styles.icon}>
+              {item.icon}
+            </Typography>
           </View>
+
           <PrimaryHeading style={styles.title}>{item.title}</PrimaryHeading>
           <HindiText style={styles.titleHi}>{item.titleHi}</HindiText>
-          <Typography variant="body" center style={styles.description}>{item.description}</Typography>
-          <HindiText center style={styles.descriptionHi}>{item.descriptionHi}</HindiText>
+
+          <Typography variant="body" center style={styles.description}>
+            {item.description}
+          </Typography>
+          <HindiText center style={styles.descriptionHi}>
+            {item.descriptionHi}
+          </HindiText>
         </View>
       </View>
     );
@@ -145,9 +148,17 @@ export default function WelcomeScreen(): React.JSX.Element {
         onPress={handleSkip}
         activeOpacity={0.7}
       >
-        <Typography variant="body" style={styles.skipText}>
-          Skip / छोड़ें
-        </Typography>
+        <View style={styles.skipRow}>
+          <Typography variant="body" style={styles.skipText}>
+            Skip / छोड़ें
+          </Typography>
+          <Icon
+            name="arrow-right"
+            size={18}
+            color={Colors.gray500}
+            style={styles.skipArrow}
+          />
+        </View>
       </TouchableOpacity>
 
       {/* Carousel */}
@@ -155,7 +166,11 @@ export default function WelcomeScreen(): React.JSX.Element {
         ref={flatListRef}
         data={SLIDES}
         renderItem={renderSlide}
-        getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
+        getItemLayout={(_, index) => ({
+          length: SCREEN_WIDTH,
+          offset: SCREEN_WIDTH * index,
+          index,
+        })}
         keyExtractor={(item) => item.id}
         horizontal
         pagingEnabled
@@ -171,10 +186,7 @@ export default function WelcomeScreen(): React.JSX.Element {
         {SLIDES.map((_, index) => (
           <View
             key={index}
-            style={[
-              styles.dot,
-              index === currentIndex && styles.dotActive,
-            ]}
+            style={[styles.dot, index === currentIndex && styles.dotActive]}
           />
         ))}
       </View>
@@ -202,69 +214,80 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     position: 'absolute',
-    top: 16,
-    right: 20,
+    top: 12,
+    right: 16,
     zIndex: 10,
     padding: 8,
+  },
+  skipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   skipText: {
     color: Colors.gray500,
     fontWeight: '600',
+    fontSize: 13,
+  },
+  skipArrow: {
+    marginLeft: 4,
+    marginTop: 1,
   },
   slide: {
     width: SCREEN_WIDTH,
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Space[4],
-    paddingBottom: 140,
+    paddingHorizontal: Space[5],
   },
   slideCard: {
     backgroundColor: Colors.white,
     borderRadius: Radius['2xl'],
-    padding: Space[7],
+    paddingVertical: Space[7],
+    paddingHorizontal: Space[6],
     alignItems: 'center',
     width: '100%',
     ...Shadows.medium,
   },
   iconCircle: {
-    width: 120,
-    height: 120,
+    width: 80,
+    height: 80,
     borderRadius: Radius.full,
     backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Space[7],
+    marginBottom: Space[5],
     ...Shadows.medium,
   },
   icon: {
-    fontSize: 56,
+    fontSize: 40,
   },
   title: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '800',
     textAlign: 'center',
     marginBottom: Space[1],
     color: Colors.gray900,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
   titleHi: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.gray500,
-    marginBottom: Space[5],
+    marginBottom: Space[4],
   },
   description: {
     color: Colors.gray600,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 20,
     marginBottom: Space[2],
-    fontSize: 15,
+    fontSize: 13,
+    paddingHorizontal: Space[2],
   },
   descriptionHi: {
-    fontSize: 14,
+    fontSize: 12,
     color: Colors.gray400,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 18,
+    paddingHorizontal: Space[2],
   },
   dotsContainer: {
     flexDirection: 'row',
@@ -291,13 +314,13 @@ const styles = StyleSheet.create({
   nextButton: {
     backgroundColor: Colors.primary,
     borderRadius: Radius.full,
-    paddingVertical: Space[5],
+    paddingVertical: Space[4],
     alignItems: 'center',
     ...Shadows.strong,
   },
   nextButtonText: {
     color: Colors.white,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     letterSpacing: 0.3,
   },

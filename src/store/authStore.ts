@@ -136,15 +136,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ token, user, isAuthenticated: true, isLoading: false });
   },
 
-  // Logout — clear everything (local only, for interceptor use)
+  // Logout — clear auth state only (local only, for interceptor use)
+  // NOTE: We do NOT reset onboarding state here.
+  // Returning users should land on Login, not the Welcome screen.
   logout: () => {
     authStorage.delete('token');
     authStorage.delete('user');
     set({ token: null, user: null, isAuthenticated: false, isLoading: false });
-    useOnboardingStore.getState().resetOnboarding();
   },
 
   // Full logout — notify backend then clear local state
+  // NOTE: We do NOT reset onboarding state here.
+  // Returning users should land on Login, not the Welcome screen.
   logoutAndClear: async () => {
     try {
       await logoutApi();
@@ -155,7 +158,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     authStorage.delete('token');
     authStorage.delete('user');
     set({ token: null, user: null, isAuthenticated: false, isLoading: false });
-    useOnboardingStore.getState().resetOnboarding();
   },
 
   // Update user fields (e.g., after profile update)

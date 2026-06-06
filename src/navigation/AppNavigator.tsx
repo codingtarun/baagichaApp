@@ -11,12 +11,14 @@
  *   - Not authenticated + first launch → Welcome → Auth → Notification → Location → MainTabs
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { CommonActions } from '@react-navigation/native';
 import type { RootStackParamList } from './types';
 
 import { useAuthStore } from '../store/authStore';
 import { useOnboardingStore } from '../store/onboardingStore';
+import { navigationRef } from './navigationRef';
 import {
   initializePushNotifications,
   linkOrphanTokens,
@@ -53,6 +55,38 @@ export default function AppNavigator(): React.JSX.Element {
     restoreOnboarding();
     restoreSession();
   }, [restoreOnboarding, restoreSession]);
+
+  // Reset navigation stack when auth state changes
+  // This forces React Navigation to drop the old navigator tree
+  // and mount the correct one, preventing access to protected screens after logout.
+  const prevIsAuthenticated = useRef(isAuthenticated);
+
+  useEffect(() => {
+    if (!navigationRef.isReady()) return;
+
+    const wasAuth = prevIsAuthenticated.current;
+    const isAuth = isAuthenticated;
+
+    if (wasAuth && !isAuth) {
+      // Logged out → reset to Auth stack
+      navigationRef.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Auth', params: { screen: 'Login' } }],
+        })
+      );
+    } else if (!wasAuth && isAuth) {
+      // Logged in → reset to MainTabs
+      navigationRef.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' }],
+        })
+      );
+    }
+
+    prevIsAuthenticated.current = isAuthenticated;
+  }, [isAuthenticated]);
 
   // Initialize Firebase push notifications when authenticated
   useEffect(() => {

@@ -44,6 +44,7 @@ import CommunityScreen from '../../screens/CommunityScreen';
 import StoryViewerScreen from '../../screens/StoryViewerScreen';
 import StoryTextComposer from '../../screens/StoryTextComposer';
 import StoryMediaPreview from '../../screens/StoryMediaPreview';
+import ToolsScreen from '../../screens/ToolsScreen';
 import type { StoryGroup } from '../../services/storyApi';
 
 export type PriorityCardData = {
@@ -61,6 +62,7 @@ export type PriorityCardData = {
 
 export type HomeStackParamList = {
   Home: undefined;
+  Tools: undefined;
   CardDetail: { card: PriorityCardData };
   FeedDetail: { postId: string };
   PostDetail: { postId: string };
@@ -136,6 +138,7 @@ export default function HomeStack(): React.JSX.Element {
       <Stack.Screen name="StoryTextComposer" component={StoryTextComposer} />
       <Stack.Screen name="StoryMediaPreview" component={StoryMediaPreview} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="Tools" component={ToolsScreen} />
     </Stack.Navigator>
   );
 }
