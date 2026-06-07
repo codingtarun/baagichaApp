@@ -36,6 +36,7 @@ import { showToast } from '../../store/toastStore';
 import type { HomeNavigationProp } from '../../navigation/types';
 import ShareSheet from '../../components/ShareSheet';
 import PostImages from '../../components/PostImages';
+import ReportComposerSheet from '../../components/ReportComposerSheet';
 import { getSuggestedUsers, type SuggestedUser } from '../../services/userApi';
 import { getFeed, getQuestions, createPost, togglePostLike, sharePost, type FeedPost } from '../../services/postApi';
 import { getGroups, joinGroup, type GroupCard } from '../../services/groupApi';
@@ -49,6 +50,7 @@ const POST_TEMPLATES = [
   { id: 'weather', icon: 'weather-rainy', label: 'Weather', text: 'Weather alert for my area: Stay prepared and stay safe! 🌧️' },
   { id: 'mandi', icon: 'chart-line', label: 'Mandi Price', text: 'Mandi price update: What prices are you getting in your area? 💰' },
   { id: 'work', icon: 'hammer-wrench', label: 'Orchard Work', text: 'Working hard in the orchard today! 🌳💪' },
+  { id: 'report', icon: 'alert-circle', label: 'Report', text: '' },
 ];
 
 const TAB_BAR_HEIGHT = 70;
@@ -98,6 +100,7 @@ export default function CommunitySegment(): React.JSX.Element {
   const [loadingFriends, setLoadingFriends] = useState(true);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [suggestedGroups, setSuggestedGroups] = useState<GroupCard[]>([]);
+  const [reportSheetVisible, setReportSheetVisible] = useState(false);
 
   // Fetch feed + experts + friends + groups + questions on mount
   useEffect(() => {
@@ -251,8 +254,16 @@ export default function CommunitySegment(): React.JSX.Element {
   };
 
   const applyTemplate = (template: typeof POST_TEMPLATES[0]) => {
+    if (template.id === 'report') {
+      setReportSheetVisible(true);
+      return;
+    }
     setPostText(template.text);
     showToast('Template added — edit & post!', 'success');
+  };
+
+  const handleReportSubmitted = (post: FeedPost) => {
+    setPosts((prev) => [post, ...prev]);
   };
 
   return (
@@ -313,6 +324,11 @@ export default function CommunitySegment(): React.JSX.Element {
         >
           <Typography variant="caption" style={styles.postBtnText}>{posting ? 'Posting...' : 'Post'}</Typography>
         </TouchableOpacity>
+        <ReportComposerSheet
+          visible={reportSheetVisible}
+          onClose={() => setReportSheetVisible(false)}
+          onReportSubmitted={handleReportSubmitted}
+        />
       </View>
 
       {/* ── Community Questions ── */}
@@ -489,6 +505,16 @@ function InputAction({ icon, label, color, onPress, selected }: { icon: string; 
   );
 }
 
+function urgencyColor(level: string): string {
+  switch (level) {
+    case 'critical': return Colors.danger;
+    case 'high': return Colors.sevHigh;
+    case 'medium': return Colors.warning;
+    case 'low': return Colors.success;
+    default: return Colors.gray500;
+  }
+}
+
 function FeedPost({ post, onLike }: { post: FeedPost; onLike: () => void }) {
   const navigation = useNavigation<HomeNavigationProp>();
   const [shareVisible, setShareVisible] = useState(false);
@@ -532,6 +558,12 @@ function FeedPost({ post, onLike }: { post: FeedPost; onLike: () => void }) {
                     <Typography variant="caption" style={styles.questionBadgeText}>Question</Typography>
                   </View>
                 )}
+                {post.type === 'report' && post.report_type && (
+                  <View style={[styles.reportBadge, { backgroundColor: urgencyColor(post.report_type.urgency_level) }]}>
+                    <Icon name={post.report_type.icon ?? 'alert'} size={10} color={Colors.white} />
+                    <Typography variant="caption" style={styles.reportBadgeText}>{post.report_type.name_en}</Typography>
+                  </View>
+                )}
               </View>
             </View>
           </TouchableOpacity>
@@ -539,6 +571,43 @@ function FeedPost({ post, onLike }: { post: FeedPost; onLike: () => void }) {
             <Icon name="dots-horizontal" size={18} color={Colors.gray500} />
           </TouchableOpacity>
         </View>
+
+        {/* Report-specific info */}
+        {post.type === 'report' && post.report_type && (
+          <View style={styles.reportInfoRow}>
+            <View style={[styles.reportUrgencyStrip, { backgroundColor: urgencyColor(post.report_type.urgency_level) }]} />
+            <View style={styles.reportInfoContent}>
+              <View style={styles.reportMetaRow}>
+                <Typography variant="caption" style={[styles.reportMetaText, { color: urgencyColor(post.report_type.urgency_level) }]}>
+                  {post.report_type.name_en} {post.report_type.name_hi ? `(${post.report_type.name_hi})` : ''}
+                </Typography>
+                {post.distance_km !== undefined && (
+                  <Typography variant="captionMuted">{post.distance_km.toFixed(1)} km away</Typography>
+                )}
+              </View>
+              {post.weather_snapshot && (
+                <Typography variant="captionMuted">
+                  🌡️ {post.weather_snapshot.temp_c}°C · {post.weather_snapshot.condition}
+                </Typography>
+              )}
+              {post.report_meta?.disease_name && (
+                <TouchableOpacity
+                  onPress={() => {
+                    if (post.report_meta?.disease_slug) {
+                      navigation.navigate('DiseaseDetail' as any, { slug: post.report_meta.disease_slug });
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Typography variant="caption" style={styles.diseaseLink}>
+                    🦠 {post.report_meta.disease_name} — Tap for info
+                  </Typography>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+
         <Typography variant="body" style={styles.feedText}>{post.body}</Typography>
         <PostImages
           images={post.images}
@@ -734,6 +803,41 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5, paddingVertical: 1, borderRadius: Radius.sm,
   },
   questionBadgeText: { fontSize: 9, fontWeight: '700', color: Colors.white },
+  reportBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 2,
+    paddingHorizontal: 5, paddingVertical: 1, borderRadius: Radius.sm,
+  },
+  reportBadgeText: { fontSize: 9, fontWeight: '700', color: Colors.white },
+  reportInfoRow: {
+    flexDirection: 'row',
+    marginTop: Space[2],
+    backgroundColor: Colors.gray50,
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+  },
+  reportUrgencyStrip: {
+    width: 4,
+  },
+  reportInfoContent: {
+    flex: 1,
+    padding: Space[3],
+    gap: Space[1],
+  },
+  reportMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  reportMetaText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  diseaseLink: {
+    color: Colors.primary,
+    fontWeight: '600',
+    fontSize: 12,
+    marginTop: 2,
+  },
 
   // ── Suggested Friends ──
   friendsContainer: { paddingHorizontal: Space[4] },

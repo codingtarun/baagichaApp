@@ -6,9 +6,18 @@
 
 import { api } from './api';
 
+export interface ReportType {
+  id: number;
+  name_en: string;
+  name_hi: string | null;
+  category: string;
+  urgency_level: 'critical' | 'high' | 'medium' | 'low';
+  icon: string | null;
+}
+
 export interface FeedPost {
   id: number;
-  type: 'status' | 'post' | 'question';
+  type: 'status' | 'post' | 'question' | 'report';
   body: string;
   visibility: string;
   likes_count: number;
@@ -34,6 +43,24 @@ export interface FeedPost {
     large: string;
   }[];
   comments?: FeedComment[];
+  // Report-specific fields
+  report_type?: ReportType;
+  latitude?: number;
+  longitude?: number;
+  weather_snapshot?: {
+    temp_c: number;
+    condition: string;
+    humidity_pct?: number;
+    wind_kph?: number;
+    fetched_at: string;
+  };
+  report_meta?: {
+    disease_id?: number;
+    disease_name?: string;
+    disease_slug?: string;
+    notes?: string;
+  };
+  distance_km?: number;
 }
 
 export interface FeedComment {
