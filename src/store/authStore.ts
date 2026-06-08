@@ -99,6 +99,10 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
 
+  // Computed helpers
+  isEmailVerified: () => boolean;
+  needsEmailVerification: () => boolean;
+
   // Actions
   setToken: (token: string) => void;
   setUser: (user: User) => void;
@@ -106,6 +110,7 @@ interface AuthState {
   logout: () => void;
   logoutAndClear: () => Promise<void>;
   updateUser: (user: Partial<User>) => void;
+  markEmailVerified: () => void;
   restoreSession: () => void;
 }
 
@@ -116,6 +121,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoading: true,
   isAuthenticated: false,
+
+  // ── Computed helpers ──
+  isEmailVerified: () => {
+    const user = get().user;
+    if (!user) return false;
+    // Social auth users are pre-verified; phone-only users may not have email
+    if (user.auth_provider !== 'local') return true;
+    if (!user.email) return true; // phone-only user, no email to verify
+    return user.email_verified_at !== null;
+  },
+
+  needsEmailVerification: () => {
+    const state = get();
+    if (!state.isAuthenticated || !state.user) return false;
+    return !state.isEmailVerified();
+  },
+
+  // ── Actions ──
 
   // Set token only
   setToken: (token: string) => {
@@ -165,6 +188,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const current = get().user;
     if (!current) return;
     const updated = { ...current, ...updates };
+    authStorage.set('user', JSON.stringify(updated));
+    set({ user: updated });
+  },
+
+  // Mark email as verified locally (e.g. after deep-link verification)
+  markEmailVerified: () => {
+    const current = get().user;
+    if (!current) return;
+    const updated: User = {
+      ...current,
+      email_verified_at: new Date().toISOString(),
+    };
     authStorage.set('user', JSON.stringify(updated));
     set({ user: updated });
   },

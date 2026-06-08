@@ -21,6 +21,9 @@ import {
   GOOGLE_CONFIGURED,
   FACEBOOK_CONFIGURED,
 } from '../config/socialAuth';
+
+// Re-export configuration flags for UI conditional rendering
+export { GOOGLE_CONFIGURED as isGoogleConfigured, FACEBOOK_CONFIGURED as isFacebookConfigured };
 import { ENV } from '../config/env';
 import { showToast } from '../store/toastStore';
 

@@ -7,7 +7,7 @@
  * Optional: name, phone, location fields.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   TextInput,
@@ -28,10 +28,38 @@ import { Typography, PrimaryHeading, HindiText } from '../../typography';
 import { useAuthStore } from '../../store/authStore';
 import { showToast } from '../../store/toastStore';
 import { registerByEmail } from '../../services/authApi';
-import { useOnboardingStore } from '../../store/onboardingStore';
+import PasswordInput from '../../components/PasswordInput';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type AuthNavProp = NativeStackNavigationProp<AuthStackParamList>;
+
+interface FormErrors {
+  name?: string[];
+  email?: string[];
+  phone?: string[];
+  password?: string[];
+  password_confirmation?: string[];
+  general?: string;
+}
+
+function isValidEmail(val: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+}
+
+function isValidPhone(val: string): boolean {
+  return /^[6-9]\d{9}$/.test(val.replace(/\D/g, ''));
+}
+
+function calculateStrength(password: string): number {
+  if (!password) return 0;
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (/[a-z]/.test(password)) score += 1;
+  if (/[A-Z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+  return score;
+}
 
 export default function EmailRegisterScreen(): React.JSX.Element {
   const navigation = useNavigation<AuthNavProp>();
@@ -45,18 +73,60 @@ export default function EmailRegisterScreen(): React.JSX.Element {
     phone: '',
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const passwordStrength = useMemo(() => calculateStrength(form.password), [form.password]);
 
   const updateField = useCallback((field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => {
       const next = { ...prev };
-      delete next[field];
+      delete (next as any)[field];
       return next;
     });
   }, []);
 
+  const validateForm = useCallback((): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (form.name && form.name.length > 50) {
+      newErrors.name = ['Name must be 50 characters or less.'];
+    }
+
+    if (!form.email.trim()) {
+      newErrors.email = ['Email is required.'];
+    } else if (!isValidEmail(form.email.trim())) {
+      newErrors.email = ['Please enter a valid email address.'];
+    }
+
+    if (form.phone && !isValidPhone(form.phone)) {
+      newErrors.phone = ['Please enter a valid 10-digit mobile number.'];
+    }
+
+    if (!form.password) {
+      newErrors.password = ['Password is required.'];
+    } else {
+      if (form.password.length < 8) {
+        newErrors.password = ['Password must be at least 8 characters.'];
+      } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(form.password)) {
+        newErrors.password = ['Password must contain uppercase, lowercase, and a number.'];
+      }
+    }
+
+    if (form.password !== form.password_confirmation) {
+      newErrors.password_confirmation = ['Passwords do not match.'];
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [form]);
+
   const handleRegister = useCallback(async () => {
+    if (!validateForm()) {
+      showToast('Please fix the errors above.', 'warning');
+      return;
+    }
+
     setErrors({});
     setIsLoading(true);
 
@@ -67,25 +137,25 @@ export default function EmailRegisterScreen(): React.JSX.Element {
       });
 
       if (response.success && response.data) {
+        // Store token so we can poll status and resend email
         authLogin(response.data.token, response.data.user);
-        showToast('Welcome! Your Baagicha account is ready.', 'success');
-        const hasSeen = useOnboardingStore.getState().hasSeenOnboarding;
-        if (!hasSeen) {
-          navigation.getParent()?.navigate('NotificationPermission');
-        }
+        showToast('Check your email to verify your account.', 'success');
+        navigation.navigate('EmailVerification', { email: form.email });
         return;
       }
     } catch (error: any) {
       if (error.response?.status === 422) {
         setErrors(error.response.data.errors || {});
         showToast('Please fix the errors above.', 'warning');
+      } else if (error.response?.status === 429) {
+        showToast('Too many requests. Please try again later.', 'error');
       } else {
         showToast('Registration failed. Please try again.', 'error');
       }
     } finally {
       setIsLoading(false);
     }
-  }, [form, authLogin]);
+  }, [form, validateForm, navigation]);
 
   const renderInput = (
     label: string,
@@ -105,7 +175,7 @@ export default function EmailRegisterScreen(): React.JSX.Element {
         )}
       </Typography>
       <TextInput
-        style={[styles.input, errors[field] && styles.inputError]}
+        style={[styles.input, (errors as any)[field] && styles.inputError]}
         placeholder={placeholder}
         placeholderTextColor={Colors.gray400}
         secureTextEntry={options.secure}
@@ -114,7 +184,7 @@ export default function EmailRegisterScreen(): React.JSX.Element {
         value={(form as any)[field]}
         onChangeText={(text) => updateField(field, text)}
       />
-      {errors[field]?.map((err: string, i: number) => (
+      {(errors as any)[field]?.map((err: string, i: number) => (
         <Typography key={i} variant="caption" style={styles.errorText}>
           {err}
         </Typography>
@@ -155,8 +225,24 @@ export default function EmailRegisterScreen(): React.JSX.Element {
             {renderInput('Full Name / पूरा नाम', 'name', 'e.g. Ramesh Negi', { optional: true })}
             {renderInput('Email / ईमेल', 'email', 'e.g. farmer@example.com', { keyboard: 'email-address' })}
             {renderInput('Phone / फोन', 'phone', 'e.g. 9876543210', { keyboard: 'phone-pad', optional: true })}
-            {renderInput('Password / पासवर्ड', 'password', 'Minimum 6 characters', { secure: true })}
-            {renderInput('Confirm Password / पासवर्ड की पुष्टि', 'password_confirmation', 'Re-enter password', { secure: true })}
+
+            <PasswordInput
+              label="Password / पासवर्ड"
+              placeholder="Minimum 8 characters"
+              value={form.password}
+              onChangeText={(text) => updateField('password', text)}
+              error={errors.password}
+              showStrength
+            />
+
+            <PasswordInput
+              label="Confirm Password / पासवर्ड की पुष्टि"
+              placeholder="Re-enter password"
+              value={form.password_confirmation}
+              onChangeText={(text) => updateField('password_confirmation', text)}
+              error={errors.password_confirmation}
+              confirmValue={form.password}
+            />
 
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}

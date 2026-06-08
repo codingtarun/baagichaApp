@@ -4,6 +4,7 @@
  * ═══════════════════════════════════════════════════════════════
  *
  * Google Sign-In and Facebook Login buttons.
+ * Conditionally rendered based on whether credentials are configured.
  *
  * Native SDK integration is handled by the parent screen.
  * These buttons trigger the onPress handlers which call the
@@ -16,6 +17,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 import { Colors } from '../theme/colors';
 import { Typography } from '../typography';
+import { isGoogleConfigured, isFacebookConfigured } from '../services/socialAuth';
 
 interface SocialAuthButtonsProps {
   onGooglePress?: () => void;
@@ -27,7 +29,14 @@ export default function SocialAuthButtons({
   onGooglePress,
   onFacebookPress,
   isLoading = false,
-}: SocialAuthButtonsProps): React.JSX.Element {
+}: SocialAuthButtonsProps): React.JSX.Element | null {
+  const showGoogle = isGoogleConfigured;
+  const showFacebook = isFacebookConfigured;
+
+  if (!showGoogle && !showFacebook) {
+    return null;
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.divider}>
@@ -40,34 +49,38 @@ export default function SocialAuthButtons({
 
       <View style={styles.buttonsRow}>
         {/* Google */}
-        <TouchableOpacity
-          style={[styles.button, styles.googleButton, isLoading && styles.disabled]}
-          onPress={onGooglePress}
-          activeOpacity={0.8}
-          disabled={isLoading}
-          accessibilityLabel="Sign in with Google"
-          accessibilityRole="button"
-        >
-          <Icon name="google" size={18} color="#DB4437" style={styles.icon} />
-          <Typography variant="body" style={styles.googleText}>
-            Google
-          </Typography>
-        </TouchableOpacity>
+        {showGoogle && (
+          <TouchableOpacity
+            style={[styles.button, styles.googleButton, isLoading && styles.disabled]}
+            onPress={onGooglePress}
+            activeOpacity={0.8}
+            disabled={isLoading}
+            accessibilityLabel="Sign in with Google"
+            accessibilityRole="button"
+          >
+            <Icon name="google" size={18} color="#DB4437" style={styles.icon} />
+            <Typography variant="body" style={styles.googleText}>
+              Google
+            </Typography>
+          </TouchableOpacity>
+        )}
 
         {/* Facebook */}
-        <TouchableOpacity
-          style={[styles.button, styles.facebookButton, isLoading && styles.disabled]}
-          onPress={onFacebookPress}
-          activeOpacity={0.8}
-          disabled={isLoading}
-          accessibilityLabel="Sign in with Facebook"
-          accessibilityRole="button"
-        >
-          <Icon name="facebook" size={18} color="#fff" style={styles.icon} />
-          <Typography variant="body" style={styles.facebookText}>
-            Facebook
-          </Typography>
-        </TouchableOpacity>
+        {showFacebook && (
+          <TouchableOpacity
+            style={[styles.button, styles.facebookButton, isLoading && styles.disabled]}
+            onPress={onFacebookPress}
+            activeOpacity={0.8}
+            disabled={isLoading}
+            accessibilityLabel="Sign in with Facebook"
+            accessibilityRole="button"
+          >
+            <Icon name="facebook" size={18} color="#fff" style={styles.icon} />
+            <Typography variant="body" style={styles.facebookText}>
+              Facebook
+            </Typography>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

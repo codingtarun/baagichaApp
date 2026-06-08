@@ -19,6 +19,7 @@ import LoginScreen from '../screens/Auth/LoginScreen';
 import EmailRegisterScreen from '../screens/Auth/EmailRegisterScreen';
 import PhoneAuthScreen from '../screens/Auth/PhoneAuthScreen';
 import ForgotPasswordScreen from '../screens/Auth/ForgotPasswordScreen';
+import EmailVerificationScreen from '../screens/Auth/EmailVerificationScreen';
 import OnboardingScreen from '../screens/Auth/OnboardingScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -30,6 +31,7 @@ export default function AuthStack(): React.JSX.Element {
       <Stack.Screen name="EmailRegister" component={EmailRegisterScreen} />
       <Stack.Screen name="PhoneAuth" component={PhoneAuthScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="EmailVerification" component={EmailVerificationScreen} />
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
     </Stack.Navigator>
   );

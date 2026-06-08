@@ -11,7 +11,9 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
 import { authStorage, useAuthStore } from '../store/authStore';
+import { showToast } from '../store/toastStore';
 import { ENV } from '../config/env';
+import { navigationRef } from '../navigation/navigationRef';
 
 export const API_BASE_URL = ENV.API_BASE_URL;
 
@@ -25,7 +27,6 @@ export const api = axios.create({
 });
 
 // ── Request Interceptor ──
-// Automatically attach the Bearer token to every request
 api.interceptors.request.use(
   (config) => {
     const token = authStorage.getString('token');
@@ -38,7 +39,6 @@ api.interceptors.request.use(
 );
 
 // ── Response Interceptor ──
-// Handle auth errors globally (401 = token expired or invalid)
 let isRefreshing = false;
 let refreshSubscribers: Array<(token: string) => void> = [];
 
@@ -79,6 +79,12 @@ function clearAuthAndRedirect(): void {
   logout();
 }
 
+function navigateToEmailVerification(): void {
+  if (navigationRef.isReady()) {
+    navigationRef.navigate('EmailVerification' as never);
+  }
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -86,10 +92,24 @@ api.interceptors.response.use(
 
     if (error.response) {
       const status = error.response.status;
+      const message = error.response.data?.message || '';
+
+      // Forbidden — email not verified (do NOT attempt refresh)
+      if (status === 403 && message.toLowerCase().includes('verify')) {
+        showToast('Please verify your email to continue.', 'warning');
+        navigateToEmailVerification();
+        return Promise.reject(error);
+      }
+
+      // Account deactivated
+      if (status === 403) {
+        showToast(message || 'Your account has been deactivated.', 'error');
+        clearAuthAndRedirect();
+        return Promise.reject(error);
+      }
 
       // Unauthorized — token expired or invalid
       if (status === 401 && originalRequest && !originalRequest._retry) {
-        // Prevent multiple simultaneous refresh attempts
         if (isRefreshing) {
           return new Promise((resolve) => {
             addRefreshSubscriber((token: string) => {
@@ -114,6 +134,11 @@ api.interceptors.response.use(
         // Refresh failed — token is truly invalid. Clear auth and redirect.
         console.error('Auth Error: Token expired or invalid. Redirecting to login.');
         clearAuthAndRedirect();
+      }
+
+      // Rate limited
+      if (status === 429) {
+        showToast('Too many requests. Please try again later.', 'warning');
       }
 
       // Validation errors

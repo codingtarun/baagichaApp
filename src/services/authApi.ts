@@ -202,6 +202,18 @@ export async function resendEmailVerification(): Promise<ApiResponse<null>> {
   return response.data;
 }
 
+export async function verifyEmailAndLogin(
+  id: string,
+  hash: string,
+  deviceName?: string
+): Promise<ApiResponse<AuthResponse>> {
+  const response = await api.get<ApiResponse<AuthResponse>>(
+    `/auth/email/verify/${id}/${hash}`,
+    { params: { device_name: deviceName } }
+  );
+  return response.data;
+}
+
 // ── Device Tokens ──
 
 export interface RegisterDeviceRequest {

@@ -23,6 +23,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { Colors } from '../../theme/colors';
 import { Radius, Shadows, Space } from '../../theme/style';
@@ -39,6 +40,20 @@ type AuthNavProp = NativeStackNavigationProp<AuthStackParamList>;
 
 type LoginMethod = 'password' | 'otp';
 
+function isValidEmail(val: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+}
+
+function isValidPhone(val: string): boolean {
+  return /^[6-9]\d{9}$/.test(val.replace(/\D/g, ''));
+}
+
+interface FormErrors {
+  login?: string[];
+  password?: string[];
+  general?: string;
+}
+
 export default function LoginScreen(): React.JSX.Element {
   const navigation = useNavigation<AuthNavProp>();
   const authLogin = useAuthStore((s) => s.login);
@@ -46,10 +61,37 @@ export default function LoginScreen(): React.JSX.Element {
   const [method, setMethod] = useState<LoginMethod>('password');
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const validateForm = useCallback((): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!login.trim()) {
+      newErrors.login = ['Please enter your email or phone number.'];
+    } else if (method === 'password') {
+      const trimmed = login.trim();
+      if (!isValidEmail(trimmed) && !isValidPhone(trimmed)) {
+        newErrors.login = ['Please enter a valid email or 10-digit phone number.'];
+      }
+    } else if (method === 'otp') {
+      if (!isValidPhone(login)) {
+        newErrors.login = ['Please enter a valid 10-digit phone number.'];
+      }
+    }
+
+    if (method === 'password' && !password) {
+      newErrors.password = ['Please enter your password.'];
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [login, password, method]);
 
   const handlePasswordLogin = useCallback(async () => {
+    if (!validateForm()) return;
+
     setErrors({});
     setIsLoading(true);
 
@@ -70,11 +112,19 @@ export default function LoginScreen(): React.JSX.Element {
         return;
       }
     } catch (error: any) {
-      if (error.response?.status === 422) {
+      const status = error.response?.status;
+      const message = error.response?.data?.message || '';
+
+      if (status === 422) {
         setErrors(error.response.data.errors || {});
         showToast('Please check your email/phone and password.', 'warning');
-      } else if (error.response?.status === 401) {
+      } else if (status === 403 && message.toLowerCase().includes('verify')) {
+        showToast('Please verify your email before logging in.', 'warning');
+        navigation.navigate('EmailVerification', { email: login });
+      } else if (status === 401) {
         showToast(error.response.data.message || 'Invalid credentials', 'error');
+      } else if (status === 429) {
+        showToast('Too many attempts. Please try again later.', 'error');
       } else if (!error.response || error.message === 'Network Error') {
         showToast(
           'Cannot connect to server. Please check your internet, API URL, and try again.',
@@ -86,11 +136,15 @@ export default function LoginScreen(): React.JSX.Element {
     } finally {
       setIsLoading(false);
     }
-  }, [login, password, authLogin]);
+  }, [login, password, authLogin, validateForm, navigation]);
 
   const goToPhoneOtp = useCallback(() => {
-    navigation.navigate('PhoneAuth');
-  }, [navigation]);
+    if (!isValidPhone(login.replace(/\D/g, ''))) {
+      setErrors({ login: ['Please enter a valid 10-digit phone number.'] });
+      return;
+    }
+    navigation.navigate('PhoneAuth', { phone: login });
+  }, [login, navigation]);
 
   const goToRegister = useCallback(() => {
     navigation.navigate('EmailRegister');
@@ -108,23 +162,19 @@ export default function LoginScreen(): React.JSX.Element {
       setErrors({});
 
       try {
-        // 1. Get token from native SDK
         const socialResult =
           provider === 'google'
             ? await signInWithGoogle()
             : await signInWithFacebook();
 
-        // 2. Send token to backend
         const response = await loginBySocial({
           provider: socialResult.provider,
           token: socialResult.token,
           device_name: `${Platform.OS} ${Platform.Version}`,
         });
 
-        // 3. Store auth state
         if (response.success && response.data) {
           if (response.data.is_new_user) {
-            // Don't login yet — let user complete profile first
             navigation.navigate('Onboarding', {
               token: response.data.token,
               user: response.data.user,
@@ -139,20 +189,23 @@ export default function LoginScreen(): React.JSX.Element {
           }
         }
       } catch (error: any) {
-        // Social login was cancelled or failed before backend call
         if (error.message?.includes('cancelled')) {
-          // User cancelled — no toast needed
           return;
         }
 
-        // Backend rejected the token
-        if (error.response?.status === 422) {
+        const status = error.response?.status;
+        if (status === 422) {
           const msg =
             error.response.data.message ||
             'Invalid social account. Please try again.';
           showToast(msg, 'error');
-        } else if (error.response?.status === 401) {
+        } else if (status === 401) {
           showToast('Your social account could not be verified.', 'error');
+        } else if (status === 403) {
+          showToast(
+            error.response.data.message || 'Your account has been deactivated.',
+            'error'
+          );
         } else {
           showToast('Unable to sign in. Please check your connection.', 'error');
         }
@@ -160,7 +213,7 @@ export default function LoginScreen(): React.JSX.Element {
         setIsLoading(false);
       }
     },
-    [authLogin]
+    [authLogin, navigation]
   );
 
   return (
@@ -224,7 +277,10 @@ export default function LoginScreen(): React.JSX.Element {
                 keyboardType={method === 'otp' ? 'phone-pad' : 'email-address'}
                 autoCapitalize="none"
                 value={login}
-                onChangeText={setLogin}
+                onChangeText={(text) => {
+                  setLogin(text);
+                  setErrors((prev) => ({ ...prev, login: undefined }));
+                }}
               />
               {errors.login?.map((err, i) => (
                 <Typography key={i} variant="caption" style={styles.errorText}>
@@ -239,14 +295,30 @@ export default function LoginScreen(): React.JSX.Element {
                 <Typography variant="label" style={styles.label}>
                   Password / पासवर्ड
                 </Typography>
-                <TextInput
-                  style={[styles.input, errors.password && styles.inputError]}
-                  placeholder="Enter your password"
-                  placeholderTextColor={Colors.gray400}
-                  secureTextEntry
-                  value={password}
-                  onChangeText={setPassword}
-                />
+                <View style={styles.passwordRow}>
+                  <TextInput
+                    style={[styles.input, styles.passwordInput, errors.password && styles.inputError]}
+                    placeholder="Enter your password"
+                    placeholderTextColor={Colors.gray400}
+                    secureTextEntry={!passwordVisible}
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      setErrors((prev) => ({ ...prev, password: undefined }));
+                    }}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={() => setPasswordVisible((v) => !v)}
+                    activeOpacity={0.7}
+                  >
+                    <MaterialCommunityIcons
+                      name={passwordVisible ? 'eye-off-outline' : 'eye-outline'}
+                      size={22}
+                      color={Colors.gray500}
+                    />
+                  </TouchableOpacity>
+                </View>
                 {errors.password?.map((err, i) => (
                   <Typography key={i} variant="caption" style={styles.errorText}>
                     {err}
@@ -320,8 +392,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   keyboardView: { flex: 1 },
   scrollContent: { flexGrow: 1, padding: 24, justifyContent: 'center' },
-  skipButton: { alignSelf: 'flex-start', marginBottom: 8 },
-  skipText: { color: Colors.primary, fontWeight: '600' },
   header: { marginBottom: 24, alignItems: 'center' },
   title: { fontSize: 28, textAlign: 'center' },
   subtitleHi: { fontSize: 16, color: Colors.gray500, marginTop: 4 },
@@ -371,6 +441,23 @@ const styles = StyleSheet.create({
   },
   inputError: { borderColor: Colors.danger },
   errorText: { color: Colors.danger, marginTop: 2 },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.gray200,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.white,
+  },
+  passwordInput: {
+    flex: 1,
+    borderWidth: 0,
+    borderRadius: 0,
+  },
+  eyeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
   button: {
     backgroundColor: Colors.primary,
     borderRadius: Radius.full,

@@ -22,8 +22,9 @@ import type { RouteProp } from '@react-navigation/native';
 export type AuthStackParamList = {
   Login: undefined;
   EmailRegister: undefined;
-  PhoneAuth: undefined;
+  PhoneAuth: { phone?: string } | undefined;
   ForgotPassword: undefined;
+  EmailVerification: { email?: string } | undefined;
   Onboarding: { token: string; user: import('../store/authStore').User } | undefined;
 };
 
@@ -89,6 +90,7 @@ export type RootStackParamList = {
   Welcome: undefined;
   NotificationPermission: undefined;
   LocationPermission: undefined;
+  EmailVerification: { email?: string } | undefined;
 };
 
 // ═══════════════════════════════════════════════════════════════

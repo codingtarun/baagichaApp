@@ -19,7 +19,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Colors } from '../../theme/colors';
@@ -32,13 +32,15 @@ import { useOnboardingStore } from '../../store/onboardingStore';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type AuthNavProp = NativeStackNavigationProp<AuthStackParamList>;
+type ScreenRouteProp = RouteProp<AuthStackParamList, 'PhoneAuth'>;
 
 export default function PhoneAuthScreen(): React.JSX.Element {
   const navigation = useNavigation<AuthNavProp>();
+  const route = useRoute<ScreenRouteProp>();
   const authLogin = useAuthStore((s) => s.login);
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(route.params?.phone ?? '');
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
