@@ -15,11 +15,23 @@ import { api } from './api';
 // autocomplete and compile-time type checking. If the backend
 // changes its response shape, TypeScript will catch mismatches.
 
+export type FruitType =
+  | 'apple'
+  | 'pear'
+  | 'plum'
+  | 'peach'
+  | 'apricot'
+  | 'cherry'
+  | 'persimmon'
+  | 'pomegranate';
+
 export interface VarietyListItem {
   id: number;
   slug: string;
   name_en: string;
   name_hi: string | null;
+  fruit_type: FruitType;
+  fruit_type_label: string;
   season_type: string;
   season_label: string;
   season_label_hi: string;
@@ -38,6 +50,12 @@ export interface SeasonFilter {
   color: string;
 }
 
+export interface FruitFilter {
+  key: string;
+  label: string;
+  labelHi: string;
+}
+
 export interface VarietyListResponse {
   data: VarietyListItem[];
   meta: {
@@ -48,6 +66,7 @@ export interface VarietyListResponse {
   };
   filters: {
     seasons: SeasonFilter[];
+    fruit_types: FruitFilter[];
   };
 }
 
@@ -60,6 +79,9 @@ export interface VarietyDetail {
   season_type: string;
   season_label: { en: string; hi: string };
   season_color: string;
+  fruit_type: FruitType;
+  fruit_type_label: string;
+  fruit_specific_attributes: Record<string, string> | null;
   origin: string | null;
   introduction_year: number | null;
   is_featured: boolean;
@@ -114,6 +136,7 @@ export interface VarietyDetail {
     season_type: string;
     season_label: string;
     season_color: string;
+    fruit_type: FruitType;
     altitude: string;
     hero_image: string | null;
     view_count: number;
@@ -130,10 +153,12 @@ export interface VarietyDetail {
 export async function fetchVarieties(params?: {
   search?: string;
   season?: string;
+  fruit?: FruitType | 'all';
   page?: number;
   per_page?: number;
 }): Promise<VarietyListResponse> {
-  const response = await api.get<VarietyListResponse>('/varieties', { params });
+  const query = { fruit: 'apple', ...params };
+  const response = await api.get<VarietyListResponse>('/varieties', { params: query });
   return response.data;
 }
 

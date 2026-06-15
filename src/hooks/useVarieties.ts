@@ -9,6 +9,8 @@ import {
   fetchVarieties,
   type VarietyListItem,
   type SeasonFilter,
+  type FruitFilter,
+  type FruitType,
 } from '../services/varietyApi';
 
 // ── Altitude Filter Types ──
@@ -76,12 +78,15 @@ function matchesAltitudeFilter(altitude: string, filterKey: AltitudeRange): bool
 interface UseVarietiesResult {
   varieties: VarietyListItem[];
   seasonFilters: SeasonFilter[];
+  fruitFilters: FruitFilter[];
   loading: boolean;
   error: string | null;
   page: number;
   lastPage: number;
   activeSeason: string;
   setActiveSeason: (season: string) => void;
+  activeFruit: FruitType | 'all';
+  setActiveFruit: (fruit: FruitType | 'all') => void;
   activeAltitude: AltitudeRange;
   setActiveAltitude: (altitude: AltitudeRange) => void;
   altitudeFilters: AltitudeFilter[];
@@ -93,11 +98,13 @@ interface UseVarietiesResult {
 export function useVarieties(): UseVarietiesResult {
   const [varieties, setVarieties] = useState<VarietyListItem[]>([]);
   const [seasonFilters, setSeasonFilters] = useState<SeasonFilter[]>([]);
+  const [fruitFilters, setFruitFilters] = useState<FruitFilter[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [activeSeason, setActiveSeason] = useState('all');
+  const [activeFruit, setActiveFruit] = useState<FruitType | 'all'>('apple');
   const [activeAltitude, setActiveAltitude] = useState<AltitudeRange>('all');
 
   const isFirstMount = useRef(true);
@@ -111,6 +118,9 @@ export function useVarieties(): UseVarietiesResult {
         if (activeSeason !== 'all') {
           params.season = activeSeason;
         }
+        if (activeFruit !== 'all') {
+          params.fruit = activeFruit;
+        }
         const response = await fetchVarieties(params);
 
         if (append) {
@@ -119,6 +129,7 @@ export function useVarieties(): UseVarietiesResult {
           setVarieties(response.data);
         }
         setSeasonFilters(response.filters.seasons);
+        setFruitFilters(response.filters.fruit_types);
         setLastPage(response.meta.last_page);
       } catch (err: any) {
         setError(err?.message ?? 'Failed to load varieties');
@@ -129,12 +140,12 @@ export function useVarieties(): UseVarietiesResult {
     [activeSeason]
   );
 
-  // Reset page & reload when season changes
+  // Reset page & reload when season or fruit changes
   useEffect(() => {
     setPage(1);
     load(1, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSeason]);
+  }, [activeSeason, activeFruit]);
 
   // Load more pages
   useEffect(() => {
@@ -176,12 +187,15 @@ export function useVarieties(): UseVarietiesResult {
   return {
     varieties: sortedVarieties,
     seasonFilters,
+    fruitFilters,
     loading,
     error,
     page,
     lastPage,
     activeSeason,
     setActiveSeason,
+    activeFruit,
+    setActiveFruit,
     activeAltitude,
     setActiveAltitude,
     altitudeFilters: ALTITUDE_FILTERS,
