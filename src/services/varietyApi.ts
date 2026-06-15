@@ -119,9 +119,30 @@ export interface VarietyDetail {
   temp_ideal_max_c: number | null;
   rain_tolerance: string | null;
   // Disease
-  disease_resistance: Record<string, string> | null;
-  susceptibility: (string | Record<string, string>)[] | null;
-  recommended_rootstocks: string[];
+  disease_resistance: {
+    id: number;
+    name: string;
+    name_hi: string | null;
+    resistance_level: string;
+    resistance_label: string;
+  }[];
+  // Rootstocks
+  recommended_rootstocks: {
+    id: number;
+    name: string;
+    full_name: string | null;
+    image: string | null;
+  }[];
+  // Related blog posts
+  related_blog_posts: {
+    id: number;
+    slug: string;
+    title: string;
+    excerpt: string | null;
+    image: string | null;
+    relation_kind: string;
+    published_at: string | null;
+  }[];
   // Market
   market_demand: string | null;
   market_price_tier: number;
@@ -170,4 +191,43 @@ export async function fetchVarieties(params?: {
 export async function fetchVarietyDetail(slug: string): Promise<VarietyDetail> {
   const response = await api.get<VarietyDetail>(`/varieties/${slug}`);
   return response.data;
+}
+
+/**
+ * Toggle like on a variety.
+ */
+export async function toggleVarietyLike(slug: string): Promise<{ is_liked: boolean; likes_count: number }> {
+  const response = await api.post<{ data: { is_liked: boolean; likes_count: number } }>(`/varieties/${slug}/like`);
+  return response.data.data;
+}
+
+/**
+ * Toggle save/bookmark on a variety.
+ */
+export async function toggleVarietySave(slug: string): Promise<{ saved: boolean }> {
+  const response = await api.post<{ data: { saved: boolean } }>(`/varieties/${slug}/save`);
+  return response.data.data;
+}
+
+/**
+ * Fetch comments for a variety.
+ */
+export async function fetchVarietyComments(slug: string): Promise<{ id: number; body: string; author: string; created_at: string }[]> {
+  const response = await api.get<{ data: { id: number; body: string; author: string; created_at: string }[] }>(`/varieties/${slug}/comments`);
+  return response.data.data;
+}
+
+/**
+ * Post a comment on a variety.
+ */
+export async function postVarietyComment(
+  slug: string,
+  body: string,
+  parentId?: number | null,
+): Promise<{ id: number; body: string; author: string; created_at: string }> {
+  const response = await api.post<{ data: { id: number; body: string; author: string; created_at: string } }>(`/varieties/${slug}/comments`, {
+    body,
+    parent_id: parentId ?? null,
+  });
+  return response.data.data;
 }

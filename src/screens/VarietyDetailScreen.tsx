@@ -403,32 +403,32 @@ function ClimateSection({ variety }: { variety: any }) {
 }
 
 function DiseaseSection({ variety }: { variety: any }) {
-  const resistance = variety.disease_resistance ?? {};
-  const resistanceEntries = Object.entries(resistance);
+  const diseases = variety.disease_resistance ?? [];
 
   const resMap: Record<string, number> = {
+    immune: 10,
     resistant: 9,
     moderately_resistant: 7,
-    moderate: 5,
     susceptible: 3,
     highly_susceptible: 1,
   };
 
   return (
     <>
-      {resistanceEntries.length > 0 && (
+      {diseases.length > 0 && (
         <DetailCard icon="shield-check" title="Disease Resistance" color={variety.season_color}>
-          {resistanceEntries.map(([disease, level]: [string, string]) => {
+          {diseases.map((item: any) => {
+            const level = item.resistance_level ?? 'susceptible';
             const val = resMap[level.toLowerCase()] ?? 5;
             const resColor = val >= 7 ? Colors.success : val >= 4 ? Colors.warning : Colors.danger;
             return (
-              <View key={disease} style={styles.meter}>
+              <View key={item.id} style={styles.meter}>
                 <View style={styles.meterHeader}>
                   <Typography variant="metaText" color={Colors.gray500}>
-                    {capitalizeWords(disease.replace(/_/g, ' '))}
+                    {item.name}
                   </Typography>
                   <Typography variant="metaText" color={resColor} style={{ fontWeight: '700' }}>
-                    {capitalizeWords(level.replace(/_/g, ' '))}
+                    {item.resistance_label}
                   </Typography>
                 </View>
                 <View style={styles.meterTrack}>
@@ -440,27 +440,14 @@ function DiseaseSection({ variety }: { variety: any }) {
         </DetailCard>
       )}
 
-      {variety.susceptibility && variety.susceptibility.length > 0 && (
-        <DetailCard icon="alert" title="Susceptibilities" color={Colors.warning} warn>
-          {variety.susceptibility.map((item: any, i: number) => (
-            <View key={i} style={styles.warnItem}>
-              <Icon name="alert-circle" size={14} color={Colors.warning} />
-              <Typography variant="bodySmall" color={Colors.gray900} style={{ marginLeft: 8, flex: 1 }}>
-                {typeof item === 'string' ? item : item.name ?? JSON.stringify(item)}
-              </Typography>
-            </View>
-          ))}
-        </DetailCard>
-      )}
-
       {variety.recommended_rootstocks.length > 0 && (
         <DetailCard icon="sprout" title="Recommended Rootstocks" color={Colors.primary} accent>
           <View style={styles.chipsRow}>
-            {variety.recommended_rootstocks.map((rs: string, i: number) => (
-              <View key={i} style={styles.chip}>
+            {variety.recommended_rootstocks.map((rs: any, i: number) => (
+              <View key={rs.id ?? i} style={styles.chip}>
                 <Icon name="sprout" size={10} color={Colors.primary} />
                 <Typography variant="badgeText" color={Colors.gray600} style={{ marginLeft: 4 }}>
-                  {rs}
+                  {rs.name}
                 </Typography>
               </View>
             ))}
