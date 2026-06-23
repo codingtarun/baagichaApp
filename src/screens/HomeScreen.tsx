@@ -24,12 +24,12 @@ const SEGMENTS = [
 ];
 
 export default function HomeScreen(): React.JSX.Element {
-  const [activeSegment, setActiveSegment] = useState('community');
+  const [activeSegment, setActiveSegment] = useState('farm');
 
   // Reset to Farming Dashboard whenever user returns to Home tab
   useFocusEffect(
     useCallback(() => {
-      setActiveSegment('community');
+      setActiveSegment('farm');
     }, [])
   );
 
