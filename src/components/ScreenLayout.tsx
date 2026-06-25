@@ -32,6 +32,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../theme/colors';
 import GlobalHeader from './GlobalHeader';
+import DailyIntelligenceCard from './intelligence/DailyIntelligenceCard';
 import { TAB_BAR_TOTAL_HEIGHT } from '../navigation/CustomTabBar';
 
 // Scroll distance (in px) before header enters compact mode
@@ -78,6 +79,9 @@ export default function ScreenLayout({
     <View style={styles.container}>
       {/* Global Header — self-contained (fetches its own data) */}
       <GlobalHeader scrollProgress={scrollProgress} />
+
+      {/* Daily Orchard Intelligence Card */}
+      <DailyIntelligenceCard />
 
       {scrollable ? (
         <Animated.ScrollView

@@ -33,8 +33,8 @@ const SUIT_CONFIG: Record<string, { icon: string; color: string; bg: string; lab
 };
 
 function getSuitConfig(day: Forecast7Day) {
-  if (day.spray_suitable) return SUIT_CONFIG['good'];
-  return SUIT_CONFIG['avoid'];
+  if (day.spray_suitable) return SUIT_CONFIG.good;
+  return SUIT_CONFIG.avoid;
 }
 
 function mapConditionToIcon(condition: string): { icon: string; color: string } {

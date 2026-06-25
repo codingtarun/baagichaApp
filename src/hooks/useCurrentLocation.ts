@@ -110,7 +110,7 @@ export function useCurrentLocation() {
         longitude,
       });
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.warn('[useCurrentLocation] Failed to fetch location:', err);
       // Leave location null so consumer can fall back to API data
     } finally {
