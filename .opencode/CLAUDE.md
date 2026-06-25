@@ -11,7 +11,7 @@ This VS Code workspace (`baagichaApp.code-workspace`) contains two projects:
 | `baagichaApp` | `.` | React Native mobile app |
 | `web_baagicha` | `../web_baagicha` | Laravel 12 web backend + admin panel |
 
-The Laravel project has its own `CLAUDE.md` at `../web_baagicha/CLAUDE.md` with detailed backend rules — read that when working on the web side. The rules in `.claude/rules/` there are auto-loaded by file path.
+The Laravel project has its own config at `../web_baagicha/.opencode/` with detailed backend rules — read that when working on the web side.
 
 ---
 
@@ -58,7 +58,7 @@ The mobile app is the companion to `web_baagicha`. When implementing features:
 ## Laravel Web App (web_baagicha)
 
 See `../web_baagicha/CLAUDE.md` for quick-start commands, stack, and project map.
-See `../web_baagicha/.claude/rules/` for all coding conventions (architecture, models, controllers, blade, CSS, JS, testing).
+See `../web_baagicha/.opencode/skills/` for all coding conventions (architecture, models, controllers, blade, CSS, JS, testing).
 
 Key facts needed for mobile integration work:
 - Auth: Laravel Breeze session-based (no Sanctum/Passport yet — token auth will need to be added for mobile API).

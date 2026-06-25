@@ -15,7 +15,7 @@ This VS Code workspace (`baagichaApp.code-workspace`) contains two projects:
 | `baagichaApp` | `.` | React Native mobile app | React 19 + RN 0.85 + TypeScript |
 | `web_baagicha` | `../web_baagicha` | Laravel 12 web backend + admin panel | Laravel 12 + PHP 8.2 + MySQL 8.0 + Bootstrap 5 |
 
-The Laravel project has its own `CLAUDE.md` at `../web_baagicha/CLAUDE.md` and rules in `.claude/rules/`.
+The Laravel project has its own config at `../web_baagicha/.opencode/` with detailed backend skills.
 
 ---
 

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [".opencode/AGENTS.md", ".opencode/CLAUDE.md", ".opencode/KIMI.md"],
+  "command": {
+    "start": {
+      "description": "Start Metro bundler",
+      "prompt": "Run npm start"
+    },
+    "android": {
+      "description": "Build and run on Android",
+      "prompt": "Run npm run android"
+    },
+    "test": {
+      "description": "Run Jest tests",
+      "prompt": "Run npm test"
+    },
+    "lint": {
+      "description": "Run ESLint",
+      "prompt": "Run npm run lint"
+    }
+  }
+}

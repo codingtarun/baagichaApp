@@ -226,16 +226,16 @@ Use tokens: `8` (sm), `16` (md), `24` (lg), `32` (xl), `999` (full)
 
 ## 11. Reference Documents
 
-All design data extracted from the Laravel web app is stored in `.kimi/`:
+All design data is available as OpenCode skills in `.opencode/skills/`:
 
-| File | Content |
+| Skill | Content |
 |------|---------|
-| `.kimi/DESIGN_SPEC.md` | Colors, typography, layout, shadows, spacing, animations |
-| `.kimi/DATA_MODELS.md` | All TypeScript interfaces |
-| `.kimi/API_REFERENCE.md` | All API endpoints |
-| `.kimi/SCREEN_BREAKDOWN.md` | Every screen with components |
+| `design-spec` | Colors, typography, layout, shadows, spacing, animations |
+| `data-models` | All TypeScript interfaces |
+| `api-reference` | All API endpoints |
+| `screen-breakdown` | Every screen with components |
 
-**Always refer to these documents** before building any screen or component.
+**Always refer to these skills** before building any screen or component.
 
 ---
 
