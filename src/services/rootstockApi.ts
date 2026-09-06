@@ -71,8 +71,8 @@ export interface RootstockDetail {
   // Planting
   spacing_m_row: number | null;
   spacing_m_tree: number | null;
-  density_per_ha_min: number | null;
-  density_per_ha_max: number | null;
+  density_per_acre_min: number | null;
+  density_per_acre_max: number | null;
   years_to_first_crop: number | null;
   productive_life_years: number | null;
   needs_staking: boolean;

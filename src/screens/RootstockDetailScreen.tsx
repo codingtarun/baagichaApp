@@ -266,8 +266,8 @@ function PlantingSection({ rootstock }: { rootstock: any }) {
   const specs = [
     rootstock.spacing_m_row && { label: 'Row Spacing', value: `${rootstock.spacing_m_row} m` },
     rootstock.spacing_m_tree && { label: 'Tree Spacing', value: `${rootstock.spacing_m_tree} m` },
-    rootstock.density_per_ha_min && { label: 'Density (min)', value: `${rootstock.density_per_ha_min.toLocaleString()} / ha` },
-    rootstock.density_per_ha_max && { label: 'Density (max)', value: `${rootstock.density_per_ha_max.toLocaleString()} / ha` },
+    rootstock.density_per_acre_min && { label: 'Density (min)', value: `${rootstock.density_per_acre_min.toLocaleString()} / acre` },
+    rootstock.density_per_acre_max && { label: 'Density (max)', value: `${rootstock.density_per_acre_max.toLocaleString()} / acre` },
     rootstock.years_to_first_crop && { label: 'First Crop', value: `${rootstock.years_to_first_crop} years` },
     rootstock.productive_life_years && { label: 'Productive Life', value: `${rootstock.productive_life_years} years` },
     { label: 'Needs Staking', value: rootstock.needs_staking ? 'Yes ✓' : 'No' },
