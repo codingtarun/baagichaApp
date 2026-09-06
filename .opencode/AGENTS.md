@@ -1,6 +1,9 @@
 # Baagicha App — Agent Guidelines
 
 > For AI assistants working on the Baagicha React Native mobile app.
+>
+> Corrected 2026-09-06 against the actual source tree. Sections 5, 6.2, 6.3, 7 and 9
+> previously described a stack this app has never used.
 
 ---
 
@@ -12,7 +15,8 @@
 - **React Version:** 19.2.3
 - **Language:** TypeScript
 - **Target:** Himalayan apple farmers (HP, UK, J&K)
-- **Design Source:** Laravel web PWA at `/home/tarun-chauhan/Desktop/Apps/web_baagicha`
+- **Design Source:** Laravel web app at `../web_baagicha` (same workspace)
+- **Backend:** all APIs live in Laravel; this app is a pure client
 
 ---
 
@@ -21,18 +25,21 @@
 ### 2.1 Folder Structure
 ```
 src/
-├── components/       # Reusable UI components (buttons, cards, inputs)
-├── screens/          # Full-screen page components
-├── navigation/       # React Navigation setup
-├── services/         # API calls, external services
+├── api/              # (thin — only notifications.ts; most API code is in services/)
+├── components/       # Reusable UI  (+ dashboard/, home/, intelligence/, shop/)
+├── config/           # env.ts — react-native-config access
+├── hooks/            # Custom hooks, one per resource (useVarieties, useOrchards, …)
+├── navigation/       # React Navigation setup (+ stacks/)
+├── screens/          # Full-screen components (+ Auth/, Home/, Onboarding/, shop/)
+├── services/         # API clients, one per domain (varietyApi.ts, shopApi.ts, …)
+├── store/            # Zustand stores
 ├── theme/            # Colors, global styles
-├── typography/       # Font system, text components
-├── hooks/            # Custom React hooks
-├── utils/            # Helper functions
 ├── types/            # Shared TypeScript interfaces
-├── constants/        # App constants (routes, config)
-└── context/          # React Context providers
+└── typography/       # Font system, text components
 ```
+
+There is no `utils/`, `constants/` or `context/` directory. Do not invent them —
+if you need one, say so first.
 
 ### 2.2 Component Rules
 - **One component per file** — keep files focused and readable.
@@ -128,16 +135,30 @@ import { CardTitle } from './CardTitle';
 - Use `useState` for component-level state.
 - Use `useReducer` for complex local state logic.
 
-### 5.2 Global State
-- Use **React Context** for app-wide state (auth, user, orchards).
-- Use **AsyncStorage** for persisted local data (task completion, pins, preferences).
-- Avoid Redux unless explicitly requested — Context + hooks are sufficient for this app.
+### 5.2 Global State — Zustand, not Context
 
-### 5.3 Data Fetching
-- Use a custom `useApi` hook or `react-query` / `@tanstack/react-query` for server state.
-- Cache responses appropriately.
-- Show loading skeletons, not spinners.
-- Handle errors with retry UI, not just toasts.
+The app uses **Zustand**. There are no React Context providers anywhere in `src/`.
+Seven stores live in `src/store/`:
+
+`authStore` · `cartStore` · `intelligenceStore` · `notificationStore` ·
+`onboardingStore` · `orchardStore` · `toastStore`
+
+Add state to an existing store before creating a new one.
+
+### 5.3 Persistence — MMKV, not AsyncStorage
+
+Persisted data (auth token, onboarding progress, preferences) uses
+**`react-native-mmkv`**. `AsyncStorage` is not installed.
+
+### 5.4 Data Fetching — hand-written hooks, no react-query
+
+`@tanstack/react-query` is **not** a dependency. The pattern is a pair:
+
+- `src/services/<domain>Api.ts` — axios calls against the Laravel API
+- `src/hooks/use<Resource>.ts` — loading/error/data state around them
+
+Follow that pattern for new resources rather than introducing a data library.
+Show loading skeletons, not spinners. Handle errors with retry UI, not just toasts.
 
 ---
 
@@ -149,29 +170,36 @@ import { CardTitle } from './CardTitle';
 - Detail screens pushed onto stack
 
 ### 6.2 Tab Navigator
-5 tabs: Home, Spray, Disease, Varieties, Rootstock
+5 tabs, each wrapping its own native stack (`src/navigation/stacks/`):
+
+**Home · Spray · Shop · Discover · MyOrchard**
+
+Diseases, varieties and rootstocks are reached through Discover, not from their own tabs.
 
 ### 6.3 Deep Linking
-Support these URLs:
-- `baagicha://spray-schedule`
-- `baagicha://disease/{slug}`
-- `baagicha://variety/{slug}`
-- `baagicha://blog/{slug}`
+**Not implemented.** No `baagicha://` scheme is registered in `AndroidManifest.xml` and
+React Navigation has no `linking` config. Treat deep links as unbuilt work, not as
+something to match.
 
 ---
 
 ## 7. API Integration
 
 ### 7.1 Base Config
-```typescript
-const api = axios.create({
-  baseURL: 'https://api.baagicha.app',
-  headers: { 'Accept': 'application/json' },
-});
+The client is `src/services/api.ts`; the base URL comes from `src/config/env.ts`,
+which reads `react-native-config`:
+
+```
+API_BASE_URL   # must end in /api/v1
 ```
 
+Set it in `.env`. Android emulator uses `http://10.0.2.2:8000/api/v1`; a physical
+device needs the dev machine's LAN IP. **There is no production API URL configured
+yet** — see the workspace `.claude/context/known-issues.md`.
+
 ### 7.2 Auth Interceptor
-Attach CSRF token / auth token to every request.
+Sanctum **bearer token**, stored in MMKV, attached to every request. Not CSRF —
+this is a token API, not a stateful SPA.
 
 ### 7.3 Error Handling
 - `401` → Clear auth, navigate to Login
@@ -202,16 +230,19 @@ Use tokens: `8` (sm), `16` (md), `24` (lg), `32` (xl), `999` (full)
 
 ## 9. Testing
 
+**Current reality:** the only test is the default `__tests__/App.test.tsx`.
+`@testing-library/react-native` and Detox are **not** installed, and `@types/jest`
+is missing (which is one of the four standing `tsc --noEmit` errors). The rest of
+this section is the intended target, not a description of the repo.
+
 ### 9.1 Unit Tests
-- Test utility functions and hooks.
-- Use Jest (already configured).
+- Test utility functions and hooks. Jest is configured.
 
 ### 9.2 Component Tests
-- Test component rendering with `@testing-library/react-native`.
-- Test user interactions (press, scroll, input).
+- Would need `@testing-library/react-native` added first.
 
 ### 9.3 E2E Tests
-- Use Detox for critical user flows (login → home → spray schedule).
+- Would need Detox added first.
 
 ---
 
